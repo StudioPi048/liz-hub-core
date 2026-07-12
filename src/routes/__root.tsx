@@ -46,12 +46,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Algo deu errado</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Tente novamente ou volte ao início.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">Tente novamente ou volte ao início.</p>
         <div className="mt-6 flex justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Tentar de novo
@@ -71,17 +72,40 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "LIZ HUB — Centro de Operações do Instituto LIZ" },
-      { name: "description", content: "Sistema operacional do Instituto LIZ: agenda, links, textos, arquivos, CRM e projetos em um único lugar." },
+      {
+        name: "description",
+        content:
+          "Sistema operacional do Instituto LIZ: agenda, links, textos, arquivos, CRM e projetos em um único lugar.",
+      },
       { property: "og:title", content: "LIZ HUB — Centro de Operações do Instituto LIZ" },
-      { property: "og:description", content: "Sistema operacional do Instituto LIZ: agenda, links, textos, arquivos, CRM e projetos em um único lugar." },
+      {
+        property: "og:description",
+        content:
+          "Sistema operacional do Instituto LIZ: agenda, links, textos, arquivos, CRM e projetos em um único lugar.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "LIZ HUB — Centro de Operações do Instituto LIZ" },
-      { name: "twitter:description", content: "Sistema operacional do Instituto LIZ: agenda, links, textos, arquivos, CRM e projetos em um único lugar." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/165719cc-34d7-45a1-92c8-60d0c9e81d14/id-preview-841da834--cdf21ce0-fe93-4a59-b0f4-0a7e801b2d1a.lovable.app-1783874976041.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/165719cc-34d7-45a1-92c8-60d0c9e81d14/id-preview-841da834--cdf21ce0-fe93-4a59-b0f4-0a7e801b2d1a.lovable.app-1783874976041.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Sistema operacional do Instituto LIZ: agenda, links, textos, arquivos, CRM e projetos em um único lugar.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/165719cc-34d7-45a1-92c8-60d0c9e81d14/id-preview-841da834--cdf21ce0-fe93-4a59-b0f4-0a7e801b2d1a.lovable.app-1783874976041.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/165719cc-34d7-45a1-92c8-60d0c9e81d14/id-preview-841da834--cdf21ce0-fe93-4a59-b0f4-0a7e801b2d1a.lovable.app-1783874976041.png",
+      },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
@@ -95,7 +119,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
