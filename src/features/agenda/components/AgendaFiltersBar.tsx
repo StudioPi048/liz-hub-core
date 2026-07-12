@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, FilterX, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { AgendaEvent } from "../model/agenda-event";
+import { AgendaEvent, AgendaEventSource, AgendaEventStatus } from "../model/agenda-event";
 // Assume Select/Combobox components exist, or use standard HTML selects for simplicity in this iteration
 
 interface AgendaFiltersBarProps {
@@ -21,7 +21,7 @@ export function AgendaFiltersBar({ filters, onChange, onClear, availableEvents }
   const statuses = useMemo(() => Array.from(new Set(availableEvents.map(e => e.status).filter(Boolean))) as string[], [availableEvents]);
   const sources = useMemo(() => Array.from(new Set(availableEvents.map(e => e.source).filter(Boolean))) as string[], [availableEvents]);
 
-  const toggleArrayItem = (array: string[], item: string) => {
+  const toggleArrayItem = <T extends string>(array: T[], item: T): T[] => {
     return array.includes(item) ? array.filter(i => i !== item) : [...array, item];
   };
 
@@ -72,7 +72,7 @@ export function AgendaFiltersBar({ filters, onChange, onClear, availableEvents }
           className="h-9 px-3 rounded-md border bg-transparent text-sm"
           value=""
           onChange={e => {
-            if (e.target.value) onChange({ statuses: toggleArrayItem(filters.statuses, e.target.value as any) });
+            if (e.target.value) onChange({ statuses: toggleArrayItem(filters.statuses, e.target.value as AgendaEventStatus) });
           }}
         >
           <option value="" disabled>Status</option>
@@ -83,7 +83,7 @@ export function AgendaFiltersBar({ filters, onChange, onClear, availableEvents }
           className="h-9 px-3 rounded-md border bg-transparent text-sm"
           value=""
           onChange={e => {
-            if (e.target.value) onChange({ sources: toggleArrayItem(filters.sources, e.target.value as any) });
+            if (e.target.value) onChange({ sources: toggleArrayItem(filters.sources, e.target.value as AgendaEventSource) });
           }}
         >
           <option value="" disabled>Origem</option>
@@ -113,12 +113,12 @@ export function AgendaFiltersBar({ filters, onChange, onClear, availableEvents }
           ))}
           {filters.statuses.map(s => (
             <Badge key={`stat-${s}`} variant="secondary" className="flex items-center gap-1 font-normal">
-              {s} <X className="h-3 w-3 cursor-pointer" onClick={() => onChange({ statuses: toggleArrayItem(filters.statuses, s as any) })} />
+              {s} <X className="h-3 w-3 cursor-pointer" onClick={() => onChange({ statuses: toggleArrayItem(filters.statuses, s) })} />
             </Badge>
           ))}
           {filters.sources.map(s => (
             <Badge key={`src-${s}`} variant="secondary" className="flex items-center gap-1 font-normal">
-              {s} <X className="h-3 w-3 cursor-pointer" onClick={() => onChange({ sources: toggleArrayItem(filters.sources, s as any) })} />
+              {s} <X className="h-3 w-3 cursor-pointer" onClick={() => onChange({ sources: toggleArrayItem(filters.sources, s) })} />
             </Badge>
           ))}
         </div>
