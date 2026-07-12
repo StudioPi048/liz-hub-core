@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, CheckCircle2, AlertCircle, Hash, History, Server } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -80,29 +80,53 @@ function CuradoriaPage() {
             <p className="text-archive-muted">Nenhum nó de conhecimento encontrado.</p>
           )}
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {data?.nodes.map((node: any) => (
-            <Card key={node.id} className="bg-archive-surface border-archive-border">
-              <CardContent className="p-4 flex justify-between items-start gap-4">
-                <div className="space-y-1 min-w-0">
-                  <div className="font-medium text-archive-fg truncate">{node.title}</div>
-                  <div className="text-xs text-archive-muted truncate">
-                    {node.source_uri} • {new Date(node.updated_at).toLocaleDateString()}
+          {data?.nodes.map((node: any) => {
+            const isOfficial = node.status === "approved" && node.authority_level === "official";
+            const isDraft = node.status === "draft";
+            
+            return (
+              <Card key={node.id} className={`bg-archive-surface border-archive-border ${isOfficial ? 'border-l-4 border-l-blue-500' : ''} ${isDraft ? 'opacity-80' : ''}`}>
+                <CardContent className="p-4 flex flex-col gap-3">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        {isOfficial && <CheckCircle2 className="h-4 w-4 text-blue-500" />}
+                        {isDraft && <AlertCircle className="h-4 w-4 text-yellow-500" />}
+                        <div className="font-medium text-archive-fg truncate">{node.title}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-archive-muted">
+                        <span className="flex items-center gap-1"><Server className="h-3 w-3" /> {node.source_type}</span>
+                        <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {node.source_uri}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 shrink-0 justify-end">
+                      <Badge variant="outline" className="text-xs uppercase">{node.type}</Badge>
+                      <Badge variant={node.status === "approved" ? "default" : "secondary"}>
+                        {node.status}
+                      </Badge>
+                      <Badge variant={node.authority_level === 'official' ? 'default' : 'outline'} className="text-[10px]">
+                        {node.authority_level}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <Badge variant="outline" className="text-xs uppercase">
-                    {node.type}
-                  </Badge>
-                  <Badge variant={node.status === "approved" ? "default" : "secondary"}>
-                    {node.status}
-                  </Badge>
-                  <Badge variant="outline" className="text-[10px]">
-                    {node.authority_level}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  
+                  <div className="flex items-center justify-between text-xs text-archive-muted border-t border-archive-border pt-2 mt-1">
+                    <div className="flex gap-4">
+                      <span className="flex items-center gap-1" title="Versão do Documento">
+                        <History className="h-3 w-3" /> v{node.version || 1}
+                      </span>
+                      <span className="flex items-center gap-1" title="Content Hash">
+                        <Hash className="h-3 w-3" /> {node.content_hash?.substring(0, 8) || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      Última Sincronização: {new Date(node.updated_at).toLocaleString('pt-BR')}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
 
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-4">
