@@ -24,7 +24,8 @@ export const disconnectGoogle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("google_oauth_tokens").delete().eq("user_id", context.userId);
+    // System-wide: any authenticated user (ideally admin) disconnecting removes the integration
+    await supabaseAdmin.from("google_oauth_tokens").delete().neq("user_id", "");
     return { ok: true };
   });
 
@@ -67,17 +68,18 @@ async function fetchRangeEvents(userId: string, timeMin: string, timeMax: string
   const { getValidAccessToken, fetchCalendarList, fetchEventsForCalendar } =
     await import("./google-calendar.server");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const tokenResult = await getValidAccessToken(userId);
+  const tokenResult = await getValidAccessToken();
   if (tokenResult.status !== "connected") {
     return { needsAuth: true as const, status: tokenResult.status, events: [] };
   }
   const token = { accessToken: tokenResult.accessToken };
   const cals = await fetchCalendarList(token.accessToken);
 
+  // System-wide: Use the preferences of the user who connected the account
   const { data: prefs } = await supabaseAdmin
     .from("google_calendar_prefs")
     .select("*")
-    .eq("user_id", userId);
+    .eq("user_id", tokenResult.ownerUserId);
   const prefsById = new Map((prefs || []).map((p) => [p.calendar_id, p]));
 
   const results: any[] = [];

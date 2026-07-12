@@ -117,24 +117,24 @@ export function decodeIdTokenEmail(idToken?: string): string | null {
 }
 
 export type GoogleAccessTokenResult =
-  | { status: "connected"; accessToken: string; googleEmail: string | null }
+  | { status: "connected"; accessToken: string; googleEmail: string | null; ownerUserId: string }
   | { status: "disconnected"; reason: "not_connected" }
   | { status: "needs_reconnect"; reason: "invalid_client" | "invalid_grant" }
   | { status: "temporarily_unavailable"; reason: "network_error" | "google_unavailable" };
 
 export async function getValidAccessToken(
-  userId: string,
+  _userId?: string, // Ignored: System-wide integration (Instituto LIZ)
 ): Promise<GoogleAccessTokenResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row } = await supabaseAdmin
     .from("google_oauth_tokens")
     .select("*")
-    .eq("user_id", userId)
+    .limit(1)
     .maybeSingle();
   if (!row) return { status: "disconnected", reason: "not_connected" };
   const expiresAt = row.token_expires_at ? new Date(row.token_expires_at).getTime() : 0;
   if (row.access_token && expiresAt > Date.now() + 60_000) {
-    return { status: "connected", accessToken: row.access_token, googleEmail: row.google_email };
+    return { status: "connected", accessToken: row.access_token, googleEmail: row.google_email, ownerUserId: row.user_id };
   }
   let refreshed;
   try {
@@ -142,11 +142,11 @@ export async function getValidAccessToken(
   } catch (e: any) {
     const errorData = e.response?.data?.error;
     if (errorData === "invalid_grant" || errorData === "invalid_client") {
-      await supabaseAdmin.from("google_oauth_tokens").delete().eq("user_id", userId);
+      await supabaseAdmin.from("google_oauth_tokens").delete().eq("user_id", row.user_id);
       // Audit log
       console.log(JSON.stringify({
         event: "google_integration_removed",
-        user_id: userId,
+        user_id: row.user_id,
         reason: errorData,
         date: new Date().toISOString(),
       }));
@@ -162,8 +162,8 @@ export async function getValidAccessToken(
       token_expires_at: newExpiry,
       scope: refreshed.scope,
     })
-    .eq("user_id", userId);
-  return { status: "connected", accessToken: refreshed.access_token, googleEmail: row.google_email };
+    .eq("user_id", row.user_id);
+  return { status: "connected", accessToken: refreshed.access_token, googleEmail: row.google_email, ownerUserId: row.user_id };
 }
 
 export async function fetchCalendarList(accessToken: string) {
