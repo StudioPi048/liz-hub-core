@@ -14,7 +14,22 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
-  if (!supabase) return { status: "skipped", reason: "no_client" };
+  const logEvent = (action: string, status: string, id: string | null = null, msg?: string) => {
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      module: "KNOWLEDGE_SYNC",
+      action,
+      status,
+      node_id: id || node.id,
+      hash: node.content_hash,
+      message: msg || ""
+    }));
+  };
+
+  if (!supabase) {
+    logEvent("SYNC", "SKIPPED", null, "No supabase client");
+    return { status: "skipped", reason: "no_client" };
+  }
 
   // Check if exists
   const { data: existing, error: errSelect } = await supabase
@@ -24,13 +39,20 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
     .eq("source_id", node.id)
     .maybeSingle();
 
-  if (errSelect && errSelect.code !== "PGRST116") throw errSelect;
+  if (errSelect && errSelect.code !== 'PGRST116') {
+    logEvent("FETCH", "ERROR", null, errSelect.message);
+    throw errSelect;
+  }
 
   if (existing) {
     if (existing.content_hash === node.content_hash) {
+      logEvent("SYNC", "UNCHANGED", existing.id);
       return { status: "unchanged" };
     } else {
-      if (dryRun) return { status: "would_update", id: existing.id };
+      if (dryRun) {
+        logEvent("SYNC", "WOULD_UPDATE", existing.id);
+        return { status: "would_update", id: existing.id };
+      }
 
       // Update to draft for new version
       const { error } = await supabase
@@ -49,11 +71,18 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
         })
         .eq("id", existing.id);
 
-      if (error) throw error;
+      if (error) {
+        logEvent("UPDATE", "ERROR", existing.id, error.message);
+        throw error;
+      }
+      logEvent("UPDATE", "SUCCESS", existing.id);
       return { status: "updated", id: existing.id };
     }
   } else {
-    if (dryRun) return { status: "would_create" };
+    if (dryRun) {
+      logEvent("SYNC", "WOULD_CREATE", null);
+      return { status: "would_create" };
+    }
 
     const { data, error } = await supabase
       .from("knowledge_nodes")
@@ -77,7 +106,11 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      logEvent("CREATE", "ERROR", null, error.message);
+      throw error;
+    }
+    logEvent("CREATE", "SUCCESS", data.id);
     return { status: "created", id: data.id };
   }
 }
