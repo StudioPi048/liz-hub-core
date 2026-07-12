@@ -1,0 +1,1 @@
+DELETE FROM public.google_oauth_tokens;
