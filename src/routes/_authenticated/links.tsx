@@ -91,11 +91,11 @@ function LinksPage() {
   }
 
   return (
-    <div className="space-y-4 max-w-6xl">
+    <div className="liz-archive-theme min-h-[calc(100vh-4rem)] p-2 space-y-4 max-w-6xl">
       <div className="flex flex-wrap gap-2 justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Biblioteca de Links</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-editorial tracking-tight text-archive-fg">Biblioteca de Links</h1>
+          <p className="text-sm text-archive-muted">
             Todos os links do Instituto em um só lugar.
           </p>
         </div>
@@ -183,12 +183,12 @@ function LinksPage() {
         <>
           {[...byCategory.entries()].map(([cat, list]) => (
             <div key={cat}>
-              <h2 className="text-sm font-semibold mb-2 uppercase tracking-wider text-muted-foreground">
+              <h2 className="text-sm font-semibold mb-2 uppercase tracking-wider text-archive-muted">
                 {cat}
               </h2>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {list.map((l) => (
-                  <Card key={l.id}>
+                  <Card key={l.id} className="bg-archive-surface border-archive-border shadow-sm hover:border-archive-accent transition-colors">
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">

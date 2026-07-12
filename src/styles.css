@@ -122,3 +122,34 @@
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
 }
+
+@theme inline {
+  --color-archive-bg: var(--archive-bg);
+  --color-archive-surface: var(--archive-surface);
+  --color-archive-fg: var(--archive-fg);
+  --color-archive-muted: var(--archive-muted);
+  --color-archive-border: var(--archive-border);
+  --color-archive-accent: var(--archive-accent);
+  --font-editorial: "Newsreader", serif;
+}
+
+.liz-archive-theme {
+  --archive-bg: oklch(0.98 0.01 60);
+  --archive-surface: oklch(0.99 0.005 60);
+  --archive-fg: oklch(0.2 0.05 60);
+  --archive-muted: oklch(0.4 0.05 60);
+  --archive-border: oklch(0.9 0.02 60);
+  --archive-accent: oklch(0.3 0.1 295);
+
+  background-color: var(--archive-bg);
+  color: var(--archive-fg);
+}
+
+.dark .liz-archive-theme {
+  --archive-bg: oklch(0.18 0.02 295);
+  --archive-surface: oklch(0.22 0.03 295);
+  --archive-fg: oklch(0.95 0.01 60);
+  --archive-muted: oklch(0.7 0.02 295);
+  --archive-border: oklch(0.3 0.03 295);
+  --archive-accent: oklch(0.7 0.1 295);
+}
