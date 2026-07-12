@@ -20,6 +20,7 @@ import { Route as AuthenticatedInstitucionalRouteImport } from './routes/_authen
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCuradoriaRouteImport } from './routes/_authenticated/curadoria'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedArquivosRouteImport } from './routes/_authenticated/arquivos'
@@ -81,6 +82,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCuradoriaRoute = AuthenticatedCuradoriaRouteImport.update({
+  id: '/curadoria',
+  path: '/curadoria',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   id: '/crm',
   path: '/crm',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/curadoria': typeof AuthenticatedCuradoriaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/curadoria': typeof AuthenticatedCuradoriaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/_authenticated/arquivos': typeof AuthenticatedArquivosRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/curadoria': typeof AuthenticatedCuradoriaRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/arquivos'
     | '/configuracoes'
     | '/crm'
+    | '/curadoria'
     | '/dashboard'
     | '/equipe'
     | '/financeiro'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/arquivos'
     | '/configuracoes'
     | '/crm'
+    | '/curadoria'
     | '/dashboard'
     | '/equipe'
     | '/financeiro'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/_authenticated/arquivos'
     | '/_authenticated/configuracoes'
     | '/_authenticated/crm'
+    | '/_authenticated/curadoria'
     | '/_authenticated/dashboard'
     | '/_authenticated/equipe'
     | '/_authenticated/financeiro'
@@ -302,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/curadoria': {
+      id: '/_authenticated/curadoria'
+      path: '/curadoria'
+      fullPath: '/curadoria'
+      preLoaderRoute: typeof AuthenticatedCuradoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/crm': {
       id: '/_authenticated/crm'
       path: '/crm'
@@ -345,6 +364,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedArquivosRoute: typeof AuthenticatedArquivosRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedCuradoriaRoute: typeof AuthenticatedCuradoriaRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
@@ -360,6 +380,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedArquivosRoute: AuthenticatedArquivosRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedCuradoriaRoute: AuthenticatedCuradoriaRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,

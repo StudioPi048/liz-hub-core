@@ -4,7 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import {
-  getGoogleStatus, getGoogleAuthUrl, disconnectGoogle, listRangeEvents,
+  getGoogleStatus,
+  getGoogleAuthUrl,
+  disconnectGoogle,
+  listRangeEvents,
 } from "@/lib/google-calendar.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -53,14 +56,15 @@ function AgendaPage() {
     refetchOnWindowFocus: true,
   });
 
-  const lastSync = events.dataUpdatedAt
-    ? format(new Date(events.dataUpdatedAt), "HH:mm:ss")
-    : null;
+  const lastSync = events.dataUpdatedAt ? format(new Date(events.dataUpdatedAt), "HH:mm:ss") : null;
 
   const getUrl = useServerFn(getGoogleAuthUrl);
   const disconnect = useMutation({
     mutationFn: () => disconnectGoogle(),
-    onSuccess: () => { toast.success("Google desconectado"); qc.invalidateQueries(); },
+    onSuccess: () => {
+      toast.success("Google desconectado");
+      qc.invalidateQueries();
+    },
   });
 
   async function connect() {
@@ -77,8 +81,13 @@ function AgendaPage() {
       <div className="max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><CalIcon className="h-5 w-5" /> Agenda</CardTitle>
-            <CardDescription>Conecte seu Google Calendar para começar. O LIZ HUB apenas lê os eventos que você autorizar.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <CalIcon className="h-5 w-5" /> Agenda
+            </CardTitle>
+            <CardDescription>
+              Conecte seu Google Calendar para começar. O LIZ HUB apenas lê os eventos que você
+              autorizar.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={connect}>Conectar Google Calendar</Button>
@@ -104,13 +113,33 @@ function AgendaPage() {
           <p className="text-sm text-muted-foreground">Conectado: {status.data.googleEmail}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant={view === "today" ? "default" : "outline"} size="sm" onClick={() => setView("today")}>Hoje</Button>
-          <Button variant={view === "week" ? "default" : "outline"} size="sm" onClick={() => setView("week")}>Próx. 7 dias</Button>
-          <Button variant="outline" size="sm" onClick={() => events.refetch()} disabled={events.isFetching}>
+          <Button
+            variant={view === "today" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("today")}
+          >
+            Hoje
+          </Button>
+          <Button
+            variant={view === "week" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("week")}
+          >
+            Próx. 7 dias
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => events.refetch()}
+            disabled={events.isFetching}
+          >
             <RefreshCcw className={`h-4 w-4 mr-1 ${events.isFetching ? "animate-spin" : ""}`} />
             Sincronizar agora
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => disconnect.mutate()}><Unlink className="h-4 w-4 mr-1" />Desconectar</Button>
+          <Button variant="ghost" size="sm" onClick={() => disconnect.mutate()}>
+            <Unlink className="h-4 w-4 mr-1" />
+            Desconectar
+          </Button>
         </div>
       </div>
 
@@ -126,11 +155,17 @@ function AgendaPage() {
       {[...groups.entries()].map(([day, list]) => (
         <div key={day}>
           <h2 className="text-sm font-semibold mb-2 capitalize">
-            {day === "sem-data" ? "Sem data" : format(new Date(day), "EEEE, d 'de' MMMM", { locale: ptBR })}
+            {day === "sem-data"
+              ? "Sem data"
+              : format(new Date(day), "EEEE, d 'de' MMMM", { locale: ptBR })}
           </h2>
           <div className="space-y-2">
             {list.map((ev: any) => (
-              <Card key={ev.id} className="border-l-4" style={{ borderLeftColor: ev.color || "#7c3aed" }}>
+              <Card
+                key={ev.id}
+                className="border-l-4"
+                style={{ borderLeftColor: ev.color || "#7c3aed" }}
+              >
                 <CardContent className="p-3 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{ev.summary || "(sem título)"}</div>
@@ -138,12 +173,19 @@ function AgendaPage() {
                       {ev.allDay
                         ? "Dia inteiro"
                         : `${format(new Date(ev.start), "HH:mm")} - ${format(new Date(ev.end), "HH:mm")}`}
-                      <Badge variant="secondary" className="text-xs">{ev.calendarSummary}</Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {ev.calendarSummary}
+                      </Badge>
                       {ev.location && <span className="truncate">📍 {ev.location}</span>}
                     </div>
                   </div>
                   {ev.htmlLink && (
-                    <a href={ev.htmlLink} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary">
+                    <a
+                      href={ev.htmlLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-muted-foreground hover:text-primary"
+                    >
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   )}
