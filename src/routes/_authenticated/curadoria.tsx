@@ -48,7 +48,7 @@ function CuradoriaPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-editorial tracking-tight text-archive-fg">
-            Curadoria Institucional
+            Patrimônio Intelectual
           </h1>
           <p className="text-sm text-archive-muted">
             Painel administrativo com permissão restrita.
