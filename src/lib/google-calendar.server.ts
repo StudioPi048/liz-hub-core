@@ -118,17 +118,27 @@ export async function getValidAccessToken(userId: string): Promise<{ accessToken
   if (row.access_token && expiresAt > Date.now() + 60_000) {
     return { accessToken: row.access_token, googleEmail: row.google_email };
   }
-  const refreshed = await refreshAccessToken(row.refresh_token);
-  const newExpiry = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
-  await supabaseAdmin
-    .from("google_oauth_tokens")
-    .update({
-      access_token: refreshed.access_token,
-      token_expires_at: newExpiry,
-      scope: refreshed.scope,
-    })
-    .eq("user_id", userId);
-  return { accessToken: refreshed.access_token, googleEmail: row.google_email };
+  try {
+    const refreshed = await refreshAccessToken(row.refresh_token);
+    const newExpiry = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
+    await supabaseAdmin
+      .from("google_oauth_tokens")
+      .update({
+        access_token: refreshed.access_token,
+        token_expires_at: newExpiry,
+        scope: refreshed.scope,
+      })
+      .eq("user_id", userId);
+    return { accessToken: refreshed.access_token, googleEmail: row.google_email };
+  } catch (e: any) {
+    const msg = String(e?.message || "");
+    // Token vinculado a credenciais antigas ou revogado — apaga para forçar reconexão
+    if (msg.includes("invalid_client") || msg.includes("invalid_grant")) {
+      await supabaseAdmin.from("google_oauth_tokens").delete().eq("user_id", userId);
+      return null;
+    }
+    throw e;
+  }
 }
 
 export async function fetchCalendarList(accessToken: string) {
