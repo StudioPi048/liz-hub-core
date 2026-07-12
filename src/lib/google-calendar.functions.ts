@@ -16,13 +16,8 @@ export const getGoogleAuthUrl = createServerFn({ method: "POST" })
 export const getGoogleStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("google_oauth_tokens")
-      .select("google_email, updated_at")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    return { connected: !!data, googleEmail: data?.google_email || null };
+    const { getValidAccessToken } = await import("./google-calendar.server");
+    return await getValidAccessToken(context.userId);
   });
 
 export const disconnectGoogle = createServerFn({ method: "POST" })
@@ -37,8 +32,11 @@ export const listCalendars = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { getValidAccessToken, fetchCalendarList } = await import("./google-calendar.server");
-    const token = await getValidAccessToken(context.userId);
-    if (!token) return { needsAuth: true as const, calendars: [] };
+    const tokenResult = await getValidAccessToken(context.userId);
+    if (tokenResult.status !== "connected") {
+      return { needsAuth: true as const, status: tokenResult.status, calendars: [] };
+    }
+    const token = { accessToken: tokenResult.accessToken };
     const items = await fetchCalendarList(token.accessToken);
     return {
       needsAuth: false as const,
@@ -69,8 +67,11 @@ async function fetchRangeEvents(userId: string, timeMin: string, timeMax: string
   const { getValidAccessToken, fetchCalendarList, fetchEventsForCalendar } =
     await import("./google-calendar.server");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const token = await getValidAccessToken(userId);
-  if (!token) return { needsAuth: true as const, events: [] };
+  const tokenResult = await getValidAccessToken(userId);
+  if (tokenResult.status !== "connected") {
+    return { needsAuth: true as const, status: tokenResult.status, events: [] };
+  }
+  const token = { accessToken: tokenResult.accessToken };
   const cals = await fetchCalendarList(token.accessToken);
 
   const { data: prefs } = await supabaseAdmin
