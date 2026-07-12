@@ -12,7 +12,7 @@ describe("scanDirectory secret scanner", () => {
     // Write a mock secret that matches the regex
     fs.writeFileSync(secretFile, "Here is my secret GOCSPX-1234567890");
 
-    const errors: {file: string, error: string}[] = [];
+    const errors: { file: string; error: string }[] = [];
     const files = scanDirectory(tmpDir, [], errors);
 
     expect(files.length).toBe(0);
@@ -32,7 +32,7 @@ describe("scanDirectory secret scanner", () => {
     fs.writeFileSync(pemFile, "KEY");
     fs.writeFileSync(validFile, "Hello");
 
-    const errors: {file: string, error: string}[] = [];
+    const errors: { file: string; error: string }[] = [];
     const files = scanDirectory(tmpDir, [], errors);
 
     expect(files.length).toBe(1);

@@ -15,15 +15,17 @@ const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabase
 
 export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
   const logEvent = (action: string, status: string, id: string | null = null, msg?: string) => {
-    console.log(JSON.stringify({
-      timestamp: new Date().toISOString(),
-      module: "KNOWLEDGE_SYNC",
-      action,
-      status,
-      node_id: id || node.id,
-      hash: node.content_hash,
-      message: msg || ""
-    }));
+    console.log(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        module: "KNOWLEDGE_SYNC",
+        action,
+        status,
+        node_id: id || node.id,
+        hash: node.content_hash,
+        message: msg || "",
+      }),
+    );
   };
 
   if (!supabase) {
@@ -39,7 +41,7 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
     .eq("source_id", node.id)
     .maybeSingle();
 
-  if (errSelect && errSelect.code !== 'PGRST116') {
+  if (errSelect && errSelect.code !== "PGRST116") {
     logEvent("FETCH", "ERROR", null, errSelect.message);
     throw errSelect;
   }
@@ -47,11 +49,52 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
   if (existing) {
     if (existing.content_hash === node.content_hash) {
       logEvent("SYNC", "UNCHANGED", existing.id);
-      return { status: "unchanged" };
+      return { status: "unchanged", currentStatus: existing.status };
     } else {
+      // Protection for approved content
+      if (existing.status === "approved") {
+        if (dryRun) {
+          logEvent("SYNC", "WOULD_CREATE_REVISION", existing.id, "Approved content changed");
+          return { status: "pending_revision", id: existing.id, currentStatus: existing.status };
+        }
+
+        // Create persistent revision
+        const { error: draftError } = await supabase.from("editorial_drafts").upsert(
+          {
+            knowledge_node_id: existing.id,
+            source_id: node.id,
+            proposed_title: node.title,
+            proposed_summary: node.summary,
+            proposed_content: node.content,
+            proposed_metadata: node.metadata,
+            previous_content_hash: existing.content_hash,
+            proposed_content_hash: node.content_hash,
+            source_type: node.source_type,
+            source_uri: node.source_uri,
+            status: "proposed",
+          },
+          {
+            onConflict: "knowledge_node_id, proposed_content_hash",
+          },
+        );
+
+        if (draftError) {
+          logEvent("UPDATE", "ERROR_DRAFT", existing.id, draftError.message);
+          throw draftError;
+        }
+
+        logEvent(
+          "UPDATE",
+          "CREATED_REVISION",
+          existing.id,
+          "Content changed but node is approved. Revision pending human review.",
+        );
+        return { status: "pending_revision", id: existing.id, currentStatus: existing.status };
+      }
+
       if (dryRun) {
         logEvent("SYNC", "WOULD_UPDATE", existing.id);
-        return { status: "would_update", id: existing.id };
+        return { status: "would_update", id: existing.id, currentStatus: existing.status };
       }
 
       // Update to draft for new version
@@ -59,6 +102,7 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
         .from("knowledge_nodes")
         .update({
           title: node.title,
+          slug: node.slug,
           type: node.type,
           status: "draft",
           authority_level: "unverified",
@@ -76,12 +120,12 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
         throw error;
       }
       logEvent("UPDATE", "SUCCESS", existing.id);
-      return { status: "updated", id: existing.id };
+      return { status: "updated", id: existing.id, currentStatus: existing.status };
     }
   } else {
     if (dryRun) {
       logEvent("SYNC", "WOULD_CREATE", null);
-      return { status: "would_create" };
+      return { status: "would_create", currentStatus: "none" };
     }
 
     const { data, error } = await supabase
@@ -92,9 +136,10 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
         source_id: node.id,
         source_title: node.title,
         title: node.title,
+        slug: node.slug,
         type: node.type,
-        status: node.status,
-        authority_level: node.authority_level,
+        status: "draft",
+        authority_level: "unverified",
         visibility: node.visibility,
         content: node.content,
         content_hash: node.content_hash,
@@ -111,23 +156,31 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
       throw error;
     }
     logEvent("CREATE", "SUCCESS", data.id);
-    return { status: "created", id: data.id };
+    return { status: "created", id: data.id, currentStatus: "none" };
   }
 }
 
 export async function syncEdges(nodes: ParsedNode[], dryRun: boolean = true) {
   const logEvent = (action: string, status: string, msg?: string) => {
-    console.log(JSON.stringify({
-      timestamp: new Date().toISOString(),
-      module: "KNOWLEDGE_SYNC",
-      action,
-      status,
-      message: msg || ""
-    }));
+    console.log(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        module: "KNOWLEDGE_SYNC",
+        action,
+        status,
+        message: msg || "",
+      }),
+    );
+  };
+
+  const stats = {
+    created: 0,
+    ignored: 0,
+    missingTargets: 0,
   };
 
   if (!supabase) {
-    return;
+    return stats;
   }
 
   logEvent("SYNC_EDGES", "START", `Processing ${nodes.length} nodes for edges`);
@@ -156,34 +209,47 @@ export async function syncEdges(nodes: ParsedNode[], dryRun: boolean = true) {
         .maybeSingle();
 
       if (!targetData) {
-        logEvent("SYNC_EDGES", "WARN", `Target node not found in DB: ${rel.target} for source: ${node.id}`);
+        logEvent(
+          "SYNC_EDGES",
+          "WARN",
+          `Target node not found in DB: ${rel.target} for source: ${node.id}`,
+        );
+        stats.missingTargets++;
         continue;
       }
 
       if (dryRun) {
         logEvent("SYNC_EDGES", "WOULD_CREATE", `${node.id} -[${rel.type}]-> ${rel.target}`);
+        stats.created++;
         continue;
       }
 
       // Upsert edge
-      const { error } = await supabase
-        .from("knowledge_edges")
-        .upsert({
+      const { error } = await supabase.from("knowledge_edges").upsert(
+        {
           source_id: sourceData.id,
           target_id: targetData.id,
           relation_type: rel.type,
-          status: 'approved',
-          confidence: 1.0
-        }, {
-          onConflict: 'source_id, target_id, relation_type'
-        });
+          status: "proposed",
+          confidence: 1.0,
+          metadata: {
+            reason: "declared_in_frontmatter",
+            origin: node.source_uri,
+          },
+        },
+        {
+          onConflict: "source_id, target_id, relation_type",
+        },
+      );
 
       if (error) {
         logEvent("SYNC_EDGES", "ERROR", `Failed to create edge: ${error.message}`);
       } else {
         logEvent("SYNC_EDGES", "SUCCESS", `${node.id} -[${rel.type}]-> ${rel.target}`);
+        stats.created++;
       }
     }
   }
   logEvent("SYNC_EDGES", "COMPLETE");
+  return stats;
 }
