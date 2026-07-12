@@ -1,6 +1,7 @@
 ---
 id: fantasma
 title: "Fantasma"
+slug: fantasma
 type: page
 status: draft
 authority_level: working_material

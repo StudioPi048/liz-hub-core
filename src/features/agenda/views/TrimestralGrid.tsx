@@ -11,12 +11,13 @@ interface TrimestralGridProps {
   onEventClick?: (event: AgendaEvent) => void;
 }
 
-export function TrimestralGrid({ currentDate, events, onDayClick, onEventClick }: TrimestralGridProps) {
-  const months = [
-    currentDate,
-    addMonths(currentDate, 1),
-    addMonths(currentDate, 2)
-  ];
+export function TrimestralGrid({
+  currentDate,
+  events,
+  onDayClick,
+  onEventClick,
+}: TrimestralGridProps) {
+  const months = [currentDate, addMonths(currentDate, 1), addMonths(currentDate, 2)];
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 overflow-y-auto">

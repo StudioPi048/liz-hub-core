@@ -1,6 +1,7 @@
 ---
 id: projeto-sentido
 title: "Projeto Sentido"
+slug: projeto-sentido
 type: page
 status: draft
 authority_level: working_material

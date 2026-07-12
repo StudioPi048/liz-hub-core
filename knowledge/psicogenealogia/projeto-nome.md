@@ -1,6 +1,7 @@
 ---
 id: projeto-nome
 title: "Projeto Nome"
+slug: projeto-nome
 type: page
 status: draft
 authority_level: working_material

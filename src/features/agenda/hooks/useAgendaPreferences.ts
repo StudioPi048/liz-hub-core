@@ -30,7 +30,11 @@ export function useAgendaPreferences() {
       if (stored) {
         const parsed = JSON.parse(stored);
         // Fallback merge to ensure all keys exist
-        return { ...defaultPreferences, ...parsed, filters: { ...defaultPreferences.filters, ...parsed.filters } };
+        return {
+          ...defaultPreferences,
+          ...parsed,
+          filters: { ...defaultPreferences.filters, ...parsed.filters },
+        };
       }
     } catch (e) {
       console.warn("Failed to parse agenda preferences", e);
@@ -49,13 +53,13 @@ export function useAgendaPreferences() {
   const restoreDefaults = () => setPrefs(defaultPreferences);
 
   const updatePrefs = (updates: Partial<AgendaPreferences>) => {
-    setPrefs(prev => ({ ...prev, ...updates }));
+    setPrefs((prev) => ({ ...prev, ...updates }));
   };
 
   const updateFilters = (filterUpdates: Partial<AgendaFilters>) => {
-    setPrefs(prev => ({
+    setPrefs((prev) => ({
       ...prev,
-      filters: { ...prev.filters, ...filterUpdates }
+      filters: { ...prev.filters, ...filterUpdates },
     }));
   };
 

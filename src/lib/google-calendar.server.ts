@@ -98,7 +98,9 @@ export async function refreshAccessToken(refreshToken: string) {
   if (!res.ok) {
     const text = await res.text();
     let data;
-    try { data = JSON.parse(text); } catch {}
+    try {
+      data = JSON.parse(text);
+    } catch {}
     const err = new Error(`Google token refresh failed: ${res.status} ${text}`);
     (err as any).response = { data, status: res.status };
     throw err;
@@ -134,7 +136,12 @@ export async function getValidAccessToken(
   if (!row) return { status: "disconnected", reason: "not_connected" };
   const expiresAt = row.token_expires_at ? new Date(row.token_expires_at).getTime() : 0;
   if (row.access_token && expiresAt > Date.now() + 60_000) {
-    return { status: "connected", accessToken: row.access_token, googleEmail: row.google_email, ownerUserId: row.user_id };
+    return {
+      status: "connected",
+      accessToken: row.access_token,
+      googleEmail: row.google_email,
+      ownerUserId: row.user_id,
+    };
   }
   let refreshed;
   try {
@@ -144,12 +151,14 @@ export async function getValidAccessToken(
     if (errorData === "invalid_grant" || errorData === "invalid_client") {
       await supabaseAdmin.from("google_oauth_tokens").delete().eq("user_id", row.user_id);
       // Audit log
-      console.log(JSON.stringify({
-        event: "google_integration_removed",
-        user_id: row.user_id,
-        reason: errorData,
-        date: new Date().toISOString(),
-      }));
+      console.log(
+        JSON.stringify({
+          event: "google_integration_removed",
+          user_id: row.user_id,
+          reason: errorData,
+          date: new Date().toISOString(),
+        }),
+      );
       return { status: "needs_reconnect", reason: errorData as "invalid_grant" | "invalid_client" };
     }
     return { status: "temporarily_unavailable", reason: "google_unavailable" };
@@ -163,7 +172,12 @@ export async function getValidAccessToken(
       scope: refreshed.scope,
     })
     .eq("user_id", row.user_id);
-  return { status: "connected", accessToken: refreshed.access_token, googleEmail: row.google_email, ownerUserId: row.user_id };
+  return {
+    status: "connected",
+    accessToken: refreshed.access_token,
+    googleEmail: row.google_email,
+    ownerUserId: row.user_id,
+  };
 }
 
 export async function fetchCalendarList(accessToken: string) {

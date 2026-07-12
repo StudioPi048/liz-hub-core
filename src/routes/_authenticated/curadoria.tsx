@@ -83,9 +83,12 @@ function CuradoriaPage() {
           {data?.nodes.map((node: any) => {
             const isOfficial = node.status === "approved" && node.authority_level === "official";
             const isDraft = node.status === "draft";
-            
+
             return (
-              <Card key={node.id} className={`bg-archive-surface border-archive-border ${isOfficial ? 'border-l-4 border-l-blue-500' : ''} ${isDraft ? 'opacity-80' : ''}`}>
+              <Card
+                key={node.id}
+                className={`bg-archive-surface border-archive-border ${isOfficial ? "border-l-4 border-l-blue-500" : ""} ${isDraft ? "opacity-80" : ""}`}
+              >
                 <CardContent className="p-4 flex flex-col gap-3">
                   <div className="flex justify-between items-start gap-4">
                     <div className="space-y-1 min-w-0 flex-1">
@@ -95,32 +98,41 @@ function CuradoriaPage() {
                         <div className="font-medium text-archive-fg truncate">{node.title}</div>
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-archive-muted">
-                        <span className="flex items-center gap-1"><Server className="h-3 w-3" /> {node.source_type}</span>
-                        <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {node.source_uri}</span>
+                        <span className="flex items-center gap-1">
+                          <Server className="h-3 w-3" /> {node.source_type}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" /> {node.source_uri}
+                        </span>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0 justify-end">
-                      <Badge variant="outline" className="text-xs uppercase">{node.type}</Badge>
+                      <Badge variant="outline" className="text-xs uppercase">
+                        {node.type}
+                      </Badge>
                       <Badge variant={node.status === "approved" ? "default" : "secondary"}>
                         {node.status}
                       </Badge>
-                      <Badge variant={node.authority_level === 'official' ? 'default' : 'outline'} className="text-[10px]">
+                      <Badge
+                        variant={node.authority_level === "official" ? "default" : "outline"}
+                        className="text-[10px]"
+                      >
                         {node.authority_level}
                       </Badge>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between text-xs text-archive-muted border-t border-archive-border pt-2 mt-1">
                     <div className="flex gap-4">
                       <span className="flex items-center gap-1" title="Versão do Documento">
                         <History className="h-3 w-3" /> v{node.version || 1}
                       </span>
                       <span className="flex items-center gap-1" title="Content Hash">
-                        <Hash className="h-3 w-3" /> {node.content_hash?.substring(0, 8) || 'N/A'}
+                        <Hash className="h-3 w-3" /> {node.content_hash?.substring(0, 8) || "N/A"}
                       </span>
                     </div>
                     <div>
-                      Última Sincronização: {new Date(node.updated_at).toLocaleString('pt-BR')}
+                      Última Sincronização: {new Date(node.updated_at).toLocaleString("pt-BR")}
                     </div>
                   </div>
                 </CardContent>

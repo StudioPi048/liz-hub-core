@@ -1,6 +1,7 @@
 ---
 id: parentificacao
 title: "Parentificação"
+slug: parentificacao
 type: page
 status: draft
 authority_level: working_material
