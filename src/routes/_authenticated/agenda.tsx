@@ -46,7 +46,8 @@ export function AgendaPage() {
   useEffect(() => {
     if (search.google_connected) {
       toast.success("Google Calendar conectado!");
-      qc.invalidateQueries();
+      qc.invalidateQueries({ queryKey: ["google-status"] });
+      qc.invalidateQueries({ queryKey: ["events"] });
     }
     if (search.google_error) {
       toast.error("Erro ao conectar Google: " + search.google_error);
@@ -54,6 +55,7 @@ export function AgendaPage() {
   }, [search, qc]);
 
   const status = useQuery({ queryKey: ["google-status"], queryFn: () => getGoogleStatus() });
+  const googleConnectionStatus = status.data?.status;
 
   // Calculate Date Boundaries based on view and focusDate
   let fromDate = startOfDay(focusDate);
@@ -88,10 +90,10 @@ export function AgendaPage() {
   // NOTE: In the future we will call an internal Supabase function that queries `agenda_events`
   // AND merges with `listRangeEvents` dynamically. For now, we adapt what we have.
   const eventsQuery = useQuery({
-    queryKey: ["events", fromDate.toISOString(), toDate.toISOString()],
+    queryKey: ["events", fromDate.toISOString(), toDate.toISOString(), googleConnectionStatus],
+    enabled: googleConnectionStatus === "connected",
     queryFn: async () => {
       // Mocked adapter for current google events -> AgendaEvent
-      if (status.data?.status !== "connected") return { events: [] };
       const res = await listRangeEvents({ data: { from: fromDate.toISOString(), to: toDate.toISOString() } });
       const rawEvents: any[] = res.events || [];
       const adapted: AgendaEvent[] = rawEvents.map(e => ({
@@ -124,7 +126,8 @@ export function AgendaPage() {
     mutationFn: () => disconnectGoogle(),
     onSuccess: () => {
       toast.success("Google desconectado");
-      qc.invalidateQueries();
+      qc.invalidateQueries({ queryKey: ["google-status"] });
+      qc.removeQueries({ queryKey: ["events"] });
     },
   });
 
