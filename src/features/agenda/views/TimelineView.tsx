@@ -1,10 +1,12 @@
 import React from "react";
-import { format, isToday, isTomorrow, isThisWeek, isNextWeek, isSameMonth, addMonths } from "date-fns";
+import { format, isToday, isTomorrow, isThisWeek, isSameMonth, addMonths, addWeeks, isSameWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AgendaEvent } from "../model/agenda-event";
 import { cn } from "@/lib/utils";
 import { ExternalLink, MapPin, Video, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+const isNextWeek = (date: Date) => isSameWeek(date, addWeeks(new Date(), 1));
 
 interface TimelineViewProps {
   events: AgendaEvent[];

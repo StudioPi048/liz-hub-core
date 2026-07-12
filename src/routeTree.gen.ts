@@ -25,7 +25,11 @@ import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/cr
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedArquivosRouteImport } from './routes/_authenticated/arquivos'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedAcervoRouteRouteImport } from './routes/_authenticated/acervo/route'
+import { Route as AuthenticatedAcervoIndexRouteImport } from './routes/_authenticated/acervo/index'
+import { Route as AuthenticatedAcervoCollectionRouteImport } from './routes/_authenticated/acervo/$collection'
 import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google/callback'
+import { Route as AuthenticatedAcervoItemSlugRouteImport } from './routes/_authenticated/acervo/item/$slug'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -108,15 +112,40 @@ const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAcervoRouteRoute =
+  AuthenticatedAcervoRouteRouteImport.update({
+    id: '/acervo',
+    path: '/acervo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcervoIndexRoute =
+  AuthenticatedAcervoIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAcervoRouteRoute,
+  } as any)
+const AuthenticatedAcervoCollectionRoute =
+  AuthenticatedAcervoCollectionRouteImport.update({
+    id: '/$collection',
+    path: '/$collection',
+    getParentRoute: () => AuthenticatedAcervoRouteRoute,
+  } as any)
 const ApiPublicGoogleCallbackRoute = ApiPublicGoogleCallbackRouteImport.update({
   id: '/api/public/google/callback',
   path: '/api/public/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAcervoItemSlugRoute =
+  AuthenticatedAcervoItemSlugRouteImport.update({
+    id: '/item/$slug',
+    path: '/item/$slug',
+    getParentRoute: () => AuthenticatedAcervoRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/acervo': typeof AuthenticatedAcervoRouteRouteWithChildren
   '/agenda': typeof AuthenticatedAgendaRoute
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
@@ -130,6 +159,9 @@ export interface FileRoutesByFullPath {
   '/projetos': typeof AuthenticatedProjetosRoute
   '/prompts': typeof AuthenticatedPromptsRoute
   '/textos': typeof AuthenticatedTextosRoute
+  '/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
+  '/acervo/': typeof AuthenticatedAcervoIndexRoute
+  '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -148,6 +180,9 @@ export interface FileRoutesByTo {
   '/projetos': typeof AuthenticatedProjetosRoute
   '/prompts': typeof AuthenticatedPromptsRoute
   '/textos': typeof AuthenticatedTextosRoute
+  '/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
+  '/acervo': typeof AuthenticatedAcervoIndexRoute
+  '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
 }
 export interface FileRoutesById {
@@ -155,6 +190,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/acervo': typeof AuthenticatedAcervoRouteRouteWithChildren
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/arquivos': typeof AuthenticatedArquivosRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
@@ -168,6 +204,9 @@ export interface FileRoutesById {
   '/_authenticated/projetos': typeof AuthenticatedProjetosRoute
   '/_authenticated/prompts': typeof AuthenticatedPromptsRoute
   '/_authenticated/textos': typeof AuthenticatedTextosRoute
+  '/_authenticated/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
+  '/_authenticated/acervo/': typeof AuthenticatedAcervoIndexRoute
+  '/_authenticated/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
 }
 export interface FileRouteTypes {
@@ -175,6 +214,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/acervo'
     | '/agenda'
     | '/arquivos'
     | '/configuracoes'
@@ -188,6 +228,9 @@ export interface FileRouteTypes {
     | '/projetos'
     | '/prompts'
     | '/textos'
+    | '/acervo/$collection'
+    | '/acervo/'
+    | '/acervo/item/$slug'
     | '/api/public/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -206,12 +249,16 @@ export interface FileRouteTypes {
     | '/projetos'
     | '/prompts'
     | '/textos'
+    | '/acervo/$collection'
+    | '/acervo'
+    | '/acervo/item/$slug'
     | '/api/public/google/callback'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/acervo'
     | '/_authenticated/agenda'
     | '/_authenticated/arquivos'
     | '/_authenticated/configuracoes'
@@ -225,6 +272,9 @@ export interface FileRouteTypes {
     | '/_authenticated/projetos'
     | '/_authenticated/prompts'
     | '/_authenticated/textos'
+    | '/_authenticated/acervo/$collection'
+    | '/_authenticated/acervo/'
+    | '/_authenticated/acervo/item/$slug'
     | '/api/public/google/callback'
   fileRoutesById: FileRoutesById
 }
@@ -349,6 +399,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgendaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/acervo': {
+      id: '/_authenticated/acervo'
+      path: '/acervo'
+      fullPath: '/acervo'
+      preLoaderRoute: typeof AuthenticatedAcervoRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/acervo/': {
+      id: '/_authenticated/acervo/'
+      path: '/'
+      fullPath: '/acervo/'
+      preLoaderRoute: typeof AuthenticatedAcervoIndexRouteImport
+      parentRoute: typeof AuthenticatedAcervoRouteRoute
+    }
+    '/_authenticated/acervo/$collection': {
+      id: '/_authenticated/acervo/$collection'
+      path: '/$collection'
+      fullPath: '/acervo/$collection'
+      preLoaderRoute: typeof AuthenticatedAcervoCollectionRouteImport
+      parentRoute: typeof AuthenticatedAcervoRouteRoute
+    }
     '/api/public/google/callback': {
       id: '/api/public/google/callback'
       path: '/api/public/google/callback'
@@ -356,10 +427,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/acervo/item/$slug': {
+      id: '/_authenticated/acervo/item/$slug'
+      path: '/item/$slug'
+      fullPath: '/acervo/item/$slug'
+      preLoaderRoute: typeof AuthenticatedAcervoItemSlugRouteImport
+      parentRoute: typeof AuthenticatedAcervoRouteRoute
+    }
   }
 }
 
+interface AuthenticatedAcervoRouteRouteChildren {
+  AuthenticatedAcervoCollectionRoute: typeof AuthenticatedAcervoCollectionRoute
+  AuthenticatedAcervoIndexRoute: typeof AuthenticatedAcervoIndexRoute
+  AuthenticatedAcervoItemSlugRoute: typeof AuthenticatedAcervoItemSlugRoute
+}
+
+const AuthenticatedAcervoRouteRouteChildren: AuthenticatedAcervoRouteRouteChildren =
+  {
+    AuthenticatedAcervoCollectionRoute: AuthenticatedAcervoCollectionRoute,
+    AuthenticatedAcervoIndexRoute: AuthenticatedAcervoIndexRoute,
+    AuthenticatedAcervoItemSlugRoute: AuthenticatedAcervoItemSlugRoute,
+  }
+
+const AuthenticatedAcervoRouteRouteWithChildren =
+  AuthenticatedAcervoRouteRoute._addFileChildren(
+    AuthenticatedAcervoRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAcervoRouteRoute: typeof AuthenticatedAcervoRouteRouteWithChildren
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedArquivosRoute: typeof AuthenticatedArquivosRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
@@ -376,6 +473,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAcervoRouteRoute: AuthenticatedAcervoRouteRouteWithChildren,
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedArquivosRoute: AuthenticatedArquivosRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,

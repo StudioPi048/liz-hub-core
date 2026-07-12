@@ -38,6 +38,14 @@ import {
   Clock,
   Star,
   Zap,
+  Library,
+  BookOpen,
+  GraduationCap,
+  Package,
+  CalendarDays,
+  Users2,
+  Network,
+  HelpCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,6 +61,17 @@ const nav = [
   { to: "/institucional", label: "Institucional", icon: Building2 },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/prompts", label: "Prompts IA", icon: Bot },
+] as const;
+
+const acervoNav = [
+  { to: "/acervo", label: "Visão Geral", icon: Library },
+  { to: "/acervo/$collection", params: { collection: "livros" }, label: "Livros", icon: BookOpen },
+  { to: "/acervo/$collection", params: { collection: "cursos" }, label: "Cursos e Formações", icon: GraduationCap },
+  { to: "/acervo/$collection", params: { collection: "produtos" }, label: "Produtos", icon: Package },
+  { to: "/acervo/$collection", params: { collection: "eventos" }, label: "Eventos", icon: CalendarDays },
+  { to: "/acervo/$collection", params: { collection: "autores" }, label: "Autores e Professores", icon: Users2 },
+  { to: "/acervo/$collection", params: { collection: "conceitos" }, label: "Conceitos e Metodologia", icon: Network },
+  { to: "/acervo/$collection", params: { collection: "faq" }, label: "Perguntas Frequentes", icon: HelpCircle },
   { to: "/curadoria", label: "Curadoria", icon: Sparkles },
 ] as const;
 
@@ -113,6 +132,31 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <SidebarMenuItem key={n.to}>
                       <SidebarMenuButton asChild isActive={active}>
                         <Link to={n.to}>
+                          <Icon />
+                          <span>{n.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Acervo</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {acervoNav.map((n) => {
+                  const Icon = n.icon;
+                  // Exact match for overview, prefix match for others to keep active state
+                  const active = n.to === "/acervo" 
+                    ? pathname === "/acervo" 
+                    : pathname.startsWith("/acervo/" + (n as any).params?.collection);
+                  return (
+                    <SidebarMenuItem key={n.label}>
+                      <SidebarMenuButton asChild isActive={active}>
+                        <Link to={n.to as any} params={(n as any).params}>
                           <Icon />
                           <span>{n.label}</span>
                         </Link>
