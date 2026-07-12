@@ -29,6 +29,11 @@ export interface ReportStats {
   warnings: number;
   errors: { file: string; error: string }[];
   completenessDetails?: CompletenessDetail[];
+  assetsCreated?: number;
+  assetsUpdated?: number;
+  assetsUnchanged?: number;
+  assetsPendingRevision?: number;
+  assetsMissingFromManifest?: number;
 }
 
 export function generateIndexationReport(stats: ReportStats) {
@@ -55,6 +60,13 @@ Modo: ${stats.mode.toUpperCase()}
 - **Arestas Criadas:** ${stats.edgesCreated}
 - **Arestas Ignoradas/Duplicadas:** ${stats.edgesIgnored}
 - **Relações Não Resolvidas (Alvo Inexistente):** ${stats.unresolvedRelations}
+
+## Ativos (Assets)
+- **Ativos Criados:** ${stats.assetsCreated || 0}
+- **Ativos Atualizados (Drafts):** ${stats.assetsUpdated || 0}
+- **Ativos Inalterados:** ${stats.assetsUnchanged || 0}
+- **Revisões Pendentes de Ativos:** ${stats.assetsPendingRevision || 0}
+- **Ausentes no Manifesto (Removidos do MD):** ${stats.assetsMissingFromManifest || 0}
 
 ## Logs
 - **Alertas (Warnings):** ${stats.warnings}

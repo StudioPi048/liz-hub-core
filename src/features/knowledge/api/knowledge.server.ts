@@ -8,7 +8,10 @@ export const KnowledgeFilterSchema = z.object({
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(50).default(10),
   query: z.string().optional(),
-  type: z.enum([...KNOWLEDGE_TYPES, "all"] as [string, ...string[]]).optional().default("all"),
+  type: z
+    .enum([...KNOWLEDGE_TYPES, "all"] as [string, ...string[]])
+    .optional()
+    .default("all"),
   status: z.enum(["draft", "in_review", "approved", "archived", "all"]).optional().default("all"),
 });
 
@@ -22,7 +25,7 @@ export const getKnowledgeNodes = createServerFn({ method: "POST" })
     // However, the policy says: "Admins and editors can read all nodes".
     // For now, since this is a protected route, we assume they are allowed, but to be strictly RLS compliant,
     // we should execute the query with the user's JWT.
-    
+
     // To fetch securely with the user's role, we should ideally instantiate a Supabase client with the user's token.
     // Given the architecture, we will use the admin client but enforce role check here manually, OR we can just rely on the UI/API.
     // Let's use supabaseAdmin but check if the user is admin/editor.
@@ -30,15 +33,18 @@ export const getKnowledgeNodes = createServerFn({ method: "POST" })
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId);
-    
-    const isAllowed = roles?.some(r => r.role === 'admin' || r.role === 'editor');
+
+    const isAllowed = roles?.some((r) => r.role === "admin" || r.role === "editor");
     if (!isAllowed) {
       throw new Error("Unauthorized to access knowledge core");
     }
 
     let query = (supabaseAdmin as any)
       .from("knowledge_nodes")
-      .select("id, title, slug, type, status, authority_level, summary, coverUrl:metadata->coverUrl, created_at, updated_at", { count: "exact" });
+      .select(
+        "id, title, slug, type, status, authority_level, summary, coverUrl:metadata->coverUrl, created_at, updated_at",
+        { count: "exact" },
+      );
 
     if (data.type && data.type !== "all") {
       query = query.eq("type", data.type);
@@ -72,12 +78,12 @@ export const getKnowledgeNodeBySlug = createServerFn({ method: "GET" })
   .validator((d) => z.object({ slug: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
+
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId);
-    const isAllowed = roles?.some(r => r.role === 'admin' || r.role === 'editor');
+    const isAllowed = roles?.some((r) => r.role === "admin" || r.role === "editor");
     if (!isAllowed) throw new Error("Unauthorized");
 
     // Fetch node
@@ -106,7 +112,7 @@ export const getKnowledgeNodeBySlug = createServerFn({ method: "GET" })
       relations: {
         outgoing: edgesAsSource || [],
         incoming: edgesAsTarget || [],
-      }
+      },
     };
   });
 
@@ -114,21 +120,21 @@ export const getKnowledgeDashboardStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
+
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId);
-    const isAllowed = roles?.some(r => r.role === 'admin' || r.role === 'editor');
+    const isAllowed = roles?.some((r) => r.role === "admin" || r.role === "editor");
     if (!isAllowed) throw new Error("Unauthorized");
 
     // Simple raw counts grouping
     const { data, error } = await (supabaseAdmin as any)
       .from("knowledge_nodes")
       .select("type, status");
-      
+
     if (error) throw error;
-    
+
     const stats = {
       books: 0,
       courses: 0,
@@ -140,7 +146,7 @@ export const getKnowledgeDashboardStats = createServerFn({ method: "GET" })
       drafts: 0,
       approved: 0,
     };
-    
+
     (data || []).forEach((n: any) => {
       if (n.type === "book") stats.books++;
       if (n.type === "course") stats.courses++;
@@ -149,7 +155,7 @@ export const getKnowledgeDashboardStats = createServerFn({ method: "GET" })
       if (n.type === "author" || n.type === "person") stats.authors++;
       if (n.type === "methodological") stats.concepts++;
       if (n.type === "faq") stats.faq++;
-      
+
       if (n.status === "draft") stats.drafts++;
       if (n.status === "approved") stats.approved++;
     });

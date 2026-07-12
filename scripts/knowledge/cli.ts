@@ -1,7 +1,7 @@
 import { scanDirectory } from "./scan";
 import { parseFile, ParsedNode } from "./parse";
 import { validateNode } from "./validate";
-import { syncNode, syncEdges } from "./sync";
+import { syncNode, syncEdges, syncAssets } from "./sync";
 import { generateIndexationReport } from "./report";
 import { evaluateCompleteness } from "./completeness";
 import path from "path";
@@ -146,6 +146,11 @@ async function run() {
       unresolvedRelations: 0,
       warnings: 0,
       errors,
+      assetsCreated: 0,
+      assetsUpdated: 0,
+      assetsUnchanged: 0,
+      assetsPendingRevision: 0,
+      assetsMissingFromManifest: 0,
       completenessDetails: expectedActions.map((a) => ({
         id: a.node.id,
         type: a.node.type,
@@ -225,11 +230,35 @@ async function run() {
     console.error("Failed to sync edges", e);
   }
 
+  // 4. Sync Assets (Pass 3)
+  let assetStats = {
+    created: 0,
+    updated_draft: 0,
+    pending_revision: 0,
+    unchanged: 0,
+    missing_from_manifest: 0,
+    missing_targets: 0,
+    errors: 0
+  };
+
+  try {
+    const assetResults = await syncAssets(validNodes, !isApply);
+    if (assetResults) {
+      assetStats = assetResults;
+    }
+  } catch (e: any) {
+    console.error("Failed to sync assets", e);
+  }
+
   console.log(`\nSync complete.
   Nodes Created: ${stats.created}
   Nodes Updated (Drafts): ${stats.updated}
   Nodes Ignored (Unchanged): ${stats.ignored}
   Approved Content Preserved / Revisions Created: ${stats.approvedPreserved}
+  Assets Created: ${assetStats.created}
+  Assets Updated (Drafts): ${assetStats.updated_draft}
+  Assets Ignored (Unchanged): ${assetStats.unchanged}
+  Asset Revisions Pendentes: ${assetStats.pending_revision}
   `);
 
   generateIndexationReport({
@@ -246,8 +275,13 @@ async function run() {
     edgesCreated: edgeStats.created,
     edgesIgnored: edgeStats.ignored,
     unresolvedRelations: edgeStats.missingTargets,
-    warnings: edgeStats.missingTargets, // Mapping missing targets as warnings
+    warnings: edgeStats.missingTargets + assetStats.missing_targets + assetStats.missing_from_manifest, 
     errors,
+    assetsCreated: assetStats.created,
+    assetsUpdated: assetStats.updated_draft,
+    assetsUnchanged: assetStats.unchanged,
+    assetsPendingRevision: assetStats.pending_revision,
+    assetsMissingFromManifest: assetStats.missing_from_manifest,
     completenessDetails: expectedActions.map((a) => ({
       id: a.node.id,
       type: a.node.type,

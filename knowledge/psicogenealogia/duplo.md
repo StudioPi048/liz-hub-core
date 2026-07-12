@@ -1,6 +1,7 @@
 ---
 id: duplo
 title: "Duplo"
+slug: duplo
 type: page
 status: draft
 authority_level: working_material

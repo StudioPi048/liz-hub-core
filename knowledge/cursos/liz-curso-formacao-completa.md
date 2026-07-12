@@ -1,7 +1,8 @@
 ---
 id: liz-curso-formacao-completa
 title: "Formação Completa"
-type: page
+slug: formacao-completa
+type: course
 status: draft
 authority_level: working_material
 visibility: internal

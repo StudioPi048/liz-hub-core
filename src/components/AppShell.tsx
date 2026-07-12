@@ -45,7 +45,7 @@ import {
   CalendarDays,
   Users2,
   Network,
-  HelpCircle
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -66,12 +66,42 @@ const nav = [
 const acervoNav = [
   { to: "/acervo", label: "Visão Geral", icon: Library },
   { to: "/acervo/$collection", params: { collection: "livros" }, label: "Livros", icon: BookOpen },
-  { to: "/acervo/$collection", params: { collection: "cursos" }, label: "Cursos e Formações", icon: GraduationCap },
-  { to: "/acervo/$collection", params: { collection: "produtos" }, label: "Produtos", icon: Package },
-  { to: "/acervo/$collection", params: { collection: "eventos" }, label: "Eventos", icon: CalendarDays },
-  { to: "/acervo/$collection", params: { collection: "autores" }, label: "Autores e Professores", icon: Users2 },
-  { to: "/acervo/$collection", params: { collection: "conceitos" }, label: "Conceitos e Metodologia", icon: Network },
-  { to: "/acervo/$collection", params: { collection: "faq" }, label: "Perguntas Frequentes", icon: HelpCircle },
+  {
+    to: "/acervo/$collection",
+    params: { collection: "cursos" },
+    label: "Cursos e Formações",
+    icon: GraduationCap,
+  },
+  {
+    to: "/acervo/$collection",
+    params: { collection: "produtos" },
+    label: "Produtos",
+    icon: Package,
+  },
+  {
+    to: "/acervo/$collection",
+    params: { collection: "eventos" },
+    label: "Eventos",
+    icon: CalendarDays,
+  },
+  {
+    to: "/acervo/$collection",
+    params: { collection: "autores" },
+    label: "Autores e Professores",
+    icon: Users2,
+  },
+  {
+    to: "/acervo/$collection",
+    params: { collection: "conceitos" },
+    label: "Conceitos e Metodologia",
+    icon: Network,
+  },
+  {
+    to: "/acervo/$collection",
+    params: { collection: "faq" },
+    label: "Perguntas Frequentes",
+    icon: HelpCircle,
+  },
   { to: "/curadoria", label: "Curadoria", icon: Sparkles },
 ] as const;
 
@@ -150,9 +180,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {acervoNav.map((n) => {
                   const Icon = n.icon;
                   // Exact match for overview, prefix match for others to keep active state
-                  const active = n.to === "/acervo" 
-                    ? pathname === "/acervo" 
-                    : pathname.startsWith("/acervo/" + (n as any).params?.collection);
+                  const active =
+                    n.to === "/acervo"
+                      ? pathname === "/acervo"
+                      : pathname.startsWith("/acervo/" + (n as any).params?.collection);
                   return (
                     <SidebarMenuItem key={n.label}>
                       <SidebarMenuButton asChild isActive={active}>
@@ -223,10 +254,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border/50 bg-background/95 backdrop-blur px-4">
           <SidebarTrigger />
           <div className="flex-1 flex items-center">
-             <Button variant="outline" size="sm" className="h-8 w-64 justify-start text-muted-foreground font-normal">
-               <Search className="mr-2 h-3.5 w-3.5" />
-               Buscar no LIZ HUB...
-             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-64 justify-start text-muted-foreground font-normal"
+            >
+              <Search className="mr-2 h-3.5 w-3.5" />
+              Buscar no LIZ HUB...
+            </Button>
           </div>
           <Button variant="ghost" size="icon" className="h-8 w-8 relative">
             <BellRing className="h-4 w-4" />

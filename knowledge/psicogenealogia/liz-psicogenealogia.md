@@ -1,6 +1,7 @@
 ---
 id: liz-psicogenealogia
 title: "Psicogenealogia"
+slug: psicogenealogia
 type: page
 status: draft
 authority_level: working_material

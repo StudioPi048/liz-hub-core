@@ -1,6 +1,7 @@
 ---
 id: cripta
 title: "Cripta"
+slug: cripta
 type: page
 status: draft
 authority_level: working_material

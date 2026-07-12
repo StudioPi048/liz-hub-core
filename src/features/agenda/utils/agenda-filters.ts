@@ -7,16 +7,16 @@ import { AgendaFilters } from "../model/agenda-filters";
  * - AND entre os arrays de critérios
  */
 export function filterAgendaEvents(events: AgendaEvent[], filters: AgendaFilters): AgendaEvent[] {
-  return events.filter(ev => {
+  return events.filter((ev) => {
     // Busca Textual
     if (filters.query) {
       const q = filters.query.toLowerCase();
-      const matchQuery = 
-        ev.title?.toLowerCase().includes(q) || 
+      const matchQuery =
+        ev.title?.toLowerCase().includes(q) ||
         ev.description?.toLowerCase().includes(q) ||
         ev.location?.toLowerCase().includes(q) ||
         ev.responsibleName?.toLowerCase().includes(q);
-        
+
       if (!matchQuery) return false;
     }
 

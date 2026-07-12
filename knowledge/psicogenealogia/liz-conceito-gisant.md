@@ -1,6 +1,7 @@
 ---
 id: liz-conceito-gisant
 title: "Gisant"
+slug: gisant
 type: page
 status: draft
 authority_level: working_material

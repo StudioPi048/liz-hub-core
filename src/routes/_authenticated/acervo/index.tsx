@@ -2,7 +2,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getKnowledgeDashboardStats } from "@/features/knowledge/api/knowledge.server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Library, BookOpen, GraduationCap, Package, CalendarDays, Users2, Network, HelpCircle, Plus, Upload, CheckCircle2, CopyX } from "lucide-react";
+import {
+  Library,
+  BookOpen,
+  GraduationCap,
+  Package,
+  CalendarDays,
+  Users2,
+  Network,
+  HelpCircle,
+  Plus,
+  Upload,
+  CheckCircle2,
+  CopyX,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { knowledgeTypeLabels } from "@/features/knowledge/model/knowledge-types";
 
@@ -46,14 +59,49 @@ function AcervoDashboard() {
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title={knowledgeTypeLabels.book} value={stats?.books} icon={BookOpen} to="/acervo/livros" />
-        <StatCard title={knowledgeTypeLabels.course} value={stats?.courses} icon={GraduationCap} to="/acervo/cursos" />
-        <StatCard title={knowledgeTypeLabels.product} value={stats?.products} icon={Package} to="/acervo/produtos" />
-        <StatCard title={knowledgeTypeLabels.event} value={stats?.events} icon={CalendarDays} to="/acervo/eventos" />
-        <StatCard title={knowledgeTypeLabels.author} value={stats?.authors} icon={Users2} to="/acervo/autores" />
-        <StatCard title={knowledgeTypeLabels.methodological} value={stats?.concepts} icon={Network} to="/acervo/conceitos" />
-        <StatCard title={knowledgeTypeLabels.faq} value={stats?.faq || 0} icon={HelpCircle} to="/acervo/faq" />
-        
+        <StatCard
+          title={knowledgeTypeLabels.book}
+          value={stats?.books}
+          icon={BookOpen}
+          to="/acervo/livros"
+        />
+        <StatCard
+          title={knowledgeTypeLabels.course}
+          value={stats?.courses}
+          icon={GraduationCap}
+          to="/acervo/cursos"
+        />
+        <StatCard
+          title={knowledgeTypeLabels.product}
+          value={stats?.products}
+          icon={Package}
+          to="/acervo/produtos"
+        />
+        <StatCard
+          title={knowledgeTypeLabels.event}
+          value={stats?.events}
+          icon={CalendarDays}
+          to="/acervo/eventos"
+        />
+        <StatCard
+          title={knowledgeTypeLabels.author}
+          value={stats?.authors}
+          icon={Users2}
+          to="/acervo/autores"
+        />
+        <StatCard
+          title={knowledgeTypeLabels.methodological}
+          value={stats?.concepts}
+          icon={Network}
+          to="/acervo/conceitos"
+        />
+        <StatCard
+          title={knowledgeTypeLabels.faq}
+          value={stats?.faq || 0}
+          icon={HelpCircle}
+          to="/acervo/faq"
+        />
+
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">

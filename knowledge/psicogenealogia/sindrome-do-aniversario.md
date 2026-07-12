@@ -1,6 +1,7 @@
 ---
 id: sindrome-do-aniversario
 title: "Síndrome do Aniversário"
+slug: sindrome-do-aniversario
 type: page
 status: draft
 authority_level: working_material

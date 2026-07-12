@@ -10,23 +10,23 @@ interface TypeRequirements {
 const REQUIREMENTS_BY_TYPE: Record<string, TypeRequirements> = {
   book: {
     essential: ["title", "author", "summary", "source_type"],
-    recommended: ["cover", "subtitle", "publisher", "isbn", "links"],
+    recommended: ["asset:cover", "asset:checkout", "asset:interior_pdf", "metadata:isbn", "metadata:publisher"],
   },
   course: {
-    essential: ["title", "summary", "source_type"], // summary mapped as description
-    recommended: ["professors", "workload", "program", "audience", "links"],
+    essential: ["title", "summary", "source_type"], 
+    recommended: ["asset:landing_page", "asset:checkout", "asset:slide_deck", "metadata:professors", "metadata:program"],
   },
   author: {
     essential: ["title", "summary", "source_type"],
-    recommended: ["bio", "social", "photo"],
+    recommended: ["asset:cover", "metadata:bio", "metadata:social"],
   },
   event: {
     essential: ["title", "summary", "source_type"],
-    recommended: ["date", "location", "organizer", "links"],
+    recommended: ["asset:registration_page", "asset:schedule", "asset:gallery", "metadata:location", "metadata:organizer"],
   },
   product: {
     essential: ["title", "summary", "source_type"],
-    recommended: ["price", "features", "images"],
+    recommended: ["asset:cover", "asset:checkout", "asset:landing_page", "metadata:price"],
   },
 };
 
@@ -68,10 +68,21 @@ export function evaluateCompleteness(node: ParsedNode): CompletenessReport {
   const missingRecommended: string[] = [];
 
   for (const field of reqs.recommended) {
-    if (node.metadata && node.metadata[field]) presentRecommended.push(field);
-    else if (field === "author" && node.author) presentRecommended.push(field);
-    else if (field === "summary" && node.summary) presentRecommended.push(field);
-    else missingRecommended.push(field);
+    if (field.startsWith("asset:")) {
+      const category = field.split(":")[1];
+      const hasAsset = node.assets?.some(a => a.category === category);
+      if (hasAsset) presentRecommended.push(field);
+      else missingRecommended.push(field);
+    } else if (field.startsWith("metadata:")) {
+      const key = field.split(":")[1];
+      if (node.metadata && node.metadata[key]) presentRecommended.push(field);
+      else missingRecommended.push(field);
+    } else {
+      if (node.metadata && node.metadata[field]) presentRecommended.push(field);
+      else if (field === "author" && node.author) presentRecommended.push(field);
+      else if (field === "summary" && node.summary) presentRecommended.push(field);
+      else missingRecommended.push(field);
+    }
   }
 
   let score: CompletenessScore = "partial";

@@ -1,6 +1,7 @@
 ---
 id: genossociograma
 title: "Genossociograma"
+slug: genossociograma
 type: page
 status: draft
 authority_level: working_material
