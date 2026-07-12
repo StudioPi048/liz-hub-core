@@ -19,6 +19,9 @@ authority_level: unverified
 visibility: internal
 source_type: repository_file
 language: pt-BR
+relations:
+  - type: belongs_to
+    target: liz-psicogenealogia
 ---
 Hello World
 `,
@@ -28,6 +31,8 @@ Hello World
     expect(result.id).toBe("test-id");
     expect(result.title).toBe("Test Title");
     expect(result.content).toBe("Hello World");
+    expect(result.relations).toHaveLength(1);
+    expect(result.relations?.[0].type).toBe("belongs_to");
     expect(result.content_hash).toBeDefined();
 
     fs.unlinkSync(mockFile);

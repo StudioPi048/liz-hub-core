@@ -1,6 +1,7 @@
 import { scanDirectory } from "./scan";
 import { parseFile } from "./parse";
-import { syncNode } from "./sync";
+import { syncNode, syncEdges } from "./sync";
+import type { ParsedNode } from "./parse";
 import path from "path";
 import fs from "fs";
 
@@ -33,6 +34,8 @@ async function run() {
     reportData.push({ file: err.file, status: "error", error: err.error });
   }
 
+  const parsedNodes: ParsedNode[] = [];
+
   for (const file of files) {
     try {
       const node = parseFile(file);
@@ -47,12 +50,17 @@ async function run() {
       }
 
       reportData.push({ file, status: result.status });
+      parsedNodes.push(node);
     } catch (e: unknown) {
       const errMessage = e instanceof Error ? e.message : String(e);
       console.error(`Error processing ${file}:`, errMessage);
       errors++;
       reportData.push({ file, status: "error", error: errMessage });
     }
+  }
+
+  if (parsedNodes.length > 0) {
+    await syncEdges(parsedNodes, isDryRun);
   }
 
   const report = `

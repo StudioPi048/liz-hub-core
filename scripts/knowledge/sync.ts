@@ -114,3 +114,76 @@ export async function syncNode(node: ParsedNode, dryRun: boolean = true) {
     return { status: "created", id: data.id };
   }
 }
+
+export async function syncEdges(nodes: ParsedNode[], dryRun: boolean = true) {
+  const logEvent = (action: string, status: string, msg?: string) => {
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      module: "KNOWLEDGE_SYNC",
+      action,
+      status,
+      message: msg || ""
+    }));
+  };
+
+  if (!supabase) {
+    return;
+  }
+
+  logEvent("SYNC_EDGES", "START", `Processing ${nodes.length} nodes for edges`);
+
+  for (const node of nodes) {
+    if (!node.relations || node.relations.length === 0) continue;
+
+    // Resolve source_id
+    const { data: sourceData } = await supabase
+      .from("knowledge_nodes")
+      .select("id")
+      .eq("source_id", node.id)
+      .maybeSingle();
+
+    if (!sourceData) {
+      logEvent("SYNC_EDGES", "WARN", `Source node not found in DB: ${node.id}`);
+      continue;
+    }
+
+    for (const rel of node.relations) {
+      // Resolve target_id
+      const { data: targetData } = await supabase
+        .from("knowledge_nodes")
+        .select("id")
+        .eq("source_id", rel.target)
+        .maybeSingle();
+
+      if (!targetData) {
+        logEvent("SYNC_EDGES", "WARN", `Target node not found in DB: ${rel.target} for source: ${node.id}`);
+        continue;
+      }
+
+      if (dryRun) {
+        logEvent("SYNC_EDGES", "WOULD_CREATE", `${node.id} -[${rel.type}]-> ${rel.target}`);
+        continue;
+      }
+
+      // Upsert edge
+      const { error } = await supabase
+        .from("knowledge_edges")
+        .upsert({
+          source_id: sourceData.id,
+          target_id: targetData.id,
+          relation_type: rel.type,
+          status: 'approved',
+          confidence: 1.0
+        }, {
+          onConflict: 'source_id, target_id, relation_type'
+        });
+
+      if (error) {
+        logEvent("SYNC_EDGES", "ERROR", `Failed to create edge: ${error.message}`);
+      } else {
+        logEvent("SYNC_EDGES", "SUCCESS", `${node.id} -[${rel.type}]-> ${rel.target}`);
+      }
+    }
+  }
+  logEvent("SYNC_EDGES", "COMPLETE");
+}
