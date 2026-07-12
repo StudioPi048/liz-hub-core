@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, Edit, Calendar, BookOpen, Clock, Tag } from "lucide-react";
 import { KNOWLEDGE_TYPES, parseMetadata } from "@/features/knowledge/model/knowledge-types";
+import { AssetGallery } from "@/features/knowledge/components/AssetGallery";
+import { AssetUploadModal } from "@/features/knowledge/components/AssetUploadModal";
 
 export const Route = createFileRoute("/_authenticated/acervo/item/$slug")({
   component: ItemPage,
@@ -42,6 +44,7 @@ function ItemPage() {
 
   const node = data.node as any;
   const relations = data.relations;
+  const assets = data.assets || [];
   const metadata = parseMetadata(node.type, node.metadata) as any;
   const isBook = node.type === "book";
   const coverUrl = metadata.coverUrl;
@@ -65,16 +68,21 @@ function ItemPage() {
         {/* Left Column: Image or Basic Info */}
         <div className="w-full md:w-1/3 space-y-6 shrink-0">
           {coverUrl ? (
-            <div className="rounded-lg overflow-hidden border shadow-sm aspect-[2/3] bg-muted relative">
+            <div className="rounded-lg overflow-hidden border shadow-sm aspect-[2/3] bg-muted relative group">
               <img src={coverUrl} alt={node.title} className="object-cover w-full h-full" />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <AssetUploadModal nodeId={node.id} nodeType={node.type}>
+                  <Button variant="secondary" size="sm">
+                    Trocar Capa
+                  </Button>
+                </AssetUploadModal>
+              </div>
             </div>
           ) : (
             <div className="rounded-lg border shadow-sm aspect-video md:aspect-square bg-muted/20 flex flex-col items-center justify-center p-6 text-center">
               <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <p className="text-sm text-muted-foreground">Capa não cadastrada</p>
-              <Button variant="link" size="sm" className="mt-2">
-                Adicionar Capa
-              </Button>
+              <AssetUploadModal nodeId={node.id} nodeType={node.type} />
             </div>
           )}
 
@@ -136,6 +144,14 @@ function ItemPage() {
               <div className="whitespace-pre-wrap">{node.content}</div>
             </div>
           )}
+
+          <div className="border-t pt-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-editorial font-semibold">Ativos e Mídias (DAM)</h3>
+              <AssetUploadModal nodeId={node.id} nodeType={node.type} />
+            </div>
+            <AssetGallery assets={assets} />
+          </div>
 
           <div className="border-t pt-8 space-y-6">
             <h3 className="text-xl font-editorial font-semibold">Relacionamentos</h3>

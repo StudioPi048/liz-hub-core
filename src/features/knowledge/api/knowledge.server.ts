@@ -96,7 +96,6 @@ export const getKnowledgeNodeBySlug = createServerFn({ method: "GET" })
     if (error) throw error;
     if (!node) return null;
 
-    // Fetch relations (edges)
     const { data: edgesAsSource } = await (supabaseAdmin as any)
       .from("knowledge_edges")
       .select("*, target:knowledge_nodes!knowledge_edges_target_id_fkey(id, title, slug, type)")
@@ -107,12 +106,20 @@ export const getKnowledgeNodeBySlug = createServerFn({ method: "GET" })
       .select("*, source:knowledge_nodes!knowledge_edges_source_id_fkey(id, title, slug, type)")
       .eq("target_id", node.id);
 
+    // Fetch assets and their pending revisions
+    const { data: assets } = await (supabaseAdmin as any)
+      .from("knowledge_assets")
+      .select("*, revisions:knowledge_asset_revisions(*)")
+      .eq("knowledge_node_id", node.id)
+      .order("sort_order", { ascending: true });
+
     return {
       node,
       relations: {
         outgoing: edgesAsSource || [],
         incoming: edgesAsTarget || [],
       },
+      assets: assets || [],
     };
   });
 
@@ -161,4 +168,91 @@ export const getKnowledgeDashboardStats = createServerFn({ method: "GET" })
     });
 
     return stats;
+  });
+
+export const getAssetSignedUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d) => z.object({ bucket: z.string(), path: z.string() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAllowed = roles?.some((r) => r.role === "admin" || r.role === "editor");
+    if (!isAllowed) throw new Error("Unauthorized");
+
+    const { data: signedUrl, error } = await supabaseAdmin.storage
+      .from(data.bucket)
+      .createSignedUrl(data.path, 3600); // 1 hour
+
+    if (error) throw error;
+    return { signedUrl: signedUrl.signedUrl };
+  });
+
+export const createAssetUploadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d) => z.object({ bucket: z.string(), path: z.string() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAllowed = roles?.some((r) => r.role === "admin" || r.role === "editor");
+    if (!isAllowed) throw new Error("Unauthorized");
+
+    const { data: uploadUrl, error } = await supabaseAdmin.storage
+      .from(data.bucket)
+      .createSignedUploadUrl(data.path);
+
+    if (error) throw error;
+    return { 
+      signedUrl: uploadUrl.signedUrl, 
+      token: uploadUrl.token,
+      path: uploadUrl.path 
+    };
+  });
+
+export const registerAsset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d) => z.object({ 
+    knowledge_node_id: z.string(),
+    stable_id: z.string(),
+    asset_type: z.string(),
+    asset_category: z.string(),
+    name: z.string(),
+    storage_provider: z.string(),
+    storage_bucket: z.string().optional(),
+    storage_path: z.string().optional(),
+    external_url: z.string().optional(),
+    visibility: z.string().default("internal"),
+    rights_status: z.string().default("unknown"),
+    is_primary: z.boolean().default(false),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAllowed = roles?.some((r) => r.role === "admin" || r.role === "editor");
+    if (!isAllowed) throw new Error("Unauthorized");
+
+    const { data: asset, error } = await (supabaseAdmin as any)
+      .from("knowledge_assets")
+      .insert({
+        ...data,
+        source_type: "ui_upload",
+        status: "draft",
+        created_by: context.userId
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return asset;
   });
