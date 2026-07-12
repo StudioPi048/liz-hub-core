@@ -11,9 +11,16 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
       queryFn: async () => {
         const { data: u } = await supabase.auth.getUser();
         if (!u.user) return null;
-        const { data: p } = await supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle();
-        const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
-        return { email: u.user.email, profile: p, roles: (r||[]).map(x=>x.role) };
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", u.user.id)
+          .maybeSingle();
+        const { data: r } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", u.user.id);
+        return { email: u.user.email, profile: p, roles: (r || []).map((x) => x.role) };
       },
     });
     return (
@@ -23,11 +30,21 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
           <p className="text-sm text-muted-foreground">Seu perfil e permissões.</p>
         </div>
         <Card>
-          <CardHeader><CardTitle>Perfil</CardTitle><CardDescription>{me.data?.email}</CardDescription></CardHeader>
+          <CardHeader>
+            <CardTitle>Perfil</CardTitle>
+            <CardDescription>{me.data?.email}</CardDescription>
+          </CardHeader>
           <CardContent className="space-y-2">
-            <div><span className="text-sm text-muted-foreground">Nome:</span> {me.data?.profile?.full_name}</div>
+            <div>
+              <span className="text-sm text-muted-foreground">Nome:</span>{" "}
+              {me.data?.profile?.full_name}
+            </div>
             <div className="flex gap-1">
-              {(me.data?.roles || []).map(r => <Badge key={r} variant="secondary">{r}</Badge>)}
+              {(me.data?.roles || []).map((r) => (
+                <Badge key={r} variant="secondary">
+                  {r}
+                </Badge>
+              ))}
             </div>
           </CardContent>
         </Card>

@@ -8,7 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Copy, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,33 +36,60 @@ function TextosPage() {
   const snippets = useQuery({
     queryKey: ["snippets"],
     queryFn: async () => {
-      const { data } = await supabase.from("text_snippets").select("*, text_snippet_variants(*)").order("created_at", { ascending: false });
+      const { data } = await supabase
+        .from("text_snippets")
+        .select("*, text_snippet_variants(*)")
+        .order("created_at", { ascending: false });
       return data || [];
     },
   });
 
   const create = useMutation({
     mutationFn: async () => {
-      const { data: snip, error } = await supabase.from("text_snippets").insert({ title, theme: theme || null }).select().single();
+      const { data: snip, error } = await supabase
+        .from("text_snippets")
+        .insert({ title, theme: theme || null })
+        .select()
+        .single();
       if (error) throw error;
-      const rows = Object.entries(bodies).filter(([, v]) => v.trim()).map(([variant, body]) => ({ snippet_id: snip.id, variant, body }));
+      const rows = Object.entries(bodies)
+        .filter(([, v]) => v.trim())
+        .map(([variant, body]) => ({ snippet_id: snip.id, variant, body }));
       if (rows.length) {
         const { error: e2 } = await supabase.from("text_snippet_variants").insert(rows);
         if (e2) throw e2;
       }
     },
-    onSuccess: () => { toast.success("Texto salvo"); setOpen(false); setTitle(""); setTheme(""); setBodies({}); qc.invalidateQueries({ queryKey: ["snippets"] }); },
+    onSuccess: () => {
+      toast.success("Texto salvo");
+      setOpen(false);
+      setTitle("");
+      setTheme("");
+      setBodies({});
+      qc.invalidateQueries({ queryKey: ["snippets"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("text_snippets").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => { toast.success("Removido"); qc.invalidateQueries({ queryKey: ["snippets"] }); },
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("text_snippets").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Removido");
+      qc.invalidateQueries({ queryKey: ["snippets"] });
+    },
   });
 
-  const filtered = (snippets.data || []).filter((s: any) =>
-    !q || s.title.toLowerCase().includes(q.toLowerCase()) || (s.theme || "").toLowerCase().includes(q.toLowerCase()) ||
-    (s.text_snippet_variants || []).some((v: any) => v.body.toLowerCase().includes(q.toLowerCase())),
+  const filtered = (snippets.data || []).filter(
+    (s: any) =>
+      !q ||
+      s.title.toLowerCase().includes(q.toLowerCase()) ||
+      (s.theme || "").toLowerCase().includes(q.toLowerCase()) ||
+      (s.text_snippet_variants || []).some((v: any) =>
+        v.body.toLowerCase().includes(q.toLowerCase()),
+      ),
   );
 
   return (
@@ -68,23 +102,53 @@ function TextosPage() {
         <div className="flex gap-2 flex-1 md:flex-none md:w-96">
           <div className="relative flex-1">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Buscar..." value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input
+              className="pl-9"
+              placeholder="Buscar..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Novo</Button></DialogTrigger>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-1" />
+                Novo
+              </Button>
+            </DialogTrigger>
             <DialogContent className="max-w-2xl">
-              <DialogHeader><DialogTitle>Novo texto</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>Novo texto</DialogTitle>
+              </DialogHeader>
               <div className="space-y-3 max-h-[70vh] overflow-y-auto">
-                <div><Label>Título</Label><Input value={title} onChange={(e)=>setTitle(e.target.value)} /></div>
-                <div><Label>Tema/Projeto</Label><Input value={theme} onChange={(e)=>setTheme(e.target.value)} placeholder="Ex: Congresso, Formação..." /></div>
+                <div>
+                  <Label>Título</Label>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Tema/Projeto</Label>
+                  <Input
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value)}
+                    placeholder="Ex: Congresso, Formação..."
+                  />
+                </div>
                 {VARIANTS.map((v) => (
                   <div key={v}>
                     <Label className="capitalize">{v}</Label>
-                    <Textarea rows={3} value={bodies[v] || ""} onChange={(e)=>setBodies({...bodies, [v]: e.target.value})} />
+                    <Textarea
+                      rows={3}
+                      value={bodies[v] || ""}
+                      onChange={(e) => setBodies({ ...bodies, [v]: e.target.value })}
+                    />
                   </div>
                 ))}
               </div>
-              <DialogFooter><Button onClick={()=>create.mutate()} disabled={!title}>Salvar</Button></DialogFooter>
+              <DialogFooter>
+                <Button onClick={() => create.mutate()} disabled={!title}>
+                  Salvar
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -98,18 +162,42 @@ function TextosPage() {
             <CardHeader className="flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base">{s.title}</CardTitle>
-                {s.theme && <Badge variant="secondary" className="mt-1">{s.theme}</Badge>}
+                {s.theme && (
+                  <Badge variant="secondary" className="mt-1">
+                    {s.theme}
+                  </Badge>
+                )}
               </div>
-              <Button size="sm" variant="ghost" onClick={() => { if(confirm("Remover?")) del.mutate(s.id); }}><Trash2 className="h-4 w-4" /></Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  if (confirm("Remover?")) del.mutate(s.id);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-2">
-              {(s.text_snippet_variants || []).length === 0 && <p className="text-sm text-muted-foreground">Sem variações.</p>}
+              {(s.text_snippet_variants || []).length === 0 && (
+                <p className="text-sm text-muted-foreground">Sem variações.</p>
+              )}
               {(s.text_snippet_variants || []).map((v: any) => (
                 <div key={v.id} className="border rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <Badge variant="outline" className="capitalize">{v.variant}</Badge>
-                    <Button size="sm" variant="ghost" onClick={()=>{ navigator.clipboard.writeText(v.body); toast.success("Copiado"); }}>
-                      <Copy className="h-3 w-3 mr-1" />Copiar
+                    <Badge variant="outline" className="capitalize">
+                      {v.variant}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(v.body);
+                        toast.success("Copiado");
+                      }}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copiar
                     </Button>
                   </div>
                   <p className="text-sm whitespace-pre-wrap">{v.body}</p>

@@ -6,7 +6,8 @@ export const getGoogleAuthUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ origin: z.string().url() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { requireGoogleEnv, signState, buildGoogleAuthUrl } = await import("./google-calendar.server");
+    const { requireGoogleEnv, signState, buildGoogleAuthUrl } =
+      await import("./google-calendar.server");
     const { clientId, stateSecret } = requireGoogleEnv();
     const state = signState(context.userId, data.origin, stateSecret);
     return { url: buildGoogleAuthUrl(data.origin, state, clientId) };
@@ -65,7 +66,8 @@ export const listRangeEvents = createServerFn({ method: "POST" })
   });
 
 async function fetchRangeEvents(userId: string, timeMin: string, timeMax: string) {
-  const { getValidAccessToken, fetchCalendarList, fetchEventsForCalendar } = await import("./google-calendar.server");
+  const { getValidAccessToken, fetchCalendarList, fetchEventsForCalendar } =
+    await import("./google-calendar.server");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const token = await getValidAccessToken(userId);
   if (!token) return { needsAuth: true as const, events: [] };
@@ -105,5 +107,13 @@ async function fetchRangeEvents(userId: string, timeMin: string, timeMax: string
   return { needsAuth: false as const, events: results };
 }
 
-function startOfDay() { const d = new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
-function endOfDay() { const d = new Date(); d.setHours(23,59,59,999); return d.toISOString(); }
+function startOfDay() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+function endOfDay() {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d.toISOString();
+}

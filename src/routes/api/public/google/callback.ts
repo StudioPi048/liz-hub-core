@@ -12,9 +12,8 @@ export const Route = createFileRoute("/api/public/google/callback")({
         if (!code || !state) return redirectHtml(`/agenda?google_error=missing_params`);
 
         try {
-          const {
-            requireGoogleEnv, verifyState, exchangeCodeForTokens, decodeIdTokenEmail,
-          } = await import("@/lib/google-calendar.server");
+          const { requireGoogleEnv, verifyState, exchangeCodeForTokens, decodeIdTokenEmail } =
+            await import("@/lib/google-calendar.server");
           const { stateSecret } = requireGoogleEnv();
           const parsed = verifyState(state, stateSecret);
           if (!parsed) return redirectHtml(`/agenda?google_error=invalid_state`);

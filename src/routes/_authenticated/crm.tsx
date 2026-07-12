@@ -8,8 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,16 +36,42 @@ export const Route = createFileRoute("/_authenticated/crm")({
 function CrmPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", origin: "", interest: "", status: "novo", notes: "" });
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    origin: "",
+    interest: "",
+    status: "novo",
+    notes: "",
+  });
 
   const contacts = useQuery({
     queryKey: ["crm"],
-    queryFn: async () => (await supabase.from("crm_contacts").select("*").order("created_at", { ascending: false })).data || [],
+    queryFn: async () =>
+      (await supabase.from("crm_contacts").select("*").order("created_at", { ascending: false }))
+        .data || [],
   });
 
   const create = useMutation({
-    mutationFn: async () => { const { error } = await supabase.from("crm_contacts").insert(form); if (error) throw error; },
-    onSuccess: () => { toast.success("Contato criado"); setOpen(false); setForm({ name: "", phone: "", email: "", origin: "", interest: "", status: "novo", notes: "" }); qc.invalidateQueries({ queryKey: ["crm"] }); },
+    mutationFn: async () => {
+      const { error } = await supabase.from("crm_contacts").insert(form);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Contato criado");
+      setOpen(false);
+      setForm({
+        name: "",
+        phone: "",
+        email: "",
+        origin: "",
+        interest: "",
+        status: "novo",
+        notes: "",
+      });
+      qc.invalidateQueries({ queryKey: ["crm"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -45,7 +84,10 @@ function CrmPage() {
   });
 
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("crm_contacts").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("crm_contacts").delete().eq("id", id);
+      if (error) throw error;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["crm"] }),
   });
 
@@ -64,25 +106,82 @@ function CrmPage() {
           <p className="text-sm text-muted-foreground">Contatos e leads.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Novo contato</Button></DialogTrigger>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-1" />
+              Novo contato
+            </Button>
+          </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Novo contato</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Novo contato</DialogTitle>
+            </DialogHeader>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2"><Label>Nome</Label><Input value={form.name} onChange={(e)=>setForm({...form, name:e.target.value})} /></div>
-              <div><Label>Telefone</Label><Input value={form.phone} onChange={(e)=>setForm({...form, phone:e.target.value})} /></div>
-              <div><Label>E-mail</Label><Input value={form.email} onChange={(e)=>setForm({...form, email:e.target.value})} /></div>
-              <div><Label>Origem</Label><Input value={form.origin} onChange={(e)=>setForm({...form, origin:e.target.value})} placeholder="Instagram, Indicação..." /></div>
-              <div><Label>Interesse</Label><Input value={form.interest} onChange={(e)=>setForm({...form, interest:e.target.value})} placeholder="Congresso, Formação..." /></div>
+              <div className="sm:col-span-2">
+                <Label>Nome</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Telefone</Label>
+                <Input
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>E-mail</Label>
+                <Input
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Origem</Label>
+                <Input
+                  value={form.origin}
+                  onChange={(e) => setForm({ ...form, origin: e.target.value })}
+                  placeholder="Instagram, Indicação..."
+                />
+              </div>
+              <div>
+                <Label>Interesse</Label>
+                <Input
+                  value={form.interest}
+                  onChange={(e) => setForm({ ...form, interest: e.target.value })}
+                  placeholder="Congresso, Formação..."
+                />
+              </div>
               <div className="sm:col-span-2">
                 <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v)=>setForm({...form, status:v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUSES.map(s=><SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
-              <div className="sm:col-span-2"><Label>Notas</Label><Textarea value={form.notes} onChange={(e)=>setForm({...form, notes:e.target.value})} /></div>
+              <div className="sm:col-span-2">
+                <Label>Notas</Label>
+                <Textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
+              </div>
             </div>
-            <DialogFooter><Button onClick={()=>create.mutate()} disabled={!form.name}>Salvar</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={() => create.mutate()} disabled={!form.name}>
+                Salvar
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -105,11 +204,25 @@ function CrmPage() {
                     <Card key={c.id}>
                       <CardContent className="p-3">
                         <div className="font-medium">{c.name}</div>
-                        <div className="text-xs text-muted-foreground">{c.phone} {c.email}</div>
-                        {c.interest && <Badge variant="outline" className="mt-1 text-xs">{c.interest}</Badge>}
+                        <div className="text-xs text-muted-foreground">
+                          {c.phone} {c.email}
+                        </div>
+                        {c.interest && (
+                          <Badge variant="outline" className="mt-1 text-xs">
+                            {c.interest}
+                          </Badge>
+                        )}
                         <div className="flex gap-1 mt-2 flex-wrap">
-                          {STATUSES.filter(s=>s!==c.status).map(s => (
-                            <Button key={s} size="sm" variant="ghost" className="h-6 text-xs" onClick={()=>updateStatus.mutate({id:c.id, status:s})}>→ {s}</Button>
+                          {STATUSES.filter((s) => s !== c.status).map((s) => (
+                            <Button
+                              key={s}
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-xs"
+                              onClick={() => updateStatus.mutate({ id: c.id, status: s })}
+                            >
+                              → {s}
+                            </Button>
                           ))}
                         </div>
                       </CardContent>
@@ -127,10 +240,20 @@ function CrmPage() {
                 <CardContent className="p-3 flex items-center gap-3">
                   <div className="flex-1">
                     <div className="font-medium">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.phone} · {c.email} · {c.origin}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {c.phone} · {c.email} · {c.origin}
+                    </div>
                   </div>
                   <Badge>{c.status}</Badge>
-                  <Button size="sm" variant="ghost" onClick={()=>{ if(confirm("Remover?")) del.mutate(c.id); }}><Trash2 className="h-4 w-4" /></Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (confirm("Remover?")) del.mutate(c.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </CardContent>
               </Card>
             ))}

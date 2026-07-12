@@ -4,13 +4,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
-  SidebarHeader, SidebarFooter, SidebarInset,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarInset,
 } from "@/components/ui/sidebar";
 import {
-  LayoutDashboard, Calendar, Link2, FileText, Users, Contact, Building2, Briefcase,
-  Wallet, Sparkles, FolderOpen, Bot, LogOut, Settings,
+  LayoutDashboard,
+  Calendar,
+  Link2,
+  FileText,
+  Users,
+  Contact,
+  Building2,
+  Briefcase,
+  Wallet,
+  Sparkles,
+  FolderOpen,
+  Bot,
+  LogOut,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +48,7 @@ const nav = [
   { to: "/institucional", label: "Institucional", icon: Building2 },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/prompts", label: "Prompts IA", icon: Bot },
+  { to: "/curadoria", label: "Curadoria", icon: Sparkles },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -38,8 +61,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
-      const { data: p } = await supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle();
-      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.user.id);
       return { ...p, email: u.user.email, roles: (roles || []).map((r) => r.role) };
     },
   });
@@ -77,7 +107,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   return (
                     <SidebarMenuItem key={n.to}>
                       <SidebarMenuButton asChild isActive={active}>
-                        <Link to={n.to}><Icon /><span>{n.label}</span></Link>
+                        <Link to={n.to}>
+                          <Icon />
+                          <span>{n.label}</span>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -90,12 +123,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link to="/configuracoes"><Settings /><span>Configurações</span></Link>
+                <Link to="/configuracoes">
+                  <Settings />
+                  <span>Configurações</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={signOut}>
-                <LogOut /><span>Sair</span>
+                <LogOut />
+                <span>Sair</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -111,7 +148,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/80 backdrop-blur px-4">
           <SidebarTrigger />
           <div className="flex-1" />
-          <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>Atualizar</Button>
+          <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
+            Atualizar
+          </Button>
         </header>
         <main className="p-4 md:p-6">{children}</main>
       </SidebarInset>

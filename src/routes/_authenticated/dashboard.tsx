@@ -20,7 +20,11 @@ function DashboardPage() {
   const { data: projects } = useQuery({
     queryKey: ["projects-active"],
     queryFn: async () => {
-      const { data } = await supabase.from("projects").select("*").eq("status", "ativo").order("name");
+      const { data } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("status", "ativo")
+        .order("name");
       return data || [];
     },
   });
@@ -30,7 +34,9 @@ function DashboardPage() {
     queryFn: async () => {
       const { data } = await supabase.from("crm_contacts").select("status");
       const counts: Record<string, number> = {};
-      (data || []).forEach((r) => { counts[r.status] = (counts[r.status] || 0) + 1; });
+      (data || []).forEach((r) => {
+        counts[r.status] = (counts[r.status] || 0) + 1;
+      });
       return counts;
     },
   });
@@ -39,7 +45,9 @@ function DashboardPage() {
     <div className="space-y-6 max-w-7xl">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight capitalize">{greeting}</h1>
-        <p className="text-muted-foreground">Bem-vinda de volta ao Centro de Operações do Instituto LIZ.</p>
+        <p className="text-muted-foreground">
+          Bem-vinda de volta ao Centro de Operações do Instituto LIZ.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -56,7 +64,11 @@ function DashboardPage() {
               <CardTitle>Compromissos de hoje</CardTitle>
               <CardDescription>Direto do seu Google Calendar</CardDescription>
             </div>
-            <Button asChild variant="ghost" size="sm"><Link to="/agenda">Abrir agenda <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/agenda">
+                Abrir agenda <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent>
             <TodayCalendarEvents />
@@ -78,7 +90,9 @@ function DashboardPage() {
                 <Badge variant="secondary">{count}</Badge>
               </div>
             ))}
-            <Button asChild variant="outline" size="sm" className="w-full mt-2"><Link to="/crm">Abrir CRM</Link></Button>
+            <Button asChild variant="outline" size="sm" className="w-full mt-2">
+              <Link to="/crm">Abrir CRM</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -87,13 +101,19 @@ function DashboardPage() {
         <h2 className="text-lg font-semibold mb-3">Projetos ativos</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {(projects || []).map((p) => (
-            <Card key={p.id} className="border-l-4" style={{ borderLeftColor: p.color || "#7c3aed" }}>
+            <Card
+              key={p.id}
+              className="border-l-4"
+              style={{ borderLeftColor: p.color || "#7c3aed" }}
+            >
               <CardHeader>
                 <CardTitle className="text-base">{p.name}</CardTitle>
                 <CardDescription>{p.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button asChild variant="outline" size="sm"><Link to="/projetos">Abrir projeto</Link></Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/projetos">Abrir projeto</Link>
+                </Button>
               </CardContent>
             </Card>
           ))}

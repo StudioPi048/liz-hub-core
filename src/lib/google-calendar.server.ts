@@ -27,7 +27,10 @@ export function signState(userId: string, origin: string, secret: string): strin
   return `${body}.${sig}`;
 }
 
-export function verifyState(state: string, secret: string): { userId: string; origin: string } | null {
+export function verifyState(
+  state: string,
+  secret: string,
+): { userId: string; origin: string } | null {
   const [body, sig] = state.split(".");
   if (!body || !sig) return null;
   const expected = crypto.createHmac("sha256", secret).update(body).digest("base64url");
@@ -106,7 +109,9 @@ export function decodeIdTokenEmail(idToken?: string): string | null {
   }
 }
 
-export async function getValidAccessToken(userId: string): Promise<{ accessToken: string; googleEmail: string | null } | null> {
+export async function getValidAccessToken(
+  userId: string,
+): Promise<{ accessToken: string; googleEmail: string | null } | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row } = await supabaseAdmin
     .from("google_oauth_tokens")
@@ -147,7 +152,11 @@ export async function fetchEventsForCalendar(
   timeMax: string,
 ) {
   const params = new URLSearchParams({
-    timeMin, timeMax, singleEvents: "true", orderBy: "startTime", maxResults: "100",
+    timeMin,
+    timeMax,
+    singleEvents: "true",
+    orderBy: "startTime",
+    maxResults: "100",
   });
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
