@@ -33,6 +33,11 @@ import {
   Bot,
   LogOut,
   Settings,
+  Search,
+  BellRing,
+  Clock,
+  Star,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -118,6 +123,32 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Ações Rápidas</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton>
+                    <Search className="h-4 w-4" />
+                    <span>Busca Global (Cmd+K)</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton>
+                    <BellRing className="h-4 w-4 text-orange-500" />
+                    <span>Pendências</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton>
+                    <Clock className="h-4 w-4" />
+                    <span>Recentes</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
@@ -144,15 +175,24 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/80 backdrop-blur px-4">
+      <SidebarInset className="bg-background">
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border/50 bg-background/95 backdrop-blur px-4">
           <SidebarTrigger />
-          <div className="flex-1" />
-          <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
-            Atualizar
+          <div className="flex-1 flex items-center">
+             <Button variant="outline" size="sm" className="h-8 w-64 justify-start text-muted-foreground font-normal">
+               <Search className="mr-2 h-3.5 w-3.5" />
+               Buscar no LIZ HUB...
+             </Button>
+          </div>
+          <Button variant="ghost" size="icon" className="h-8 w-8 relative">
+            <BellRing className="h-4 w-4" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-orange-500" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 relative">
+            <Zap className="h-4 w-4" />
           </Button>
         </header>
-        <main className="p-4 md:p-6">{children}</main>
+        <main className="p-4 md:p-8 max-w-[1600px] mx-auto w-full">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

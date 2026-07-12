@@ -4,10 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Link2, FileText, Contact, ArrowRight } from "lucide-react";
+import { Calendar, Link2, FileText, Contact, ArrowRight, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TodayCalendarEvents } from "@/components/TodayCalendarEvents";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -15,125 +14,143 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const today = new Date();
-  const greeting = `Hoje é ${format(today, "EEEE, d 'de' MMMM", { locale: ptBR })}`;
-
-  const { data: projects } = useQuery({
-    queryKey: ["projects-active"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("status", "ativo")
-        .order("name");
-      return data || [];
-    },
-  });
-
-  const { data: crmCounts } = useQuery({
-    queryKey: ["crm-counts"],
-    queryFn: async () => {
-      const { data } = await supabase.from("crm_contacts").select("status");
-      const counts: Record<string, number> = {};
-      (data || []).forEach((r) => {
-        counts[r.status] = (counts[r.status] || 0) + 1;
-      });
-      return counts;
-    },
-  });
-
+  
   return (
-    <div className="space-y-6 max-w-7xl">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight capitalize">{greeting}</h1>
-        <p className="text-muted-foreground">
-          Bem-vinda de volta ao Centro de Operações do Instituto LIZ.
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Cockpit Operacional</h1>
+          <p className="text-sm text-muted-foreground">
+            {format(today, "EEEE, d 'de' MMMM", { locale: ptBR })}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            Novo Evento
+          </Button>
+          <Button size="sm">
+            Nova Pendência
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <QuickCard to="/agenda" icon={Calendar} label="Agenda" />
-        <QuickCard to="/links" icon={Link2} label="Links" />
-        <QuickCard to="/textos" icon={FileText} label="Textos" />
-        <QuickCard to="/crm" icon={Contact} label="CRM" />
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader className="flex-row items-center justify-between">
-            <div>
-              <CardTitle>Compromissos de hoje</CardTitle>
-              <CardDescription>Direto do seu Google Calendar</CardDescription>
-            </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/agenda">
-                Abrir agenda <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-l-4 border-l-blue-500 rounded-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Como está meu dia?</CardTitle>
           </CardHeader>
-          <CardContent>
-            <TodayCalendarEvents />
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-bold">5</div>
+            <p className="text-xs text-muted-foreground mt-1">2 consultas, 1 reunião, 2 pendências</p>
+            <Button variant="link" size="sm" className="px-0 h-auto mt-2" asChild>
+              <Link to="/agenda">Ver agenda de hoje <ArrowRight className="h-3 w-3 ml-1" /></Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-orange-500 rounded-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">O que precisa de atenção?</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-bold text-orange-600">3</div>
+            <p className="text-xs text-muted-foreground mt-1">Contatos CRM aguardando retorno</p>
+            <Button variant="link" size="sm" className="px-0 h-auto mt-2" asChild>
+              <Link to="/crm">Abrir leads <ArrowRight className="h-3 w-3 ml-1" /></Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-red-500 rounded-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">O que venceu?</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-bold text-red-600">1</div>
+            <p className="text-xs text-muted-foreground mt-1">Fatura em atraso</p>
+            <Button variant="link" size="sm" className="px-0 h-auto mt-2 text-red-600" asChild>
+              <Link to="/financeiro">Resolver pendências <ArrowRight className="h-3 w-3 ml-1" /></Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-green-500 rounded-sm">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Ações Rápidas</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 flex flex-col gap-2">
+            <Button variant="outline" size="sm" className="justify-start" asChild>
+              <Link to="/agenda"><Calendar className="h-4 w-4 mr-2" /> Planejar Semana</Link>
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start" asChild>
+              <Link to="/crm"><Contact className="h-4 w-4 mr-2" /> Retornar Contatos</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader className="border-b bg-muted/20 pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Clock className="h-4 w-4" /> Próximos Compromissos
+              </CardTitle>
+              <Button asChild variant="ghost" size="sm" className="h-8">
+                <Link to="/agenda">Ver todos</Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              <div className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm">Mentoria Turma 4</span>
+                  <span className="text-xs text-muted-foreground">14:00 - 15:30 • Zoom</span>
+                </div>
+                <Button size="sm" variant="secondary">Entrar</Button>
+              </div>
+              <div className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm">Revisão de Conteúdo (Lote 2)</span>
+                  <span className="text-xs text-muted-foreground">16:00 - 17:00</span>
+                </div>
+                <Button size="sm" variant="secondary">Abrir</Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>CRM</CardTitle>
-            <CardDescription>Leads por status</CardDescription>
+          <CardHeader className="border-b bg-muted/20 pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" /> Alertas Operacionais
+              </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {Object.entries(crmCounts || {}).length === 0 && (
-              <p className="text-sm text-muted-foreground">Ainda sem contatos cadastrados.</p>
-            )}
-            {Object.entries(crmCounts || {}).map(([status, count]) => (
-              <div key={status} className="flex items-center justify-between">
-                <span className="capitalize text-sm">{status}</span>
-                <Badge variant="secondary">{count}</Badge>
+          <CardContent className="p-0">
+             <div className="divide-y">
+              <div className="p-4 flex items-start gap-3 hover:bg-muted/10 transition-colors">
+                <div className="mt-0.5"><div className="h-2 w-2 rounded-full bg-red-500" /></div>
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium text-sm">Conflito de Agenda Detectado</span>
+                  <span className="text-xs text-muted-foreground">Mentoria coincide com consulta presencial amanhã às 14:00.</span>
+                  <Button size="sm" variant="link" className="px-0 h-auto justify-start text-xs">Resolver conflito</Button>
+                </div>
               </div>
-            ))}
-            <Button asChild variant="outline" size="sm" className="w-full mt-2">
-              <Link to="/crm">Abrir CRM</Link>
-            </Button>
+              <div className="p-4 flex items-start gap-3 hover:bg-muted/10 transition-colors">
+                <div className="mt-0.5"><div className="h-2 w-2 rounded-full bg-orange-500" /></div>
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium text-sm">2 novos leads do Instagram</span>
+                  <span className="text-xs text-muted-foreground">Tempo de resposta atual: 4h.</span>
+                  <Button size="sm" variant="link" className="px-0 h-auto justify-start text-xs">Iniciar atendimento</Button>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      <div>
-        <h2 className="text-lg font-semibold mb-3">Projetos ativos</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {(projects || []).map((p) => (
-            <Card
-              key={p.id}
-              className="border-l-4"
-              style={{ borderLeftColor: p.color || "#7c3aed" }}
-            >
-              <CardHeader>
-                <CardTitle className="text-base">{p.name}</CardTitle>
-                <CardDescription>{p.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/projetos">Abrir projeto</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
     </div>
-  );
-}
-
-function QuickCard({ to, icon: Icon, label }: { to: string; icon: any; label: string }) {
-  return (
-    <Link to={to} className="block">
-      <Card className="hover:border-primary transition-colors">
-        <CardContent className="p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-brand-soft flex items-center justify-center">
-            <Icon className="h-5 w-5 text-primary" />
-          </div>
-          <span className="font-medium">{label}</span>
-        </CardContent>
-      </Card>
-    </Link>
   );
 }
