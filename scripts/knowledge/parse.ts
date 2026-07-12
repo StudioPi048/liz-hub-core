@@ -10,7 +10,7 @@ import {
   VISIBILITIES,
   ASSET_STATUSES,
   isValidCategoryForNode
-} from "./model/asset-vocabulary";
+} from "../../src/features/knowledge/model/asset-vocabulary";
 
 export const RelationSchema = z.object({
   type: z.enum([
