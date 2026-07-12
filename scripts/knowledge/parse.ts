@@ -19,7 +19,7 @@ export const RelationSchema = z.object({
     "used_in",
     "contradicts",
     "supersedes",
-    "version_of"
+    "version_of",
   ]),
   target: z.string().min(1),
 });
@@ -27,6 +27,7 @@ export const RelationSchema = z.object({
 export const FrontmatterSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
+  slug: z.string().min(1),
   type: z.enum([
     "institutional",
     "methodological",

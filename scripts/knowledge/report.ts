@@ -1,92 +1,89 @@
-import { scanDirectory } from "./scan";
-import { parseFile } from "./parse";
-import { syncNode, syncEdges } from "./sync";
-import type { ParsedNode } from "./parse";
 import path from "path";
 import fs from "fs";
 
-async function run() {
-  const args = process.argv.slice(2);
-  const isApply = args.includes("--apply");
-  const isDryRun = !isApply;
+export interface CompletenessDetail {
+  id: string;
+  type: string;
+  title: string;
+  score: string;
+  presentEssential: string[];
+  missingEssential: string[];
+  presentRecommended: string[];
+  missingRecommended: string[];
+}
 
-  console.log(`Starting Knowledge Indexer... Mode: ${isDryRun ? "DRY-RUN" : "APPLY"}`);
+export interface ReportStats {
+  mode: "dry-run" | "apply" | "report-only" | "validate-only";
+  filesRead: number;
+  validNodes: number;
+  invalidFiles: number;
+  securityBlocks: number;
+  nodesCreated: number;
+  draftsUpdated: number;
+  nodesIgnored: number;
+  approvedPreserved: number;
+  revisionsCreated: number;
+  edgesCreated: number;
+  edgesIgnored: number;
+  unresolvedRelations: number;
+  warnings: number;
+  errors: { file: string; error: string }[];
+  completenessDetails?: CompletenessDetail[];
+}
 
-  const rootDir = path.resolve(process.cwd(), "knowledge");
-  if (!fs.existsSync(rootDir)) {
-    console.error("Directory 'knowledge' not found.");
-    process.exit(1);
-  }
-
-  const errorsArr: { file: string; error: string }[] = [];
-  const files = scanDirectory(rootDir, [], errorsArr);
-  console.log(`Found ${files.length} markdown files.`);
-
-  let created = 0;
-  let updated = 0;
-  let unchanged = 0;
-  let errors = 0;
-
-  const reportData = [];
-
-  for (const err of errorsArr) {
-    errors++;
-    reportData.push({ file: err.file, status: "error", error: err.error });
-  }
-
-  const parsedNodes: ParsedNode[] = [];
-
-  for (const file of files) {
-    try {
-      const node = parseFile(file);
-      const result = await syncNode(node, isDryRun);
-
-      if (result.status === "created" || result.status === "would_create") created++;
-      if (result.status === "updated" || result.status === "would_update") updated++;
-      if (result.status === "unchanged") unchanged++;
-      if (result.status === "skipped") {
-        console.warn("Supabase not configured. Skipping DB sync.");
-        break;
-      }
-
-      reportData.push({ file, status: result.status });
-      parsedNodes.push(node);
-    } catch (e: unknown) {
-      const errMessage = e instanceof Error ? e.message : String(e);
-      console.error(`Error processing ${file}:`, errMessage);
-      errors++;
-      reportData.push({ file, status: "error", error: errMessage });
-    }
-  }
-
-  if (parsedNodes.length > 0) {
-    await syncEdges(parsedNodes, isDryRun);
-  }
-
+export function generateIndexationReport(stats: ReportStats) {
   const report = `
-# Relatório de Indexação (Knowledge Base)
+# Relatório de Ingestão (LIZ HUB Knowledge)
 
 Data: ${new Date().toISOString()}
-Modo: ${isDryRun ? "DRY-RUN (Nenhuma alteração no DB)" : "APPLY"}
+Modo: ${stats.mode.toUpperCase()}
 
-- **Arquivos Lidos:** ${files.length}
-- **Nós (A Criar/Criados):** ${created}
-- **Nós (A Atualizar/Atualizados):** ${updated}
-- **Nós Inalterados:** ${unchanged}
-- **Erros:** ${errors}
+## Resumo
+- **Arquivos Lidos:** ${stats.filesRead}
+- **Arquivos Válidos:** ${stats.validNodes}
+- **Arquivos Inválidos:** ${stats.invalidFiles}
+- **Bloqueios de Segurança:** ${stats.securityBlocks}
 
-## Detalhes:
-${reportData.map((r) => `- ${r.file}: **${r.status}** ${r.error ? `(${r.error})` : ""}`).join("\n")}
+## Nós (Nodes)
+- **Criados:** ${stats.nodesCreated}
+- **Atualizados (Drafts):** ${stats.draftsUpdated}
+- **Inalterados:** ${stats.nodesIgnored}
+- **Preservados (Aprovados):** ${stats.approvedPreserved}
+- **Revisões Pendentes Criadas:** ${stats.revisionsCreated}
+
+## Relações (Edges)
+- **Arestas Criadas:** ${stats.edgesCreated}
+- **Arestas Ignoradas/Duplicadas:** ${stats.edgesIgnored}
+- **Relações Não Resolvidas (Alvo Inexistente):** ${stats.unresolvedRelations}
+
+## Logs
+- **Alertas (Warnings):** ${stats.warnings}
+- **Erros (Críticos/Validação):** ${stats.errors.length}
+
+${stats.errors.length > 0 ? `## Detalhe de Erros\n${stats.errors.map((r) => `- [${r.file}] ${r.error}`).join("\n")}` : ""}
+
+${
+  stats.completenessDetails && stats.completenessDetails.length > 0
+    ? `## Detalhamento de Completude
+${stats.completenessDetails
+  .map(
+    (c) => `
+### ${c.title} (${c.type}) - \`${c.id}\`
+- **Score:** ${c.score.toUpperCase()}
+- **Essenciais Presentes:** ${c.presentEssential.join(", ") || "Nenhum"}
+- **Essenciais Ausentes:** ${c.missingEssential.join(", ") || "Nenhum"}
+- **Recomendados Presentes:** ${c.presentRecommended.join(", ") || "Nenhum"}
+- **Recomendados Ausentes:** ${c.missingRecommended.join(", ") || "Nenhum"}
+`,
+  )
+  .join("")}`
+    : ""
+}
   `.trim();
 
   const reportDir = path.resolve(process.cwd(), "docs/knowledge");
   if (!fs.existsSync(reportDir)) fs.mkdirSync(reportDir, { recursive: true });
   fs.writeFileSync(path.join(reportDir, "indexation-report.md"), report);
 
-  console.log(
-    `Indexation completed. Report saved to docs/knowledge/indexation-report.md. Errors: ${errors}`,
-  );
-  if (errors > 0 && isApply) process.exit(1);
+  console.log(`Report saved to docs/knowledge/indexation-report.md`);
 }
-
-run().catch(console.error);
