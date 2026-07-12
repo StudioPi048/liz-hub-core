@@ -9,12 +9,12 @@ const GOOGLE_SCOPES = [
 ].join(" ");
 
 export function requireGoogleEnv() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
   const stateSecret = process.env.GOOGLE_OAUTH_STATE_SECRET;
   if (!clientId || !clientSecret || !stateSecret) {
     throw new Error(
-      "Integração Google não configurada. Configure GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET no painel de secrets.",
+      "Integração Google não configurada. Configure GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nos secrets.",
     );
   }
   return { clientId, clientSecret, stateSecret };
