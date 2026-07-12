@@ -3,6 +3,27 @@ import matter from "gray-matter";
 import crypto from "crypto";
 import { z } from "zod";
 
+export const RelationSchema = z.object({
+  type: z.enum([
+    "belongs_to",
+    "part_of",
+    "authored_by",
+    "created_by",
+    "mentions",
+    "references",
+    "explains",
+    "applies_to",
+    "related_to",
+    "prerequisite_of",
+    "offered_by",
+    "used_in",
+    "contradicts",
+    "supersedes",
+    "version_of"
+  ]),
+  target: z.string().min(1),
+});
+
 export const FrontmatterSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
@@ -36,7 +57,10 @@ export const FrontmatterSchema = z.object({
   author: z.string().optional(),
   summary: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  relations: z.array(RelationSchema).optional(),
 });
+
+export type RelationNode = z.infer<typeof RelationSchema>;
 
 export type ParsedNode = z.infer<typeof FrontmatterSchema> & {
   source_uri: string;
