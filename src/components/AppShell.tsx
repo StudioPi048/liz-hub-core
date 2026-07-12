@@ -1,0 +1,120 @@
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import {
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
+  SidebarHeader, SidebarFooter, SidebarInset,
+} from "@/components/ui/sidebar";
+import {
+  LayoutDashboard, Calendar, Link2, FileText, Users, Contact, Building2, Briefcase,
+  Wallet, Sparkles, FolderOpen, Bot, LogOut, Settings,
+} from "lucide-react";
+import { toast } from "sonner";
+
+const nav = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/agenda", label: "Agenda", icon: Calendar },
+  { to: "/links", label: "Links", icon: Link2 },
+  { to: "/textos", label: "Textos", icon: FileText },
+  { to: "/arquivos", label: "Arquivos", icon: FolderOpen },
+  { to: "/crm", label: "CRM", icon: Contact },
+  { to: "/projetos", label: "Projetos", icon: Briefcase },
+  { to: "/equipe", label: "Equipe", icon: Users },
+  { to: "/institucional", label: "Institucional", icon: Building2 },
+  { to: "/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/prompts", label: "Prompts IA", icon: Bot },
+] as const;
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const { data: profile } = useQuery({
+    queryKey: ["me-profile"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data: p } = await supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle();
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+      return { ...p, email: u.user.email, roles: (roles || []).map((r) => r.role) };
+    },
+  });
+
+  async function signOut() {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    toast.success("Sessão encerrada");
+    navigate({ to: "/auth", replace: true });
+  }
+
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center gap-2 px-2 py-3">
+            <div className="h-9 w-9 rounded-lg bg-sidebar-primary flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-sidebar-primary-foreground" />
+            </div>
+            <div>
+              <div className="font-semibold text-sidebar-foreground">LIZ HUB</div>
+              <div className="text-xs text-sidebar-foreground/70">Instituto LIZ</div>
+            </div>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Operação</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {nav.map((n) => {
+                  const Icon = n.icon;
+                  const active = pathname === n.to || pathname.startsWith(n.to + "/");
+                  return (
+                    <SidebarMenuItem key={n.to}>
+                      <SidebarMenuButton asChild isActive={active}>
+                        <Link to={n.to}><Icon /><span>{n.label}</span></Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link to="/configuracoes"><Settings /><span>Configurações</span></Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={signOut}>
+                <LogOut /><span>Sair</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          {profile && (
+            <div className="px-3 py-2 text-xs text-sidebar-foreground/80 border-t border-sidebar-border">
+              <div className="truncate font-medium">{profile.full_name || profile.email}</div>
+              <div className="truncate opacity-70">{profile.roles?.join(", ") || "viewer"}</div>
+            </div>
+          )}
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-background/80 backdrop-blur px-4">
+          <SidebarTrigger />
+          <div className="flex-1" />
+          <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>Atualizar</Button>
+        </header>
+        <main className="p-4 md:p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
