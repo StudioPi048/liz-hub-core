@@ -48,7 +48,14 @@ function AgendaPage() {
     queryKey: ["events", view],
     queryFn: () => listRangeEvents({ data: { from, to } }),
     enabled: !!status.data?.connected,
+    refetchInterval: 3 * 60 * 1000, // sincroniza a cada 3 minutos
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
+
+  const lastSync = events.dataUpdatedAt
+    ? format(new Date(events.dataUpdatedAt), "HH:mm:ss")
+    : null;
 
   const getUrl = useServerFn(getGoogleAuthUrl);
   const disconnect = useMutation({
@@ -99,10 +106,17 @@ function AgendaPage() {
         <div className="flex gap-2">
           <Button variant={view === "today" ? "default" : "outline"} size="sm" onClick={() => setView("today")}>Hoje</Button>
           <Button variant={view === "week" ? "default" : "outline"} size="sm" onClick={() => setView("week")}>Próx. 7 dias</Button>
-          <Button variant="outline" size="sm" onClick={() => events.refetch()}><RefreshCcw className="h-4 w-4 mr-1" />Atualizar</Button>
+          <Button variant="outline" size="sm" onClick={() => events.refetch()} disabled={events.isFetching}>
+            <RefreshCcw className={`h-4 w-4 mr-1 ${events.isFetching ? "animate-spin" : ""}`} />
+            Sincronizar agora
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => disconnect.mutate()}><Unlink className="h-4 w-4 mr-1" />Desconectar</Button>
         </div>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Sincronização automática a cada 3 min{lastSync ? ` · última: ${lastSync}` : ""}
+      </p>
 
       {events.isLoading && <p className="text-sm text-muted-foreground">Carregando eventos...</p>}
       {evs.length === 0 && !events.isLoading && (
