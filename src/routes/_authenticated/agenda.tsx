@@ -98,12 +98,6 @@ export function AgendaPage() {
   } else if (view === "quarter") {
     fromDate = startOfWeek(startOfMonth(focusDate), { weekStartsOn: 0 });
     toDate = endOfWeek(endOfMonth(addMonths(focusDate, 2)), { weekStartsOn: 0 });
-  } else if (view === "30d") {
-    fromDate = startOfDay(focusDate);
-    toDate = endOfDay(addDays(focusDate, 30));
-  } else if (view === "90d") {
-    fromDate = startOfDay(focusDate);
-    toDate = endOfDay(addDays(focusDate, 90));
   } else if (view === "timeline") {
     fromDate = startOfDay(focusDate);
     toDate = endOfDay(addMonths(focusDate, 6));
@@ -305,27 +299,25 @@ export function AgendaPage() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background rounded-lg border shadow-sm">
         <header className="p-3 border-b flex flex-wrap items-center gap-2 justify-between bg-muted/20">
           <div className="flex gap-1 overflow-x-auto hide-scrollbar">
-            {(["today", "week", "month", "quarter", "30d", "90d"] as const).map((v) => (
-              <Button
-                key={v}
-                variant={view === v ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => updatePrefs({ view: v })}
-                className={view === v ? "bg-background shadow-sm" : ""}
-              >
-                {v === "today"
-                  ? "Hoje"
-                  : v === "week"
-                    ? "Semana"
-                    : v === "month"
-                      ? "Mês"
-                      : v === "quarter"
-                        ? "Trimestre"
-                        : v === "30d"
-                          ? "30 Dias"
-                          : "90 Dias"}
-              </Button>
-            ))}
+          {(["today", "week", "month", "quarter", "timeline"] as const).map((v) => (
+            <Button
+              key={v}
+              variant={view === v ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => updatePrefs({ view: v })}
+              className={view === v ? "bg-background shadow-sm" : ""}
+            >
+              {v === "today"
+                ? "Hoje"
+                : v === "week"
+                  ? "Semana"
+                  : v === "month"
+                    ? "Mês"
+                    : v === "quarter"
+                      ? "Trimestre"
+                      : "Semestre (Lista)"}
+            </Button>
+          ))}
           </div>
 
           <div className="flex items-center gap-2">
@@ -427,13 +419,11 @@ export function AgendaPage() {
               {view === "quarter" && (
                 <TrimestralGrid currentDate={focusDate} events={filteredEvents} />
               )}
-              {(view === "30d" ||
-                view === "90d" ||
-                view === "week" ||
+              {(view === "week" ||
                 view === "today" ||
                 view === "tomorrow" ||
                 view === "timeline") && (
-                <TimelineView events={filteredEvents} showStrategicHighlights={view === "90d"} />
+                <TimelineView events={filteredEvents} showStrategicHighlights={view === "timeline"} />
               )}
             </>
           )}
