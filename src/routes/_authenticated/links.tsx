@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useLinks, useLinkCategories, useCreateLink, useDeleteLink } from "@/features/links";
+import { useLinks, useLinkCategories, useCreateLink, useDeleteLink, useUpdateLink } from "@/features/links";
+import type { LinkWithCategory } from "@/features/links";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Copy, ExternalLink, Plus, Search, Trash2, Loader2 } from "lucide-react";
+import { Copy, ExternalLink, Plus, Search, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/links")({
@@ -33,12 +34,51 @@ function LinksPage() {
   const [q, setQ] = useState("");
   const [openNew, setOpenNew] = useState(false);
   const [form, setForm] = useState({ name: "", url: "", category_id: "", notes: "" });
+  const [openEdit, setOpenEdit] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    id: string;
+    name: string;
+    url: string;
+    category_id: string;
+    notes: string;
+  }>({ id: "", name: "", url: "", category_id: "", notes: "" });
 
   const { data: catsData, isLoading: isLoadingCats, error: errorCats } = useLinkCategories();
   const { data: linksData, isLoading: isLoadingLinks, error: errorLinks } = useLinks();
 
   const create = useCreateLink();
   const del = useDeleteLink();
+  const update = useUpdateLink();
+
+  const openEditFor = (l: LinkWithCategory) => {
+    setEditForm({
+      id: l.id,
+      name: l.name,
+      url: l.url,
+      category_id: l.category_id || "",
+      notes: l.notes || "",
+    });
+    setOpenEdit(true);
+  };
+
+  const handleUpdate = () => {
+    update.mutate(
+      {
+        id: editForm.id,
+        name: editForm.name,
+        url: editForm.url,
+        category_id: editForm.category_id || null,
+        notes: editForm.notes || null,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Link atualizado");
+          setOpenEdit(false);
+        },
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
+  };
 
   const handleCreate = () => {
     create.mutate(
@@ -231,6 +271,14 @@ function LinksPage() {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() => openEditFor(l)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => handleDelete(l.id)}
                           disabled={del.isPending}
                         >
@@ -248,6 +296,64 @@ function LinksPage() {
           )}
         </>
       )}
+
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar link</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nome</Label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>URL</Label>
+              <Input
+                value={editForm.url}
+                onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <Label>Categoria</Label>
+              <Select
+                value={editForm.category_id}
+                onValueChange={(v) => setEditForm({ ...editForm, category_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoadingCats ? "Carregando..." : "Selecione"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(catsData || []).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Observações</Label>
+              <Textarea
+                value={editForm.notes || ""}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleUpdate}
+              disabled={!editForm.name || !editForm.url || update.isPending}
+            >
+              {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
