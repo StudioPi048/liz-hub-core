@@ -17,7 +17,7 @@ export const KnowledgeFilterSchema = z.object({
 
 export const getKnowledgeNodes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((d) => KnowledgeFilterSchema.parse(d))
+  .inputValidator((d) => KnowledgeFilterSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // We use supabaseAdmin for server side, but we must respect RLS by using the user's token or
@@ -75,7 +75,7 @@ export const getKnowledgeNodes = createServerFn({ method: "POST" })
 
 export const getKnowledgeNodeBySlug = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .validator((d) => z.object({ slug: z.string() }).parse(d))
+  .inputValidator((d) => z.object({ slug: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -172,7 +172,7 @@ export const getKnowledgeDashboardStats = createServerFn({ method: "GET" })
 
 export const getAssetSignedUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((d) => z.object({ bucket: z.string(), path: z.string() }).parse(d))
+  .inputValidator((d) => z.object({ bucket: z.string(), path: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -193,7 +193,7 @@ export const getAssetSignedUrl = createServerFn({ method: "POST" })
 
 export const createAssetUploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((d) => z.object({ bucket: z.string(), path: z.string() }).parse(d))
+  .inputValidator((d) => z.object({ bucket: z.string(), path: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -218,7 +218,7 @@ export const createAssetUploadUrl = createServerFn({ method: "POST" })
 
 export const registerAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((d) => z.object({ 
+  .inputValidator((d) => z.object({ 
     knowledge_node_id: z.string(),
     stable_id: z.string(),
     asset_type: z.string(),
