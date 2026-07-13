@@ -12,7 +12,7 @@ assets:
   - id: checkout
     type: link
     category: checkout
-    path: "https://go.hotmart.com/Q104946299G?dp=1"
+    external_url: "https://go.hotmart.com/Q104946299G?dp=1"
     provider: external_url
     name: "Checkout Hotmart"
 ---

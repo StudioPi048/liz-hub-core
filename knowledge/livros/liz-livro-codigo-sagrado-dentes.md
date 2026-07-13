@@ -12,7 +12,7 @@ assets:
   - id: amazon
     type: link
     category: external_reference
-    path: "https://www.amazon.com/dp/6597601300"
+    external_url: "https://www.amazon.com/dp/6597601300"
     provider: external_url
     name: "Amazon Internacional"
 ---

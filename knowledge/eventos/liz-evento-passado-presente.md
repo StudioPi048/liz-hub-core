@@ -12,7 +12,7 @@ assets:
   - id: form
     type: link
     category: external_reference
-    path: "https://forms.gle/EWG3x2wFsMmQNhqr9"
+    external_url: "https://forms.gle/EWG3x2wFsMmQNhqr9"
     provider: external_url
     name: "Formulário de Inscrição"
 ---
