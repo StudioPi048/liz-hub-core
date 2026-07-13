@@ -13,3 +13,11 @@ export type CreateLinkInput = {
   category_id?: string | null;
   notes?: string | null;
 };
+
+export type UpdateLinkInput = {
+  id: string;
+  name?: string;
+  url?: string;
+  category_id?: string | null;
+  notes?: string | null;
+};
