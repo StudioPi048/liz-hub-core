@@ -48,9 +48,11 @@ function AcervoDashboard() {
           <Upload className="h-4 w-4" />
           Importar Dados
         </Button>
-        <Button variant="secondary" className="gap-2">
-          <CheckCircle2 className="h-4 w-4" />
-          Revisar Pendentes ({stats?.drafts || 0})
+        <Button variant="secondary" className="gap-2" asChild>
+          <Link to="/acervo/pendentes">
+            <CheckCircle2 className="h-4 w-4" />
+            Revisar Pendentes ({stats?.drafts || 0})
+          </Link>
         </Button>
         <Button variant="ghost" className="gap-2 text-muted-foreground">
           <CopyX className="h-4 w-4" />
