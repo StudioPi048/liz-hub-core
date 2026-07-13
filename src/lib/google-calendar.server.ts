@@ -149,11 +149,11 @@ export async function getValidAccessToken(
   } catch (e: any) {
     const errorData = e.response?.data?.error;
     if (errorData === "invalid_grant" || errorData === "invalid_client") {
-      await supabaseAdmin.from("google_oauth_tokens").delete().eq("user_id", row.user_id);
+      // DO NOT DELETE THE TOKEN automatically. Just warn admin it needs reconnect.
       // Audit log
       console.log(
         JSON.stringify({
-          event: "google_integration_removed",
+          event: "google_integration_expired",
           user_id: row.user_id,
           reason: errorData,
           date: new Date().toISOString(),

@@ -17,7 +17,12 @@ export const getGoogleStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { getValidAccessToken } = await import("./google-calendar.server");
-    return await getValidAccessToken(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", context.userId);
+    const isAdmin = roles?.some(r => r.role === "admin") || false;
+    
+    const tokenResult = await getValidAccessToken(context.userId);
+    return { ...tokenResult, isAdmin };
   });
 
 export const disconnectGoogle = createServerFn({ method: "POST" })
@@ -51,17 +56,115 @@ export const listCalendars = createServerFn({ method: "GET" })
     };
   });
 
-export const listTodayEvents = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    return await fetchRangeEvents(context.userId, startOfDay(), endOfDay());
-  });
-
-export const listRangeEvents = createServerFn({ method: "POST" })
+export const getAgendaEvents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ from: z.string(), to: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
-    return await fetchRangeEvents(context.userId, data.from, data.to);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: events, error } = await (supabaseAdmin as any)
+      .from("agenda_events")
+      .select("*")
+      .gte("starts_at", data.from)
+      .lte("ends_at", data.to)
+      .order("starts_at", { ascending: true });
+
+    if (error) throw error;
+
+    // Adapt to frontend AgendaEvent model
+    const adapted = (events || []).map((e: any) => ({
+        id: e.id,
+        source: e.source,
+        title: e.title,
+        description: e.description,
+        startsAt: e.starts_at,
+        endsAt: e.ends_at,
+        allDay: e.all_day,
+        timezone: e.timezone,
+        calendarId: e.external_calendar_id,
+        calendarName: null,
+        location: e.location,
+        isEditable: false,
+        isExternal: e.source === 'google',
+        visibility: e.visibility,
+        isBlocking: e.is_blocking,
+        isRecurring: e.is_recurring,
+        status: e.status,
+    }));
+
+    return { events: adapted };
+  });
+
+export const listTodayEvents = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: events, error } = await (supabaseAdmin as any)
+      .from("agenda_events")
+      .select("*")
+      .gte("starts_at", startOfDay())
+      .lte("ends_at", endOfDay())
+      .order("starts_at", { ascending: true });
+    
+    if (error) throw error;
+    
+    const adapted = (events || []).map((e: any) => ({
+        id: e.id,
+        source: e.source,
+        title: e.title,
+        description: e.description,
+        startsAt: e.starts_at,
+        endsAt: e.ends_at,
+        allDay: e.all_day,
+        timezone: e.timezone,
+        calendarId: e.external_calendar_id,
+        calendarName: null,
+        location: e.location,
+        isEditable: false,
+        isExternal: e.source === 'google',
+        visibility: e.visibility,
+        isBlocking: e.is_blocking,
+        isRecurring: e.is_recurring,
+        status: e.status,
+    }));
+    return { events: adapted };
+  });
+
+export const syncGoogleCalendarToDatabase = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ from: z.string(), to: z.string() }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Only allow admin
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", context.userId);
+    const isAdmin = roles?.some(r => r.role === "admin");
+    if (!isAdmin) throw new Error("Apenas administradores podem sincronizar a agenda do sistema.");
+
+    // Fetch from google
+    const result = await fetchRangeEvents(context.userId, data.from, data.to);
+    if (result.needsAuth) throw new Error("A integração do sistema com Google Calendar está desconectada ou expirada.");
+
+    // Upsert into Supabase
+    const eventsToUpsert = result.events.map(ev => ({
+      source: "google",
+      external_calendar_id: ev.calendarId,
+      external_event_id: ev.id,
+      title: ev.summary || "(Sem Título)",
+      description: ev.description || null,
+      starts_at: ev.start,
+      ends_at: ev.end,
+      all_day: ev.allDay,
+      location: ev.location || null,
+      color_key: ev.color,
+      status: "confirmed"
+    }));
+
+    for (const ev of eventsToUpsert) {
+      await (supabaseAdmin as any).from("agenda_events").upsert(ev, {
+        onConflict: "external_calendar_id, external_event_id"
+      });
+    }
+
+    return { ok: true, synced: eventsToUpsert.length };
   });
 
 async function fetchRangeEvents(userId: string, timeMin: string, timeMax: string) {

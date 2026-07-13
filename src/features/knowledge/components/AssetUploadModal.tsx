@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createAssetUploadUrl, registerAsset } from "../api/knowledge.server";
-import { VALID_CATEGORIES_PER_TYPE, ASSET_TYPES } from "../model/asset-vocabulary";
+import { 
+  AssetCategory, 
+  StorageProvider, 
+  RightsStatus, 
+  Visibility, 
+  NODE_CATEGORY_MAPPING 
+} from "../model/asset-vocabulary";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +29,7 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
   const [name, setName] = useState<string>("");
   const queryClient = useQueryClient();
 
-  const validCategories = VALID_CATEGORIES_PER_TYPE[nodeType as keyof typeof VALID_CATEGORIES_PER_TYPE] || [];
+  const validCategories = NODE_CATEGORY_MAPPING[nodeType as keyof typeof NODE_CATEGORY_MAPPING] || [];
 
   const uploadMutation = useMutation({
     mutationFn: async () => {

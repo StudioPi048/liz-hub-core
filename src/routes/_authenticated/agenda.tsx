@@ -7,7 +7,8 @@ import {
   getGoogleStatus,
   getGoogleAuthUrl,
   disconnectGoogle,
-  listRangeEvents,
+  getAgendaEvents,
+  syncGoogleCalendarToDatabase,
 } from "@/lib/google-calendar.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -107,40 +108,33 @@ export function AgendaPage() {
     toDate = endOfDay(addMonths(focusDate, 6));
   }
 
-  // NOTE: In the future we will call an internal Supabase function that queries `agenda_events`
-  // AND merges with `listRangeEvents` dynamically. For now, we adapt what we have.
+  // Fetch events directly from Supabase agenda_events table
   const eventsQuery = useQuery({
-    queryKey: ["events", fromDate.toISOString(), toDate.toISOString(), googleConnectionStatus],
-    enabled: googleConnectionStatus === "connected",
+    queryKey: ["events", fromDate.toISOString(), toDate.toISOString()],
     queryFn: async () => {
-      // Mocked adapter for current google events -> AgendaEvent
-      const res = await listRangeEvents({
+      const res = await getAgendaEvents({
         data: { from: fromDate.toISOString(), to: toDate.toISOString() },
       });
-      const rawEvents: any[] = res.events || [];
-      const adapted: AgendaEvent[] = rawEvents.map((e) => ({
-        id: e.id,
-        source: "google",
-        title: e.summary || "(Sem Título)",
-        description: e.description,
-        startsAt: e.start,
-        endsAt: e.end,
-        allDay: e.allDay,
-        timezone: "America/Sao_Paulo", // MOCK
-        calendarId: e.calendarId,
-        calendarName: e.calendarSummary,
-        location: e.location,
-        isEditable: false,
-        isExternal: true,
-        visibility: "internal",
-        isBlocking: true,
-        isRecurring: false,
-        status: "confirmed",
-      }));
-      return { events: adapted };
+      return { events: res.events };
     },
     refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
+  });
+
+  const syncGoogle = useMutation({
+    mutationFn: async () => {
+      if (!status.data?.isAdmin) return;
+      await syncGoogleCalendarToDatabase({
+        data: { from: fromDate.toISOString(), to: toDate.toISOString() }
+      });
+    },
+    onSuccess: () => {
+      toast.success("Agenda sincronizada com o Google Calendar");
+      eventsQuery.refetch();
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Erro ao sincronizar agenda externa");
+    }
   });
 
   const getUrl = useServerFn(getGoogleAuthUrl);
@@ -183,7 +177,7 @@ export function AgendaPage() {
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-6rem)] overflow-hidden">
       {/* COCKPIT SIDEBAR */}
-      {prefs.isSidebarOpen && (
+      {prefs.isSidebarOpen && status.data?.isAdmin && (
         <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-4 overflow-y-auto pr-2 pb-8">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-lg tracking-tight">Painel de Bordo</h2>
@@ -286,7 +280,7 @@ export function AgendaPage() {
                 <div className="text-2xl font-semibold">
                   {
                     allEvents.filter(
-                      (e) =>
+                      (e: any) =>
                         format(new Date(e.startsAt), "yyyy-MM-dd") ===
                         format(new Date(), "yyyy-MM-dd"),
                     ).length
@@ -370,18 +364,20 @@ export function AgendaPage() {
               <Filter className="h-3.5 w-3.5 mr-2" />
               Filtros
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => eventsQuery.refetch()}
-              disabled={eventsQuery.isFetching}
-              title="Sincronizar"
-            >
-              <RefreshCcw
-                className={`h-3.5 w-3.5 ${eventsQuery.isFetching ? "animate-spin" : ""}`}
-              />
-            </Button>
+            {status.data?.isAdmin && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => syncGoogle.mutate()}
+                disabled={syncGoogle.isPending}
+                title="Sincronizar com Google Calendar"
+              >
+                <RefreshCcw
+                  className={`h-3.5 w-3.5 ${syncGoogle.isPending ? "animate-spin" : ""}`}
+                />
+              </Button>
+            )}
           </div>
         </header>
 
