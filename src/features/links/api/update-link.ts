@@ -3,7 +3,12 @@ import { UpdateLinkInput } from "../types/link.types";
 
 export async function updateLink(input: UpdateLinkInput): Promise<void> {
   const { id, ...rest } = input;
-  const patch: Record<string, unknown> = {};
+  const patch: {
+    name?: string;
+    url?: string;
+    category_id?: string | null;
+    notes?: string | null;
+  } = {};
   if (rest.name !== undefined) patch.name = rest.name;
   if (rest.url !== undefined) patch.url = rest.url;
   if (rest.category_id !== undefined) patch.category_id = rest.category_id || null;
