@@ -271,6 +271,14 @@ function LinksPage() {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() => openEditFor(l)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => handleDelete(l.id)}
                           disabled={del.isPending}
                         >
@@ -288,6 +296,64 @@ function LinksPage() {
           )}
         </>
       )}
+
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar link</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Nome</Label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>URL</Label>
+              <Input
+                value={editForm.url}
+                onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <Label>Categoria</Label>
+              <Select
+                value={editForm.category_id}
+                onValueChange={(v) => setEditForm({ ...editForm, category_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoadingCats ? "Carregando..." : "Selecione"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(catsData || []).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Observações</Label>
+              <Textarea
+                value={editForm.notes || ""}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleUpdate}
+              disabled={!editForm.name || !editForm.url || update.isPending}
+            >
+              {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
