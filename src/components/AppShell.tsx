@@ -76,18 +76,18 @@ const acervoNav = [
     label: "Eventos",
     icon: CalendarDays,
   },
-  {
-    to: "/acervo/$collection",
-    params: { collection: "autores" },
-    label: "Autores e Professores",
-    icon: Users2,
-  },
-  {
-    to: "/acervo/$collection",
-    params: { collection: "conceitos" },
-    label: "Conceitos e Metodologia",
-    icon: Network,
-  },
+  // {
+  //   to: "/acervo/$collection",
+  //   params: { collection: "autores" },
+  //   label: "Autores e Professores",
+  //   icon: Users2,
+  // },
+  // {
+  //   to: "/acervo/$collection",
+  //   params: { collection: "conceitos" },
+  //   label: "Conceitos e Metodologia",
+  //   icon: Network,
+  // },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
