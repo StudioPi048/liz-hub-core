@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AgendaFilters, defaultAgendaFilters } from "../model/agenda-filters";
 
-type ViewMode = "today" | "tomorrow" | "week" | "month" | "quarter" | "30d" | "90d" | "timeline";
+type ViewMode = "today" | "tomorrow" | "week" | "month" | "quarter" | "timeline";
 
 type AgendaPreferences = {
   view: ViewMode;
@@ -30,11 +30,16 @@ export function useAgendaPreferences() {
       if (stored) {
         const parsed = JSON.parse(stored);
         // Fallback merge to ensure all keys exist
-        return {
+        const merged = {
           ...defaultPreferences,
           ...parsed,
           filters: { ...defaultPreferences.filters, ...parsed.filters },
         };
+        // Migrate deprecated views to the new consolidated timeline view
+        if (merged.view === "30d" || merged.view === "90d") {
+          merged.view = "timeline";
+        }
+        return merged;
       }
     } catch (e) {
       console.warn("Failed to parse agenda preferences", e);
