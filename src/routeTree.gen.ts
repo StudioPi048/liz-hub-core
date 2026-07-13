@@ -28,6 +28,7 @@ import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedAcervoRouteRouteImport } from './routes/_authenticated/acervo/route'
 import { Route as AuthenticatedAcervoIndexRouteImport } from './routes/_authenticated/acervo/index'
 import { Route as AuthenticatedAcervoCollectionRouteImport } from './routes/_authenticated/acervo/$collection'
+import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
 import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google/callback'
 import { Route as AuthenticatedAcervoItemSlugRouteImport } from './routes/_authenticated/acervo/item/$slug'
 
@@ -130,6 +131,12 @@ const AuthenticatedAcervoCollectionRoute =
     path: '/$collection',
     getParentRoute: () => AuthenticatedAcervoRouteRoute,
   } as any)
+const ApiPublicWebhooksHotmartRoute =
+  ApiPublicWebhooksHotmartRouteImport.update({
+    id: '/api/public/webhooks/hotmart',
+    path: '/api/public/webhooks/hotmart',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicGoogleCallbackRoute = ApiPublicGoogleCallbackRouteImport.update({
   id: '/api/public/google/callback',
   path: '/api/public/google/callback',
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/acervo/': typeof AuthenticatedAcervoIndexRoute
   '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
+  '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -184,6 +192,7 @@ export interface FileRoutesByTo {
   '/acervo': typeof AuthenticatedAcervoIndexRoute
   '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
+  '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -208,6 +217,7 @@ export interface FileRoutesById {
   '/_authenticated/acervo/': typeof AuthenticatedAcervoIndexRoute
   '/_authenticated/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
+  '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/acervo/'
     | '/acervo/item/$slug'
     | '/api/public/google/callback'
+    | '/api/public/webhooks/hotmart'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/acervo'
     | '/acervo/item/$slug'
     | '/api/public/google/callback'
+    | '/api/public/webhooks/hotmart'
   id:
     | '__root__'
     | '/'
@@ -276,6 +288,7 @@ export interface FileRouteTypes {
     | '/_authenticated/acervo/'
     | '/_authenticated/acervo/item/$slug'
     | '/api/public/google/callback'
+    | '/api/public/webhooks/hotmart'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -283,6 +296,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicGoogleCallbackRoute: typeof ApiPublicGoogleCallbackRoute
+  ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -420,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcervoCollectionRouteImport
       parentRoute: typeof AuthenticatedAcervoRouteRoute
     }
+    '/api/public/webhooks/hotmart': {
+      id: '/api/public/webhooks/hotmart'
+      path: '/api/public/webhooks/hotmart'
+      fullPath: '/api/public/webhooks/hotmart'
+      preLoaderRoute: typeof ApiPublicWebhooksHotmartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/google/callback': {
       id: '/api/public/google/callback'
       path: '/api/public/google/callback'
@@ -497,6 +518,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicGoogleCallbackRoute: ApiPublicGoogleCallbackRoute,
+  ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
