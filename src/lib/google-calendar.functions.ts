@@ -159,9 +159,18 @@ export const syncGoogleCalendarToDatabase = createServerFn({ method: "POST" })
     }));
 
     for (const ev of eventsToUpsert) {
-      await (supabaseAdmin as any).from("agenda_events").upsert(ev, {
-        onConflict: "external_calendar_id, external_event_id"
-      });
+      const { data: existing } = await (supabaseAdmin as any)
+        .from("agenda_events")
+        .select("id")
+        .eq("external_calendar_id", ev.external_calendar_id)
+        .eq("external_event_id", ev.external_event_id)
+        .maybeSingle();
+
+      if (existing) {
+        await (supabaseAdmin as any).from("agenda_events").update(ev).eq("id", existing.id);
+      } else {
+        await (supabaseAdmin as any).from("agenda_events").insert(ev);
+      }
     }
 
     return { ok: true, synced: eventsToUpsert.length };
