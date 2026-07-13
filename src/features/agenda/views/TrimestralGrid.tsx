@@ -20,7 +20,7 @@ export function TrimestralGrid({
   const months = [currentDate, addMonths(currentDate, 1), addMonths(currentDate, 2)];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 overflow-y-auto">
+    <div className="flex flex-col gap-10 overflow-y-auto pb-8">
       {months.map((month, idx) => (
         <div key={idx} className="flex flex-col gap-3 min-w-[300px]">
           <h3 className="font-semibold text-lg capitalize px-1">
@@ -32,7 +32,7 @@ export function TrimestralGrid({
               events={events}
               onDayClick={onDayClick}
               onEventClick={onEventClick}
-              maxEventsPerDay={2} // Mais condensado para visão 3 meses
+              maxEventsPerDay={4} // Espaço vertical de sobra na visão trimestral
             />
           </div>
         </div>
