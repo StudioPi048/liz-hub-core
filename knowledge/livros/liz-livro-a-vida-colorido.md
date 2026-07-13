@@ -13,8 +13,8 @@ assets:
     type: link
     category: checkout
     path: "https://go.hotmart.com/D97168130X?dp=1"
-    provider: external
-    title: "Checkout Hotmart"
+    provider: external_url
+    name: "Checkout Hotmart"
 ---
 # A Vida (Colorido)
 

@@ -13,8 +13,8 @@ assets:
     type: link
     category: checkout
     path: "https://go.hotmart.com/V97168109Y?dp=1"
-    provider: external
-    title: "Checkout Hotmart"
+    provider: external_url
+    name: "Checkout Hotmart"
 ---
 # Tecendo a Vida para Nossa Criança
 

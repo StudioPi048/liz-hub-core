@@ -13,8 +13,8 @@ assets:
     type: link
     category: checkout
     path: "https://go.hotmart.com/M97794640R?dp=1"
-    provider: external
-    title: "Checkout Hotmart"
+    provider: external_url
+    name: "Checkout Hotmart"
 ---
 # Formação em Psicogenealogia
 

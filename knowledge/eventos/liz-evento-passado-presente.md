@@ -11,10 +11,10 @@ language: pt-BR
 assets:
   - id: form
     type: link
-    category: page
+    category: external_reference
     path: "https://forms.gle/EWG3x2wFsMmQNhqr9"
-    provider: external
-    title: "Formulário de Inscrição"
+    provider: external_url
+    name: "Formulário de Inscrição"
 ---
 # Do Passado ao Presente (Portugal)
 

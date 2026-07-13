@@ -13,8 +13,8 @@ assets:
     type: link
     category: checkout
     path: "https://go.hotmart.com/U97568259S?dp=1"
-    provider: external
-    title: "Checkout Hotmart"
+    provider: external_url
+    name: "Checkout Hotmart"
 ---
 # Curso de Nomes (Básico)
 

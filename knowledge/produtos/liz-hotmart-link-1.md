@@ -13,8 +13,8 @@ assets:
     type: link
     category: checkout
     path: "https://go.hotmart.com/X106406130U?dp=1"
-    provider: external
-    title: "Checkout Hotmart"
+    provider: external_url
+    name: "Checkout Hotmart"
 ---
 # Produto Desconhecido 1 (Revisar)
 

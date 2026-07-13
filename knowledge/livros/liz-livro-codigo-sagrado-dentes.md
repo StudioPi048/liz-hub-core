@@ -11,10 +11,10 @@ language: pt-BR
 assets:
   - id: amazon
     type: link
-    category: page
+    category: external_reference
     path: "https://www.amazon.com/dp/6597601300"
-    provider: external
-    title: "Amazon Internacional"
+    provider: external_url
+    name: "Amazon Internacional"
 ---
 # Código Sagrado dos Dentes
 
