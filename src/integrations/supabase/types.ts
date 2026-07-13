@@ -14,6 +14,178 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_event_participants: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          event_id: string
+          id: string
+          response_status: string | null
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          event_id: string
+          id?: string
+          response_status?: string | null
+          role?: string
+          user_id?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          event_id?: string
+          id?: string
+          response_status?: string | null
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_events: {
+        Row: {
+          all_day: boolean
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          category_slug: string | null
+          city: string | null
+          color_key: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          description: string | null
+          ends_at: string
+          external_calendar_id: string | null
+          external_event_id: string | null
+          id: string
+          is_blocking: boolean
+          is_recurring: boolean
+          location: string | null
+          meeting_url: string | null
+          modality: string | null
+          notes: string | null
+          owner_id: string | null
+          recurrence_parent_id: string | null
+          recurrence_rule: string | null
+          recurrence_timezone: string | null
+          responsible_id: string | null
+          source: string
+          source_record_id: string | null
+          starts_at: string
+          status: string
+          timezone: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          visibility: string
+        }
+        Insert: {
+          all_day?: boolean
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category_slug?: string | null
+          city?: string | null
+          color_key?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          description?: string | null
+          ends_at: string
+          external_calendar_id?: string | null
+          external_event_id?: string | null
+          id?: string
+          is_blocking?: boolean
+          is_recurring?: boolean
+          location?: string | null
+          meeting_url?: string | null
+          modality?: string | null
+          notes?: string | null
+          owner_id?: string | null
+          recurrence_parent_id?: string | null
+          recurrence_rule?: string | null
+          recurrence_timezone?: string | null
+          responsible_id?: string | null
+          source?: string
+          source_record_id?: string | null
+          starts_at: string
+          status?: string
+          timezone?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          visibility?: string
+        }
+        Update: {
+          all_day?: boolean
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          category_slug?: string | null
+          city?: string | null
+          color_key?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          description?: string | null
+          ends_at?: string
+          external_calendar_id?: string | null
+          external_event_id?: string | null
+          id?: string
+          is_blocking?: boolean
+          is_recurring?: boolean
+          location?: string | null
+          meeting_url?: string | null
+          modality?: string | null
+          notes?: string | null
+          owner_id?: string | null
+          recurrence_parent_id?: string | null
+          recurrence_rule?: string | null
+          recurrence_timezone?: string | null
+          responsible_id?: string | null
+          source?: string
+          source_record_id?: string | null
+          starts_at?: string
+          status?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_events_recurrence_parent_id_fkey"
+            columns: ["recurrence_parent_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_keyword_map: {
         Row: {
           created_at: string
@@ -91,6 +263,74 @@ export type Database = {
         }
         Relationships: []
       }
+      editorial_drafts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          knowledge_node_id: string
+          previous_content_hash: string
+          proposed_content: string
+          proposed_content_hash: string
+          proposed_metadata: Json
+          proposed_summary: string | null
+          proposed_title: string | null
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_id: string
+          source_uri: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          knowledge_node_id: string
+          previous_content_hash: string
+          proposed_content: string
+          proposed_content_hash: string
+          proposed_metadata?: Json
+          proposed_summary?: string | null
+          proposed_title?: string | null
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id: string
+          source_uri?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          knowledge_node_id?: string
+          previous_content_hash?: string
+          proposed_content?: string
+          proposed_content_hash?: string
+          proposed_metadata?: Json
+          proposed_summary?: string | null
+          proposed_title?: string | null
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string
+          source_uri?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_drafts_knowledge_node_id_fkey"
+            columns: ["knowledge_node_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_calendar_prefs: {
         Row: {
           calendar_id: string
@@ -157,6 +397,475 @@ export type Database = {
           token_expires_at?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      knowledge_asset_revisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          indexation_run_id: string | null
+          knowledge_asset_id: string
+          knowledge_node_id: string
+          previous_content_hash: string | null
+          proposed_alt_text: string | null
+          proposed_asset_category: string
+          proposed_asset_type: string
+          proposed_content_hash: string | null
+          proposed_description: string | null
+          proposed_external_url: string | null
+          proposed_file_extension: string | null
+          proposed_license_reference: string | null
+          proposed_manifest_hash: string
+          proposed_metadata: Json
+          proposed_mime_type: string | null
+          proposed_name: string
+          proposed_original_filename: string | null
+          proposed_rights_holder: string | null
+          proposed_rights_status: string
+          proposed_size_bytes: number | null
+          proposed_storage_bucket: string | null
+          proposed_storage_path: string | null
+          proposed_storage_provider: string
+          proposed_usage_notes: string | null
+          proposed_visibility: string
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_reference: string | null
+          stable_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          indexation_run_id?: string | null
+          knowledge_asset_id: string
+          knowledge_node_id: string
+          previous_content_hash?: string | null
+          proposed_alt_text?: string | null
+          proposed_asset_category: string
+          proposed_asset_type: string
+          proposed_content_hash?: string | null
+          proposed_description?: string | null
+          proposed_external_url?: string | null
+          proposed_file_extension?: string | null
+          proposed_license_reference?: string | null
+          proposed_manifest_hash: string
+          proposed_metadata?: Json
+          proposed_mime_type?: string | null
+          proposed_name: string
+          proposed_original_filename?: string | null
+          proposed_rights_holder?: string | null
+          proposed_rights_status: string
+          proposed_size_bytes?: number | null
+          proposed_storage_bucket?: string | null
+          proposed_storage_path?: string | null
+          proposed_storage_provider: string
+          proposed_usage_notes?: string | null
+          proposed_visibility: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_reference?: string | null
+          stable_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          indexation_run_id?: string | null
+          knowledge_asset_id?: string
+          knowledge_node_id?: string
+          previous_content_hash?: string | null
+          proposed_alt_text?: string | null
+          proposed_asset_category?: string
+          proposed_asset_type?: string
+          proposed_content_hash?: string | null
+          proposed_description?: string | null
+          proposed_external_url?: string | null
+          proposed_file_extension?: string | null
+          proposed_license_reference?: string | null
+          proposed_manifest_hash?: string
+          proposed_metadata?: Json
+          proposed_mime_type?: string | null
+          proposed_name?: string
+          proposed_original_filename?: string | null
+          proposed_rights_holder?: string | null
+          proposed_rights_status?: string
+          proposed_size_bytes?: number | null
+          proposed_storage_bucket?: string | null
+          proposed_storage_path?: string | null
+          proposed_storage_provider?: string
+          proposed_usage_notes?: string | null
+          proposed_visibility?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_reference?: string | null
+          stable_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_asset_revisions_knowledge_asset_id_fkey"
+            columns: ["knowledge_asset_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_asset_revisions_knowledge_node_id_fkey"
+            columns: ["knowledge_node_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_assets: {
+        Row: {
+          alt_text: string | null
+          archived_at: string | null
+          archived_by: string | null
+          asset_category: string
+          asset_type: string
+          content_hash: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          external_url: string | null
+          file_extension: string | null
+          id: string
+          is_primary: boolean
+          knowledge_node_id: string
+          language: string | null
+          license_reference: string | null
+          metadata: Json
+          mime_type: string | null
+          name: string
+          original_filename: string | null
+          rights_holder: string | null
+          rights_status: string
+          size_bytes: number | null
+          sort_order: number
+          source_reference: string | null
+          source_type: string
+          stable_id: string
+          status: string
+          storage_bucket: string | null
+          storage_path: string | null
+          storage_provider: string
+          updated_at: string
+          updated_by: string | null
+          usage_notes: string | null
+          version: number
+          visibility: string
+        }
+        Insert: {
+          alt_text?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          asset_category: string
+          asset_type: string
+          content_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          external_url?: string | null
+          file_extension?: string | null
+          id?: string
+          is_primary?: boolean
+          knowledge_node_id: string
+          language?: string | null
+          license_reference?: string | null
+          metadata?: Json
+          mime_type?: string | null
+          name: string
+          original_filename?: string | null
+          rights_holder?: string | null
+          rights_status?: string
+          size_bytes?: number | null
+          sort_order?: number
+          source_reference?: string | null
+          source_type: string
+          stable_id: string
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          storage_provider: string
+          updated_at?: string
+          updated_by?: string | null
+          usage_notes?: string | null
+          version?: number
+          visibility?: string
+        }
+        Update: {
+          alt_text?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          asset_category?: string
+          asset_type?: string
+          content_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          external_url?: string | null
+          file_extension?: string | null
+          id?: string
+          is_primary?: boolean
+          knowledge_node_id?: string
+          language?: string | null
+          license_reference?: string | null
+          metadata?: Json
+          mime_type?: string | null
+          name?: string
+          original_filename?: string | null
+          rights_holder?: string | null
+          rights_status?: string
+          size_bytes?: number | null
+          sort_order?: number
+          source_reference?: string | null
+          source_type?: string
+          stable_id?: string
+          status?: string
+          storage_bucket?: string | null
+          storage_path?: string | null
+          storage_provider?: string
+          updated_at?: string
+          updated_by?: string | null
+          usage_notes?: string | null
+          version?: number
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_assets_knowledge_node_id_fkey"
+            columns: ["knowledge_node_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_edges: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          relation_type: string
+          source_id: string
+          status: string
+          target_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          relation_type: string
+          source_id: string
+          status?: string
+          target_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          relation_type?: string
+          source_id?: string
+          status?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_edges_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_edges_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_node_versions: {
+        Row: {
+          authority_level: string
+          change_reason: string | null
+          changed_by: string | null
+          content: string
+          content_hash: string
+          created_at: string
+          id: string
+          metadata: Json
+          node_id: string
+          source_uri: string | null
+          status: string
+          summary: string | null
+          title: string
+          version: number
+          visibility: string
+        }
+        Insert: {
+          authority_level: string
+          change_reason?: string | null
+          changed_by?: string | null
+          content: string
+          content_hash: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          node_id: string
+          source_uri?: string | null
+          status: string
+          summary?: string | null
+          title: string
+          version: number
+          visibility: string
+        }
+        Update: {
+          authority_level?: string
+          change_reason?: string | null
+          changed_by?: string | null
+          content?: string
+          content_hash?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          node_id?: string
+          source_uri?: string | null
+          status?: string
+          summary?: string | null
+          title?: string
+          version?: number
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_node_versions_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_nodes: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          archived_at: string | null
+          author_name: string | null
+          authority_level: string
+          content: string
+          content_hash: string
+          created_at: string
+          created_by: string | null
+          id: string
+          language: string
+          metadata: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          slug: string | null
+          source_id: string
+          source_title: string | null
+          source_type: string
+          source_uri: string | null
+          status: string
+          summary: string | null
+          title: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+          valid_from: string | null
+          valid_until: string | null
+          version: number
+          visibility: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
+          author_name?: string | null
+          authority_level?: string
+          content: string
+          content_hash: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          language?: string
+          metadata?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          slug?: string | null
+          source_id: string
+          source_title?: string | null
+          source_type: string
+          source_uri?: string | null
+          status?: string
+          summary?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          version?: number
+          visibility?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
+          author_name?: string | null
+          authority_level?: string
+          content?: string
+          content_hash?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          language?: string
+          metadata?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          slug?: string | null
+          source_id?: string
+          source_title?: string | null
+          source_type?: string
+          source_uri?: string | null
+          status?: string
+          summary?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+          version?: number
+          visibility?: string
         }
         Relationships: []
       }
@@ -391,6 +1100,7 @@ export type Database = {
     }
     Functions: {
       can_edit: { Args: { _user_id: string }; Returns: boolean }
+      has_knowledge_admin_role: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
