@@ -53,14 +53,6 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/agenda", label: "Agenda", icon: Calendar },
   { to: "/links", label: "Links", icon: Link2 },
-  { to: "/textos", label: "Textos", icon: FileText },
-  { to: "/arquivos", label: "Arquivos", icon: FolderOpen },
-  { to: "/crm", label: "CRM", icon: Contact },
-  { to: "/projetos", label: "Projetos", icon: Briefcase },
-  { to: "/equipe", label: "Equipe", icon: Users },
-  { to: "/institucional", label: "Institucional", icon: Building2 },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet },
-  { to: "/prompts", label: "Prompts IA", icon: Bot },
 ] as const;
 
 const acervoNav = [
@@ -96,13 +88,6 @@ const acervoNav = [
     label: "Conceitos e Metodologia",
     icon: Network,
   },
-  {
-    to: "/acervo/$collection",
-    params: { collection: "faq" },
-    label: "Perguntas Frequentes",
-    icon: HelpCircle,
-  },
-  { to: "/curadoria", label: "Curadoria", icon: Sparkles },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
