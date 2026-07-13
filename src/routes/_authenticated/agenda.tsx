@@ -98,12 +98,6 @@ export function AgendaPage() {
   } else if (view === "quarter") {
     fromDate = startOfWeek(startOfMonth(focusDate), { weekStartsOn: 0 });
     toDate = endOfWeek(endOfMonth(addMonths(focusDate, 2)), { weekStartsOn: 0 });
-  } else if (view === "30d") {
-    fromDate = startOfDay(focusDate);
-    toDate = endOfDay(addDays(focusDate, 30));
-  } else if (view === "90d") {
-    fromDate = startOfDay(focusDate);
-    toDate = endOfDay(addDays(focusDate, 90));
   } else if (view === "timeline") {
     fromDate = startOfDay(focusDate);
     toDate = endOfDay(addMonths(focusDate, 6));
