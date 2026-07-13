@@ -34,12 +34,51 @@ function LinksPage() {
   const [q, setQ] = useState("");
   const [openNew, setOpenNew] = useState(false);
   const [form, setForm] = useState({ name: "", url: "", category_id: "", notes: "" });
+  const [openEdit, setOpenEdit] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    id: string;
+    name: string;
+    url: string;
+    category_id: string;
+    notes: string;
+  }>({ id: "", name: "", url: "", category_id: "", notes: "" });
 
   const { data: catsData, isLoading: isLoadingCats, error: errorCats } = useLinkCategories();
   const { data: linksData, isLoading: isLoadingLinks, error: errorLinks } = useLinks();
 
   const create = useCreateLink();
   const del = useDeleteLink();
+  const update = useUpdateLink();
+
+  const openEditFor = (l: LinkWithCategory) => {
+    setEditForm({
+      id: l.id,
+      name: l.name,
+      url: l.url,
+      category_id: l.category_id || "",
+      notes: l.notes || "",
+    });
+    setOpenEdit(true);
+  };
+
+  const handleUpdate = () => {
+    update.mutate(
+      {
+        id: editForm.id,
+        name: editForm.name,
+        url: editForm.url,
+        category_id: editForm.category_id || null,
+        notes: editForm.notes || null,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Link atualizado");
+          setOpenEdit(false);
+        },
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
+  };
 
   const handleCreate = () => {
     create.mutate(
