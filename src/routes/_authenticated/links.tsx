@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useLinks, useLinkCategories, useCreateLink, useDeleteLink } from "@/features/links";
+import { useLinks, useLinkCategories, useCreateLink, useDeleteLink, useUpdateLink } from "@/features/links";
+import type { LinkWithCategory } from "@/features/links";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Copy, ExternalLink, Plus, Search, Trash2, Loader2 } from "lucide-react";
+import { Copy, ExternalLink, Plus, Search, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/links")({
