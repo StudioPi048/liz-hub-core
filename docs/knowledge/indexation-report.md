@@ -1,7 +1,7 @@
 # Relatório de Ingestão (LIZ HUB Knowledge)
 
-Data: 2026-07-12T23:13:49.125Z
-Modo: DRY-RUN
+Data: 2026-07-13T13:04:15.563Z
+Modo: APPLY
 
 ## Resumo
 - **Arquivos Lidos:** 12
@@ -10,14 +10,14 @@ Modo: DRY-RUN
 - **Bloqueios de Segurança:** 0
 
 ## Nós (Nodes)
-- **Criados:** 0
+- **Criados:** 12
 - **Atualizados (Drafts):** 0
 - **Inalterados:** 0
 - **Preservados (Aprovados):** 0
 - **Revisões Pendentes Criadas:** 0
 
 ## Relações (Edges)
-- **Arestas Criadas:** 0
+- **Arestas Criadas:** 14
 - **Arestas Ignoradas/Duplicadas:** 0
 - **Relações Não Resolvidas (Alvo Inexistente):** 0
 
