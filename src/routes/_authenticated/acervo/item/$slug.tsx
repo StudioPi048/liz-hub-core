@@ -51,7 +51,6 @@ function ItemPage() {
   const relations = data.relations;
   const assets = data.assets || [];
   const metadata = parseMetadata(node.type, node.metadata) as any;
-  const isBook = node.type === "book";
   const coverUrl = metadata.coverUrl;
 
   return (
