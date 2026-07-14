@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, Edit, Calendar, BookOpen, Clock, Tag } from "lucide
 import { KNOWLEDGE_TYPES, parseMetadata } from "@/features/knowledge/model/knowledge-types";
 import { AssetGallery } from "@/features/knowledge/components/AssetGallery";
 import { AssetUploadModal } from "@/features/knowledge/components/AssetUploadModal";
+import { HotmartEnrichPanel } from "@/features/knowledge/components/HotmartEnrichPanel";
 
 export const Route = createFileRoute("/_authenticated/acervo/item/$slug")({
   component: ItemPage,
@@ -116,6 +117,14 @@ function ItemPage() {
               </div>
             </div>
           </div>
+
+          {(node.type === "product" || node.type === "course") && (
+            <HotmartEnrichPanel
+              productId={node.id}
+              slug={node.slug}
+              initialUrl={metadata.public_url || metadata.hotmart_url || ""}
+            />
+          )}
         </div>
 
         {/* Right Column: Content and Relations */}
