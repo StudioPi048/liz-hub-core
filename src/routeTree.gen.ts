@@ -27,6 +27,7 @@ import { Route as AuthenticatedArquivosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedAcervoRouteRouteImport } from './routes/_authenticated/acervo/route'
 import { Route as AuthenticatedAcervoIndexRouteImport } from './routes/_authenticated/acervo/index'
+import { Route as ApiPublicAdminBootstrapRouteImport } from './routes/api/public/admin-bootstrap'
 import { Route as AuthenticatedAcervoPendentesRouteImport } from './routes/_authenticated/acervo/pendentes'
 import { Route as AuthenticatedAcervoCollectionRouteImport } from './routes/_authenticated/acervo/$collection'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
@@ -126,6 +127,11 @@ const AuthenticatedAcervoIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAcervoRouteRoute,
   } as any)
+const ApiPublicAdminBootstrapRoute = ApiPublicAdminBootstrapRouteImport.update({
+  id: '/api/public/admin-bootstrap',
+  path: '/api/public/admin-bootstrap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAcervoPendentesRoute =
   AuthenticatedAcervoPendentesRouteImport.update({
     id: '/pendentes',
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/textos': typeof AuthenticatedTextosRoute
   '/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
   '/acervo/pendentes': typeof AuthenticatedAcervoPendentesRoute
+  '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/acervo/': typeof AuthenticatedAcervoIndexRoute
   '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/textos': typeof AuthenticatedTextosRoute
   '/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
   '/acervo/pendentes': typeof AuthenticatedAcervoPendentesRoute
+  '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/acervo': typeof AuthenticatedAcervoIndexRoute
   '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/_authenticated/textos': typeof AuthenticatedTextosRoute
   '/_authenticated/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
   '/_authenticated/acervo/pendentes': typeof AuthenticatedAcervoPendentesRoute
+  '/api/public/admin-bootstrap': typeof ApiPublicAdminBootstrapRoute
   '/_authenticated/acervo/': typeof AuthenticatedAcervoIndexRoute
   '/_authenticated/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/textos'
     | '/acervo/$collection'
     | '/acervo/pendentes'
+    | '/api/public/admin-bootstrap'
     | '/acervo/'
     | '/acervo/item/$slug'
     | '/api/public/google/callback'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/textos'
     | '/acervo/$collection'
     | '/acervo/pendentes'
+    | '/api/public/admin-bootstrap'
     | '/acervo'
     | '/acervo/item/$slug'
     | '/api/public/google/callback'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/_authenticated/textos'
     | '/_authenticated/acervo/$collection'
     | '/_authenticated/acervo/pendentes'
+    | '/api/public/admin-bootstrap'
     | '/_authenticated/acervo/'
     | '/_authenticated/acervo/item/$slug'
     | '/api/public/google/callback'
@@ -308,6 +320,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicAdminBootstrapRoute: typeof ApiPublicAdminBootstrapRoute
   ApiPublicGoogleCallbackRoute: typeof ApiPublicGoogleCallbackRoute
   ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
 }
@@ -440,6 +453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcervoIndexRouteImport
       parentRoute: typeof AuthenticatedAcervoRouteRoute
     }
+    '/api/public/admin-bootstrap': {
+      id: '/api/public/admin-bootstrap'
+      path: '/api/public/admin-bootstrap'
+      fullPath: '/api/public/admin-bootstrap'
+      preLoaderRoute: typeof ApiPublicAdminBootstrapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/acervo/pendentes': {
       id: '/_authenticated/acervo/pendentes'
       path: '/pendentes'
@@ -539,19 +559,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicAdminBootstrapRoute: ApiPublicAdminBootstrapRoute,
   ApiPublicGoogleCallbackRoute: ApiPublicGoogleCallbackRoute,
   ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
