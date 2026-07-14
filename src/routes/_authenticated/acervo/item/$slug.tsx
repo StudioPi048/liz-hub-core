@@ -13,6 +13,7 @@ import {
   InlineTypePicker,
   SalesStatusToggle,
 } from "@/features/knowledge/components/ItemCurationPanel";
+import { InlineTextEdit } from "@/features/knowledge/components/InlineTextEdit";
 
 export const Route = createFileRoute("/_authenticated/acervo/item/$slug")({
   component: ItemPage,
@@ -157,16 +158,25 @@ function ItemPage() {
               )}
             </div>
 
-            {node.summary && (
-              <p className="text-lg md:text-xl leading-relaxed text-foreground/80 font-light">
-                {node.summary}
-              </p>
+            {node.summary !== undefined && (
+              <InlineTextEdit
+                nodeId={node.id}
+                slug={node.slug}
+                field="summary"
+                initialValue={node.summary}
+                className="text-lg md:text-xl leading-relaxed text-foreground/80 font-light"
+              />
             )}
           </header>
 
-          {node.content && node.content !== node.summary && (
+          {node.content !== undefined && node.content !== node.summary && (
             <section className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
-              <div className="whitespace-pre-wrap">{node.content}</div>
+              <InlineTextEdit
+                nodeId={node.id}
+                slug={node.slug}
+                field="content"
+                initialValue={node.content}
+              />
             </section>
           )}
 
@@ -176,7 +186,7 @@ function ItemPage() {
                 productId={node.id}
                 slug={node.slug}
                 initialUrl={
-                  metadata.public_url || metadata.hotmart_url || ""
+                  metadata.public_url || metadata.hotmart_url || node.source_uri || ""
                 }
               />
             </div>

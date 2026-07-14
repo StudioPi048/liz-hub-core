@@ -89,7 +89,7 @@ export function HotmartEnrichPanel({ productId, slug, initialUrl }: Props) {
             )}
           </Button>
           
-          {hasEnriched && url && (
+          {url && (
             <Button
               variant="outline"
               size="icon"
