@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getKnowledgeNodeBySlug } from "@/features/knowledge/api/knowledge.server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Loader2, ImageIcon, Tag } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, ImageIcon, Tag, ExternalLink } from "lucide-react";
 import { parseMetadata } from "@/features/knowledge/model/knowledge-types";
 import { AssetGallery } from "@/features/knowledge/components/AssetGallery";
 import { AssetUploadModal } from "@/features/knowledge/components/AssetUploadModal";
@@ -62,9 +62,18 @@ function ItemPage() {
             <ArrowLeft className="h-4 w-4" /> Voltar ao Acervo
           </Link>
         </Button>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Edit className="h-4 w-4" /> Editar Rascunho
-        </Button>
+        <div className="flex items-center gap-2">
+          {node.source_uri && (
+            <Button variant="outline" size="sm" className="gap-2" asChild>
+              <a href={node.source_uri} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" /> Abrir Página de Vendas
+              </a>
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="gap-2">
+            <Edit className="h-4 w-4" /> Editar Rascunho
+          </Button>
+        </div>
       </div>
 
       {/* Curation status card (prominent) */}

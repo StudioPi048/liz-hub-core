@@ -97,11 +97,11 @@ Deno.serve(async (req) => {
     const description = rawDescription ? decodeHtmlEntities(rawDescription) : null;
     const title = rawTitle ? decodeHtmlEntities(rawTitle) : null;
 
-    // Extrai salesEnabled do JSON embutido do Next.js (aceita espaços e aspas variadas)
-    const salesMatch = html.match(/["']salesEnabled["']\s*:\s*(true|false)/i);
-    const salesEnabled = salesMatch ? salesMatch[1].toLowerCase() === "true" : null;
+    // Extrai salesEnabled do JSON embutido do Next.js
+    const salesMatch = html.match(/"salesEnabled":\s*(true|false)/i);
+    const salesEnabled = salesMatch ? salesMatch[1].toLowerCase() === "true" : false;
 
-    if (!coverImage && !description && salesEnabled === null) {
+    if (!coverImage && !description && !salesMatch) {
       return new Response(
         JSON.stringify({
           error: "Nenhum metadado og:image / og:description encontrado na página",
@@ -134,19 +134,21 @@ Deno.serve(async (req) => {
       ...((current.metadata as Record<string, unknown>) ?? {}),
       ...(coverImage ? { cover_image: coverImage, coverUrl: coverImage } : {}),
       ...(title ? { public_title: title } : {}),
-      ...(salesEnabled !== null ? { sales_enabled: salesEnabled } : {}),
+      sales_enabled: salesEnabled,
+      public_url: url,
       enriched_from_url: url,
       enriched_at: new Date().toISOString(),
     };
 
     const update: Record<string, unknown> = {
       metadata: mergedMetadata,
+      source_uri: url,
     };
 
     if (description) {
       update.content = description;
       if (!current.summary || current.summary.trim().length === 0) {
-        update.summary = description.slice(0, 280);
+        update.summary = description;
       }
     }
 
