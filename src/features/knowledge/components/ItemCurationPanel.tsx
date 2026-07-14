@@ -44,12 +44,12 @@ export function InlineTypePicker({
   nodeId,
   slug,
   currentType,
-}: BaseProps & { currentType: KnowledgeType }) {
+}: BaseProps & { currentType: CommercialType }) {
   const invalidate = useInvalidate(slug);
-  const [type, setType] = useState<KnowledgeType>(currentType);
+  const [type, setType] = useState<CommercialType>(currentType);
 
   const mutation = useMutation({
-    mutationFn: async (newType: KnowledgeType) => {
+    mutationFn: async (newType: CommercialType) => {
       const { error } = await supabase
         .from("knowledge_nodes")
         .update({ type: newType })
@@ -74,14 +74,14 @@ export function InlineTypePicker({
           {mutation.isPending ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : null}
-          <span>{knowledgeTypeLabels[type] ?? type}</span>
+          <span>{commercialTypeLabels[type] ?? type}</span>
           <ChevronDown className="h-3 w-3 opacity-70" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuLabel>Alterar categoria</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {KNOWLEDGE_TYPES.map((t) => (
+        {COMMERCIAL_TYPES.map((t) => (
           <DropdownMenuItem
             key={t}
             onSelect={() => {
@@ -91,7 +91,7 @@ export function InlineTypePicker({
             }}
             className={t === type ? "bg-muted font-medium" : ""}
           >
-            {knowledgeTypeLabels[t]}
+            {commercialTypeLabels[t]}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
