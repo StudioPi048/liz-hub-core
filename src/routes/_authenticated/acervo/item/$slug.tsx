@@ -119,6 +119,14 @@ function ItemPage() {
             </div>
           </div>
 
+          <ItemCurationPanel
+            nodeId={node.id}
+            slug={node.slug}
+            currentType={node.type}
+            currentStatus={node.status}
+            currentAuthority={node.authority_level}
+          />
+
           {(node.type === "product" || node.type === "course") && (
             <HotmartEnrichPanel
               productId={node.id}
