@@ -123,7 +123,11 @@ function HotmartSyncButton() {
   const syncFn = useServerFn(syncHotmartCatalog);
   const mutation = useMutation({
     mutationFn: () => syncFn(),
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
+      if (result?.error) {
+        toast.error("Falha ao sincronizar", { description: result.error });
+        return;
+      }
       toast.success("Catálogo Hotmart sincronizado", {
         description: `${result.created} novos · ${result.updated} atualizados${result.failed ? ` · ${result.failed} falhas` : ""}`,
       });
