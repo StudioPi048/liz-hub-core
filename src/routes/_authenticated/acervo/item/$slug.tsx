@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getKnowledgeNodeBySlug } from "@/features/knowledge/api/knowledge.server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Loader2, ImageIcon, Tag, ExternalLink } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, ImageIcon, Tag, ExternalLink, Download } from "lucide-react";
 import { parseMetadata } from "@/features/knowledge/model/knowledge-types";
 import { AssetGallery } from "@/features/knowledge/components/AssetGallery";
 import { AssetUploadModal } from "@/features/knowledge/components/AssetUploadModal";
@@ -87,58 +87,26 @@ function ItemPage() {
         updatedAt={node.updated_at}
       />
 
-      {/* Title header */}
-      <header className="space-y-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <InlineTypePicker
-            nodeId={node.id}
-            slug={node.slug}
-            currentType={node.type}
-          />
-          <SalesStatusToggle
-            nodeId={node.id}
-            slug={node.slug}
-            metadata={metadata}
-          />
-          {metadata.tags?.slice(0, 6).map((t: string) => (
-            <Badge key={t} variant="secondary" className="font-medium bg-muted/50 text-muted-foreground hover:bg-muted transition-colors rounded-full px-3 gap-1.5">
-              <Tag className="h-3 w-3 opacity-60" /> {t}
-            </Badge>
-          ))}
-        </div>
-
-        <div className="max-w-4xl">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-editorial tracking-tight leading-[1.1] text-foreground">
-            {node.title}
-          </h1>
-          {metadata.subtitle && (
-            <h2 className="text-xl md:text-2xl text-muted-foreground mt-4 font-editorial leading-snug">
-              {metadata.subtitle}
-            </h2>
-          )}
-        </div>
-
-        {node.summary && (
-          <p className="text-lg md:text-xl leading-relaxed text-foreground/80 max-w-3xl font-light">
-            {node.summary}
-          </p>
-        )}
-      </header>
-
-      {/* Two-column body */}
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
-        {/* Left: cover + side panels */}
-        <aside className="space-y-6">
+      {/* Hero section (Cover left, Details right) */}
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] items-start">
+        
+        {/* Left: Cover */}
+        <aside className="w-full">
           {coverUrl ? (
-            <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-muted/30 shadow-sm aspect-[2/3] transition-all hover:shadow-md">
+            <div className="group relative overflow-hidden rounded-2xl bg-transparent aspect-[2/3] w-full border border-border/20 shadow-sm transition-all hover:shadow-md">
               <img
                 src={coverUrl}
                 alt={node.title}
-                className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-105 group-hover:opacity-90"
+                className="h-full w-full object-contain transition-all duration-700 ease-out group-hover:scale-105"
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/40 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100">
+                <Button variant="secondary" size="sm" className="rounded-full shadow-lg gap-2" asChild>
+                  <a href={coverUrl} download target="_blank" rel="noopener noreferrer">
+                    <Download className="h-4 w-4" /> Baixar Capa
+                  </a>
+                </Button>
                 <AssetUploadModal nodeId={node.id} nodeType={node.type}>
-                  <Button variant="secondary" size="sm" className="rounded-full shadow-lg">
+                  <Button variant="outline" size="sm" className="rounded-full bg-background/50 border-border/50 text-foreground">
                     Trocar Capa
                   </Button>
                 </AssetUploadModal>
@@ -155,137 +123,80 @@ function ItemPage() {
               <AssetUploadModal nodeId={node.id} nodeType={node.type} />
             </div>
           )}
-
-          {(node.type === "product" || node.type === "course") && (
-            <HotmartEnrichPanel
-              productId={node.id}
-              slug={node.slug}
-              initialUrl={
-                metadata.public_url || metadata.hotmart_url || ""
-              }
-            />
-          )}
-
-          <div className="space-y-4 rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm p-6 shadow-sm">
-            <h3 className="border-b border-border/40 pb-3 text-sm font-bold tracking-wide uppercase text-muted-foreground/80">
-              Metadados Técnicos
-            </h3>
-            <dl className="space-y-3.5 text-sm">
-              <div className="flex justify-between items-center">
-                <dt className="text-muted-foreground">Autoridade</dt>
-                <dd className="font-semibold capitalize text-foreground/90">
-                  {node.authority_level}
-                </dd>
-              </div>
-              <div className="flex justify-between items-center">
-                <dt className="text-muted-foreground">Versão</dt>
-                <dd className="font-mono bg-muted/50 px-2 py-0.5 rounded-md text-xs font-medium">v{node.version}</dd>
-              </div>
-              <div className="flex justify-between items-center">
-                <dt className="text-muted-foreground">Atualizado</dt>
-                <dd className="text-foreground/80 font-medium">
-                  {new Date(node.updated_at).toLocaleDateString("pt-BR")}
-                </dd>
-              </div>
-              <div className="flex justify-between items-center">
-                <dt className="text-muted-foreground">Slug</dt>
-                <dd className="truncate font-mono text-[11px] text-muted-foreground/80 max-w-[120px]" title={node.slug}>{node.slug}</dd>
-              </div>
-            </dl>
-          </div>
         </aside>
 
-        {/* Right: content + relations */}
-        <div className="space-y-10 min-w-0">
+        {/* Right: Title, Metadata, Enrich, Content */}
+        <div className="space-y-8 min-w-0">
+          <header className="space-y-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <InlineTypePicker
+                nodeId={node.id}
+                slug={node.slug}
+                currentType={node.type}
+              />
+              <SalesStatusToggle
+                nodeId={node.id}
+                slug={node.slug}
+                metadata={metadata}
+              />
+              {metadata.tags?.slice(0, 6).map((t: string) => (
+                <Badge key={t} variant="secondary" className="font-medium bg-muted/50 text-muted-foreground hover:bg-muted transition-colors rounded-full px-3 gap-1.5">
+                  <Tag className="h-3 w-3 opacity-60" /> {t}
+                </Badge>
+              ))}
+            </div>
+
+            <div className="max-w-4xl">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-editorial tracking-tight leading-[1.1] text-foreground">
+                {node.title}
+              </h1>
+              {metadata.subtitle && (
+                <h2 className="text-xl md:text-2xl text-muted-foreground mt-4 font-editorial leading-snug">
+                  {metadata.subtitle}
+                </h2>
+              )}
+            </div>
+
+            {node.summary && (
+              <p className="text-lg md:text-xl leading-relaxed text-foreground/80 font-light">
+                {node.summary}
+              </p>
+            )}
+          </header>
+
           {node.content && node.content !== node.summary && (
             <section className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
               <div className="whitespace-pre-wrap">{node.content}</div>
             </section>
           )}
 
-          <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-editorial font-semibold tracking-tight">
-                Ativos e Mídias (DAM)
-              </h3>
-              <AssetUploadModal nodeId={node.id} nodeType={node.type} />
+          {(node.type === "product" || node.type === "course") && (
+            <div className="max-w-md pt-4">
+              <HotmartEnrichPanel
+                productId={node.id}
+                slug={node.slug}
+                initialUrl={
+                  metadata.public_url || metadata.hotmart_url || ""
+                }
+              />
             </div>
-            <div className="rounded-2xl border border-border/40 bg-card/40 p-1">
-              <AssetGallery assets={assets} />
-            </div>
-          </section>
-
-          <section className="space-y-6">
-            <h3 className="text-2xl font-editorial font-semibold tracking-tight">
-              Relacionamentos
-            </h3>
-
-            {relations.outgoing.length === 0 &&
-            relations.incoming.length === 0 ? (
-              <p className="text-sm italic text-muted-foreground">
-                Nenhum relacionamento cadastrado para este item.
-              </p>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2">
-                {relations.outgoing.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-muted-foreground">
-                      Aponta para (Saída)
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      {relations.outgoing.map((edge: any) => (
-                        <Link
-                          key={edge.id}
-                          to="/acervo/item/$slug"
-                          params={{ slug: edge.target.slug }}
-                          className="flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 p-3 transition-all duration-300 hover:shadow-sm hover:bg-muted/50 hover:border-primary/20"
-                        >
-                          <Badge
-                            variant="outline"
-                            className="w-24 shrink-0 justify-center text-[10px] uppercase font-semibold bg-background/50 border-border/50"
-                          >
-                            {edge.relation_type}
-                          </Badge>
-                          <span className="truncate text-sm font-medium text-foreground/90">
-                            {edge.target.title}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {relations.incoming.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-muted-foreground">
-                      Mencionado por (Entrada)
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      {relations.incoming.map((edge: any) => (
-                        <Link
-                          key={edge.id}
-                          to="/acervo/item/$slug"
-                          params={{ slug: edge.source.slug }}
-                          className="flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 p-3 transition-all duration-300 hover:shadow-sm hover:bg-muted/50 hover:border-primary/20"
-                        >
-                          <Badge
-                            variant="outline"
-                            className="w-24 shrink-0 justify-center text-[10px] uppercase font-semibold bg-background/50 border-border/50"
-                          >
-                            {edge.relation_type}
-                          </Badge>
-                          <span className="truncate text-sm font-medium text-foreground/90">
-                            {edge.source.title}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
+          )}
         </div>
+      </div>
+
+      {/* Full-width body below */}
+      <div className="space-y-10 border-t border-border/40 pt-10 mt-10">
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-editorial font-semibold tracking-tight">
+              Ativos e Mídias (DAM)
+            </h3>
+            <AssetUploadModal nodeId={node.id} nodeType={node.type} />
+          </div>
+          <div className="rounded-2xl border border-border/40 bg-card/40 p-1">
+            <AssetGallery assets={assets} />
+          </div>
+        </section>
       </div>
     </div>
   );

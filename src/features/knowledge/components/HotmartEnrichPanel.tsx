@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wand2, Loader2 } from "lucide-react";
+import { Wand2, Loader2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,6 +14,8 @@ interface Props {
 
 export function HotmartEnrichPanel({ productId, slug, initialUrl }: Props) {
   const [url, setUrl] = useState(initialUrl ?? "");
+  const [hasEnriched, setHasEnriched] = useState(!!initialUrl);
+  const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -31,6 +33,7 @@ export function HotmartEnrichPanel({ productId, slug, initialUrl }: Props) {
       toast.success("Dados puxados com sucesso!", {
         description: "Capa e descrição foram atualizadas.",
       });
+      setHasEnriched(true);
       queryClient.invalidateQueries({ queryKey: ["knowledge-node", slug] });
       queryClient.invalidateQueries({ queryKey: ["knowledge-collection"] });
     },
@@ -41,41 +44,67 @@ export function HotmartEnrichPanel({ productId, slug, initialUrl }: Props) {
     },
   });
 
+  const handleCopy = () => {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success("Link copiado para a área de transferência!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="border rounded-lg p-5 bg-card space-y-4">
+    <div className="border rounded-2xl p-5 bg-card/60 backdrop-blur-sm border-border/40 shadow-sm space-y-4">
       <div>
         <h3 className="font-semibold text-sm flex items-center gap-2">
           <Wand2 className="h-4 w-4 text-primary" /> Enriquecimento Rápido
         </h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Cole a URL pública do produto na Hotmart para importar capa e descrição
-          automaticamente.
+          Cole a URL pública do produto na Hotmart para importar capa e descrição automaticamente.
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <Input
           type="url"
-          placeholder="https://hotmart.com/pt-br/marketplace/produtos/..."
+          placeholder="https://hotmart.com/pt-br/marketplace/..."
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           disabled={mutation.isPending}
+          className="bg-background/50"
         />
-        <Button
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || !url.trim()}
-          className="gap-2 w-full"
-        >
-          {mutation.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Puxando...
-            </>
-          ) : (
-            <>
-              <Wand2 className="h-4 w-4" /> Puxar Dados Mágicos
-            </>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending || !url.trim()}
+            className="gap-2 flex-1 shadow-sm transition-all hover:-translate-y-0.5"
+          >
+            {mutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Puxando...
+              </>
+            ) : (
+              <>
+                <Wand2 className="h-4 w-4" /> Puxar Dados Mágicos
+              </>
+            )}
+          </Button>
+          
+          {hasEnriched && url && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleCopy}
+              className="shrink-0 transition-all border-border/50 bg-background/50"
+              title="Copiar Link da Hotmart"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Copy className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
           )}
-        </Button>
+        </div>
       </div>
     </div>
   );
