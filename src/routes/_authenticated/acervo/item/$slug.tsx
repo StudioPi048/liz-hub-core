@@ -11,6 +11,7 @@ import { HotmartEnrichPanel } from "@/features/knowledge/components/HotmartEnric
 import {
   CurationStatusCard,
   InlineTypePicker,
+  SalesStatusToggle,
 } from "@/features/knowledge/components/ItemCurationPanel";
 
 export const Route = createFileRoute("/_authenticated/acervo/item/$slug")({
@@ -94,15 +95,11 @@ function ItemPage() {
             slug={node.slug}
             currentType={node.type}
           />
-          {metadata.sales_enabled === true ? (
-            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-normal">
-              ● Vendas Ativas (Hotmart)
-            </Badge>
-          ) : (
-            <Badge variant="destructive" className="font-normal">
-              ● Vendas Fechadas/Indisponível
-            </Badge>
-          )}
+          <SalesStatusToggle
+            nodeId={node.id}
+            slug={node.slug}
+            metadata={metadata}
+          />
           {metadata.tags?.slice(0, 6).map((t: string) => (
             <Badge key={t} variant="secondary" className="font-normal gap-1">
               <Tag className="h-3 w-3" /> {t}
