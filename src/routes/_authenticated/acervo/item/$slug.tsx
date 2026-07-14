@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getKnowledgeNodeBySlug } from "@/features/knowledge/api/knowledge.server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Loader2, ImageIcon, Tag } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, ImageIcon, Tag, ExternalLink } from "lucide-react";
 import { parseMetadata } from "@/features/knowledge/model/knowledge-types";
 import { AssetGallery } from "@/features/knowledge/components/AssetGallery";
 import { AssetUploadModal } from "@/features/knowledge/components/AssetUploadModal";
