@@ -62,9 +62,18 @@ function ItemPage() {
             <ArrowLeft className="h-4 w-4" /> Voltar ao Acervo
           </Link>
         </Button>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Edit className="h-4 w-4" /> Editar Rascunho
-        </Button>
+        <div className="flex items-center gap-2">
+          {node.source_uri && (
+            <Button variant="outline" size="sm" className="gap-2" asChild>
+              <a href={node.source_uri} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" /> Abrir Página de Vendas
+              </a>
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="gap-2">
+            <Edit className="h-4 w-4" /> Editar Rascunho
+          </Button>
+        </div>
       </div>
 
       {/* Curation status card (prominent) */}
