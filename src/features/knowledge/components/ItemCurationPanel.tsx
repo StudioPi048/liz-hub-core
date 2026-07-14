@@ -21,9 +21,9 @@ import { CheckCircle2, Loader2, ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  KNOWLEDGE_TYPES,
-  knowledgeTypeLabels,
-  type KnowledgeType,
+  COMMERCIAL_TYPES,
+  commercialTypeLabels,
+  type CommercialType,
 } from "@/features/knowledge/model/knowledge-types";
 
 interface BaseProps {
