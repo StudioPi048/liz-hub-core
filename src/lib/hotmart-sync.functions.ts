@@ -79,10 +79,8 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
         const slug = `produto-${product.id}`;
 
         const content = "Produto sincronizado via Hotmart.";
-        const mappedStatus = product.status === "APPROVED" ? "approved" : "draft";
-
         const content_hash = createHash("sha256")
-          .update(`${product.id}|${product.name}|${content}|${mappedStatus}`)
+          .update(`${product.id}|${product.name}|${content}|approved`)
           .digest("hex");
 
         const metadata: Record<string, any> = { source: "hotmart_sync" };
@@ -100,7 +98,7 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
               title: product.name,
               slug,
               type: "product",
-              status: mappedStatus,
+              status: "approved",
               visibility: "public",
               source_type: "hotmart",
               source_id: String(product.id),
