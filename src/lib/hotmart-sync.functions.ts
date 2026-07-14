@@ -25,7 +25,7 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
         return { error: "Apenas admins ou editores podem sincronizar o catálogo Hotmart." };
       }
 
-      const { authenticateHotmart } = await import("@/lib/hotmart.server");
+      const { authenticateHotmart, getHotmartProductDetails } = await import("@/lib/hotmart.server");
       const token = await authenticateHotmart();
       if (!token) {
         return { error: "Falha ao autenticar com a Hotmart. Verifique as credenciais." };
