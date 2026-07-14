@@ -24,6 +24,18 @@ export const knowledgeTypeLabels: Record<KnowledgeType, string> = {
   faq: "Perguntas frequentes",
 };
 
+/** Types allowed for sellable items in the Acervo (commercial) context. */
+export const COMMERCIAL_TYPES = ["book", "course", "product", "event"] as const;
+export type CommercialType = (typeof COMMERCIAL_TYPES)[number];
+
+/** Labels used in the Acervo category picker. Product is shown as "Clubes de assinatura". */
+export const commercialTypeLabels: Record<CommercialType, string> = {
+  book: "Livros",
+  course: "Cursos e formações",
+  product: "Clubes de assinatura",
+  event: "Eventos presenciais",
+};
+
 export const knowledgeTypeSlugs: Record<KnowledgeType, string> = {
   book: "livros",
   course: "cursos",
