@@ -184,15 +184,15 @@ export function ItemCurationPanel({
   currentStatus,
   currentAuthority,
 }: BaseProps & {
-  currentType: KnowledgeType;
+  currentType: CommercialType;
   currentStatus: string;
   currentAuthority: string;
 }) {
   const invalidate = useInvalidate(slug);
-  const [type, setType] = useState<KnowledgeType>(currentType);
+  const [type, setType] = useState<CommercialType>(currentType);
 
   const typeMutation = useMutation({
-    mutationFn: async (newType: KnowledgeType) => {
+    mutationFn: async (newType: CommercialType) => {
       const { error } = await supabase
         .from("knowledge_nodes")
         .update({ type: newType })
@@ -234,8 +234,8 @@ export function ItemCurationPanel({
         <Select
           value={type}
           onValueChange={(v) => {
-            setType(v as KnowledgeType);
-            typeMutation.mutate(v as KnowledgeType);
+            setType(v as CommercialType);
+            typeMutation.mutate(v as CommercialType);
           }}
           disabled={typeMutation.isPending}
         >
@@ -243,9 +243,9 @@ export function ItemCurationPanel({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {KNOWLEDGE_TYPES.map((t) => (
+            {COMMERCIAL_TYPES.map((t) => (
               <SelectItem key={t} value={t}>
-                {knowledgeTypeLabels[t]}
+                {commercialTypeLabels[t]}
               </SelectItem>
             ))}
           </SelectContent>
