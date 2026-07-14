@@ -41,19 +41,29 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
       if (pageToken) url.searchParams.set("page_token", pageToken);
 
       const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        redirect: "manual",
       });
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`Hotmart API erro ${res.status}: ${body.slice(0, 200)}`);
+      const raw = await res.text();
+      if (!res.ok || res.status >= 300) {
+        console.error("[hotmart-sync] HTTP", res.status, raw.slice(0, 300));
+        throw new Error(
+          `Hotmart API retornou ${res.status}. Verifique se o endpoint /product/rest/v1/products está habilitado para este app. Resposta: ${raw.slice(0, 200)}`,
+        );
       }
-      const json = (await res.json()) as {
-        items?: HotmartProduct[];
-        page_info?: { next_page_token?: string };
-      };
+      let json: { items?: HotmartProduct[]; page_info?: { next_page_token?: string } };
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        console.error("[hotmart-sync] resposta não-JSON", raw.slice(0, 300));
+        throw new Error(
+          `Hotmart devolveu conteúdo não-JSON (provavelmente redirect/página HTML). Prévia: ${raw.slice(0, 200)}`,
+        );
+      }
       if (Array.isArray(json.items)) allProducts.push(...json.items);
       pageToken = json.page_info?.next_page_token;
       safety += 1;
+
     } while (pageToken && safety < 20);
 
     let created = 0;
