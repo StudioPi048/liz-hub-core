@@ -98,7 +98,7 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
               title: product.name,
               slug,
               type: "product",
-              status: mappedStatus,
+              status: "approved",
               visibility: "public",
               source_type: "hotmart",
               source_id: String(product.id),
