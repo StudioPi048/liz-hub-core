@@ -12,8 +12,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, ArrowLeft, Filter, FileText, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { Search, Loader2, ArrowLeft, Filter, FileText, RefreshCw, Check, CircleDot, CircleSlash } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
 
@@ -24,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/acervo/$collection")({
 function CollectionPage() {
   const { collection } = Route.useParams();
   const type = getTypeFromSlug(collection);
+  const [salesFilter, setSalesFilter] = useState<"all" | "active" | "suspended">("all");
 
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,6 +58,17 @@ function CollectionPage() {
 
   const label = knowledgeTypeLabels[type];
 
+  const filteredNodes = useMemo(() => {
+    const nodes = data?.nodes ?? [];
+    if (salesFilter === "all") return nodes;
+    return nodes.filter((n: any) => {
+      const enabled = n.metadata?.sales_enabled;
+      return salesFilter === "active" ? enabled === true : enabled !== true;
+    });
+  }, [data?.nodes, salesFilter]);
+
+  const filterActive = salesFilter !== "all";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -71,9 +92,40 @@ function CollectionPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="gap-2">
-          <Filter className="h-4 w-4" /> Filtros
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={filterActive ? "default" : "outline"}
+              className={cn("gap-2 relative", filterActive && "border-primary")}
+            >
+              <Filter className="h-4 w-4" /> Filtros
+              {filterActive && (
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Status de Vendas (Hotmart)</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setSalesFilter("active")} className="gap-2">
+              <CircleDot className="h-4 w-4 text-emerald-600" />
+              Vendas Ativas
+              {salesFilter === "active" && <Check className="h-4 w-4 ml-auto" />}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSalesFilter("suspended")} className="gap-2">
+              <CircleSlash className="h-4 w-4 text-destructive" />
+              Vendas Suspensas
+              {salesFilter === "suspended" && <Check className="h-4 w-4 ml-auto" />}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setSalesFilter("all")}
+              disabled={salesFilter === "all"}
+            >
+              Limpar Filtros (mostrar todos)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {(type === "product" || type === "course") && <HotmartSyncButton />}
       </div>
 
@@ -85,12 +137,12 @@ function CollectionPage() {
         <div className="p-4 text-destructive border border-destructive/20 rounded-md bg-destructive/5">
           Erro ao carregar registros.
         </div>
-      ) : data?.nodes.length === 0 ? (
-        <EmptyCollectionState type={type} label={label} hasSearch={debouncedSearch.length > 0} />
+      ) : filteredNodes.length === 0 ? (
+        <EmptyCollectionState type={type} label={label} hasSearch={debouncedSearch.length > 0 || filterActive} />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {data?.nodes.map((node: any) => (
+            {filteredNodes.map((node: any) => (
               <EntityCard key={node.id} node={node} type={type} />
             ))}
           </div>
