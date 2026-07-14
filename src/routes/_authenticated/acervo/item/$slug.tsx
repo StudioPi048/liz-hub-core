@@ -85,6 +85,15 @@ function ItemPage() {
             slug={node.slug}
             currentType={node.type}
           />
+          {metadata.sales_enabled === true ? (
+            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-normal">
+              ● Vendas Ativas (Hotmart)
+            </Badge>
+          ) : (
+            <Badge variant="destructive" className="font-normal">
+              ● Vendas Fechadas/Indisponível
+            </Badge>
+          )}
           {metadata.tags?.slice(0, 6).map((t: string) => (
             <Badge key={t} variant="secondary" className="font-normal gap-1">
               <Tag className="h-3 w-3" /> {t}
