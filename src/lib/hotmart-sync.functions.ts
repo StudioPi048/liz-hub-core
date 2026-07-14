@@ -9,6 +9,8 @@ interface HotmartProduct {
   status?: string;
 }
 
+
+
 export const syncHotmartCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
