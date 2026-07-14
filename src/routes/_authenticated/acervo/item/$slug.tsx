@@ -3,12 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { getKnowledgeNodeBySlug } from "@/features/knowledge/api/knowledge.server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Edit, Calendar, BookOpen, Clock, Tag } from "lucide-react";
-import { KNOWLEDGE_TYPES, parseMetadata } from "@/features/knowledge/model/knowledge-types";
+import { ArrowLeft, Edit, Loader2, ImageIcon, Tag } from "lucide-react";
+import { parseMetadata } from "@/features/knowledge/model/knowledge-types";
 import { AssetGallery } from "@/features/knowledge/components/AssetGallery";
 import { AssetUploadModal } from "@/features/knowledge/components/AssetUploadModal";
 import { HotmartEnrichPanel } from "@/features/knowledge/components/HotmartEnrichPanel";
-import { ItemCurationPanel } from "@/features/knowledge/components/ItemCurationPanel";
+import {
+  CurationStatusCard,
+  InlineTypePicker,
+} from "@/features/knowledge/components/ItemCurationPanel";
 
 export const Route = createFileRoute("/_authenticated/acervo/item/$slug")({
   component: ItemPage,
