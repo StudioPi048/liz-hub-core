@@ -118,6 +118,45 @@ function CollectionPage() {
   );
 }
 
+function HotmartSyncButton() {
+  const queryClient = useQueryClient();
+  const syncFn = useServerFn(syncHotmartCatalog);
+  const mutation = useMutation({
+    mutationFn: () => syncFn(),
+    onSuccess: (result) => {
+      toast.success("Catálogo Hotmart sincronizado", {
+        description: `${result.created} novos · ${result.updated} atualizados${result.failed ? ` · ${result.failed} falhas` : ""}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["knowledge-collection"] });
+      queryClient.invalidateQueries({ queryKey: ["knowledge-stats"] });
+    },
+    onError: (err: any) => {
+      toast.error("Falha ao sincronizar", { description: err?.message ?? "Erro desconhecido" });
+    },
+  });
+
+  return (
+    <Button
+      variant="secondary"
+      className="gap-2"
+      onClick={() => mutation.mutate()}
+      disabled={mutation.isPending}
+    >
+      {mutation.isPending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Sincronizando catálogo...
+        </>
+      ) : (
+        <>
+          <RefreshCw className="h-4 w-4" />
+          Sincronizar Hotmart
+        </>
+      )}
+    </Button>
+  );
+}
+
 function EmptyCollectionState({
   type,
   label,
