@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CheckCircle2, Loader2, ChevronDown, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  ChevronDown,
+  Sparkles,
+  Store,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -264,5 +271,60 @@ export function ItemCurationPanel({
         {isApproved ? "Publicado (Oficial)" : "Aprovar e Publicar"}
       </Button>
     </div>
+  );
+}
+
+/** Interactive sales-status toggle for product/course items. */
+export function SalesStatusToggle({
+  nodeId,
+  slug,
+  metadata,
+}: BaseProps & { metadata: Record<string, any> }) {
+  const invalidate = useInvalidate(slug);
+  const [enabled, setEnabled] = useState<boolean>(metadata.sales_enabled === true);
+
+  const mutation = useMutation({
+    mutationFn: async (next: boolean) => {
+      const nextMetadata = { ...(metadata || {}), sales_enabled: next };
+      const { error } = await supabase
+        .from("knowledge_nodes")
+        .update({ metadata: nextMetadata })
+        .eq("id", nodeId);
+      if (error) throw error;
+      return next;
+    },
+    onMutate: async (next) => {
+      setEnabled(next);
+    },
+    onSuccess: () => {
+      toast.success(enabled ? "Vendas abertas" : "Vendas fechadas");
+      invalidate();
+    },
+    onError: (err: any, _next, _ctx) => {
+      setEnabled((prev) => !prev);
+      toast.error("Falha ao atualizar status de vendas", {
+        description: err?.message,
+      });
+    },
+  });
+
+  return (
+    <button
+      type="button"
+      onClick={() => mutation.mutate(!enabled)}
+      disabled={mutation.isPending}
+      className="inline-flex items-center gap-2 rounded-full border bg-card pl-3 pr-1 py-1 text-xs font-medium transition-colors hover:bg-muted/60 disabled:opacity-60"
+    >
+      <Store className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className={enabled ? "text-emerald-600" : "text-destructive"}>
+        {enabled ? "Vendas Abertas" : "Vendas Fechadas"}
+      </span>
+      <Switch
+        checked={enabled}
+        disabled={mutation.isPending}
+        aria-label="Alternar status de vendas"
+        className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-destructive"
+      />
+    </button>
   );
 }
