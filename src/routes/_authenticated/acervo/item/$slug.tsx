@@ -55,27 +55,74 @@ function ItemPage() {
   const coverUrl = metadata.coverUrl;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="animate-in fade-in duration-500 pb-24 space-y-8">
+      {/* Top nav */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild className="gap-2 -ml-3">
           <Link to="/acervo">
-            <ArrowLeft className="h-4 w-4" /> Voltar
+            <ArrowLeft className="h-4 w-4" /> Voltar ao Acervo
           </Link>
         </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Edit className="h-4 w-4" /> Editar Rascunho
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Edit className="h-4 w-4" /> Editar Rascunho
+        </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Left Column: Image or Basic Info */}
-        <div className="w-full md:w-1/3 space-y-6 shrink-0">
+      {/* Curation status card (prominent) */}
+      <CurationStatusCard
+        nodeId={node.id}
+        slug={node.slug}
+        currentStatus={node.status}
+        currentAuthority={node.authority_level}
+        version={node.version}
+        updatedAt={node.updated_at}
+      />
+
+      {/* Title header */}
+      <header className="space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <InlineTypePicker
+            nodeId={node.id}
+            slug={node.slug}
+            currentType={node.type}
+          />
+          {metadata.tags?.slice(0, 6).map((t: string) => (
+            <Badge key={t} variant="secondary" className="font-normal gap-1">
+              <Tag className="h-3 w-3" /> {t}
+            </Badge>
+          ))}
+        </div>
+
+        <div>
+          <h1 className="text-3xl md:text-5xl font-editorial tracking-tight leading-tight">
+            {node.title}
+          </h1>
+          {metadata.subtitle && (
+            <h2 className="text-lg md:text-xl text-muted-foreground mt-3 font-editorial">
+              {metadata.subtitle}
+            </h2>
+          )}
+        </div>
+
+        {node.summary && (
+          <p className="text-base md:text-lg leading-relaxed text-foreground/85 max-w-3xl">
+            {node.summary}
+          </p>
+        )}
+      </header>
+
+      {/* Two-column body */}
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+        {/* Left: cover + side panels */}
+        <aside className="space-y-6">
           {coverUrl ? (
-            <div className="rounded-lg overflow-hidden border shadow-sm aspect-[2/3] bg-muted relative group">
-              <img src={coverUrl} alt={node.title} className="object-cover w-full h-full" />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+            <div className="group relative overflow-hidden rounded-2xl border bg-muted shadow-sm aspect-[2/3]">
+              <img
+                src={coverUrl}
+                alt={node.title}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                 <AssetUploadModal nodeId={node.id} nodeType={node.type}>
                   <Button variant="secondary" size="sm">
                     Trocar Capa
@@ -84,105 +131,84 @@ function ItemPage() {
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border shadow-sm aspect-video md:aspect-square bg-muted/20 flex flex-col items-center justify-center p-6 text-center">
-              <BookOpen className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-sm text-muted-foreground">Capa não cadastrada</p>
+            <div className="flex aspect-[2/3] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-muted/20 p-6 text-center">
+              <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">
+                Nenhuma capa cadastrada
+              </p>
               <AssetUploadModal nodeId={node.id} nodeType={node.type} />
             </div>
           )}
-
-          <div className="space-y-4 border rounded-lg p-5 bg-card">
-            <h3 className="font-semibold text-sm border-b pb-2">Metadados Técnicos</h3>
-
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tipo</span>
-                <Badge variant="outline" className="uppercase">
-                  {node.type}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status Editorial</span>
-                <Badge variant={node.status === "approved" ? "default" : "secondary"}>
-                  {node.status}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Autoridade</span>
-                <span className="font-medium capitalize">{node.authority_level}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Versão</span>
-                <span className="font-mono">v{node.version}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Última Atualização</span>
-                <span>{new Date(node.updated_at).toLocaleDateString("pt-BR")}</span>
-              </div>
-            </div>
-          </div>
-
-          <ItemCurationPanel
-            nodeId={node.id}
-            slug={node.slug}
-            currentType={node.type}
-            currentStatus={node.status}
-            currentAuthority={node.authority_level}
-          />
 
           {(node.type === "product" || node.type === "course") && (
             <HotmartEnrichPanel
               productId={node.id}
               slug={node.slug}
-              initialUrl={metadata.public_url || metadata.hotmart_url || ""}
+              initialUrl={
+                metadata.public_url || metadata.hotmart_url || ""
+              }
             />
           )}
-        </div>
 
-        {/* Right Column: Content and Relations */}
-        <div className="flex-1 space-y-8">
-          <div>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {metadata.tags?.map((t: string) => (
-                <Badge key={t} variant="secondary" className="font-normal gap-1">
-                  <Tag className="h-3 w-3" /> {t}
-                </Badge>
-              ))}
-            </div>
-
-            <h1 className="text-3xl md:text-4xl font-editorial tracking-tight">{node.title}</h1>
-            {metadata.subtitle && (
-              <h2 className="text-xl text-muted-foreground mt-2 font-editorial">
-                {metadata.subtitle}
-              </h2>
-            )}
-
-            <p className="text-lg mt-6 leading-relaxed text-foreground/90">{node.summary}</p>
+          <div className="space-y-3 rounded-2xl border bg-card p-5">
+            <h3 className="border-b pb-2 text-sm font-semibold">
+              Metadados Técnicos
+            </h3>
+            <dl className="space-y-2.5 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Autoridade</dt>
+                <dd className="font-medium capitalize">
+                  {node.authority_level}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Versão</dt>
+                <dd className="font-mono">v{node.version}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Atualizado</dt>
+                <dd>
+                  {new Date(node.updated_at).toLocaleDateString("pt-BR")}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Slug</dt>
+                <dd className="truncate font-mono text-xs">{node.slug}</dd>
+              </div>
+            </dl>
           </div>
+        </aside>
 
+        {/* Right: content + relations */}
+        <div className="space-y-10 min-w-0">
           {node.content && node.content !== node.summary && (
-            <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none border-t pt-8">
+            <section className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
               <div className="whitespace-pre-wrap">{node.content}</div>
-            </div>
+            </section>
           )}
 
-          <div className="border-t pt-8 space-y-6">
+          <section className="space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-editorial font-semibold">Ativos e Mídias (DAM)</h3>
+              <h3 className="text-xl font-editorial font-semibold">
+                Ativos e Mídias (DAM)
+              </h3>
               <AssetUploadModal nodeId={node.id} nodeType={node.type} />
             </div>
             <AssetGallery assets={assets} />
-          </div>
+          </section>
 
-          <div className="border-t pt-8 space-y-6">
-            <h3 className="text-xl font-editorial font-semibold">Relacionamentos</h3>
+          <section className="space-y-5">
+            <h3 className="text-xl font-editorial font-semibold">
+              Relacionamentos
+            </h3>
 
-            {relations.outgoing.length === 0 && relations.incoming.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">
+            {relations.outgoing.length === 0 &&
+            relations.incoming.length === 0 ? (
+              <p className="text-sm italic text-muted-foreground">
                 Nenhum relacionamento cadastrado para este item.
               </p>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid gap-6 sm:grid-cols-2">
                 {relations.outgoing.length > 0 && (
                   <div className="space-y-3">
                     <h4 className="text-sm font-medium text-muted-foreground">
@@ -194,15 +220,17 @@ function ItemPage() {
                           key={edge.id}
                           to="/acervo/item/$slug"
                           params={{ slug: edge.target.slug }}
-                          className="flex items-center gap-3 p-3 border rounded-md hover:bg-muted/50 transition-colors"
+                          className="flex items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
                         >
                           <Badge
                             variant="outline"
-                            className="text-[10px] w-24 justify-center shrink-0"
+                            className="w-24 shrink-0 justify-center text-[10px]"
                           >
                             {edge.relation_type}
                           </Badge>
-                          <span className="text-sm font-medium truncate">{edge.target.title}</span>
+                          <span className="truncate text-sm font-medium">
+                            {edge.target.title}
+                          </span>
                         </Link>
                       ))}
                     </div>
@@ -220,15 +248,17 @@ function ItemPage() {
                           key={edge.id}
                           to="/acervo/item/$slug"
                           params={{ slug: edge.source.slug }}
-                          className="flex items-center gap-3 p-3 border rounded-md hover:bg-muted/50 transition-colors"
+                          className="flex items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
                         >
                           <Badge
                             variant="outline"
-                            className="text-[10px] w-24 justify-center shrink-0"
+                            className="w-24 shrink-0 justify-center text-[10px]"
                           >
                             {edge.relation_type}
                           </Badge>
-                          <span className="text-sm font-medium truncate">{edge.source.title}</span>
+                          <span className="truncate text-sm font-medium">
+                            {edge.source.title}
+                          </span>
                         </Link>
                       ))}
                     </div>
@@ -236,7 +266,7 @@ function ItemPage() {
                 )}
               </div>
             )}
-          </div>
+          </section>
         </div>
       </div>
     </div>
