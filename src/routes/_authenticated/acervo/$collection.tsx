@@ -148,9 +148,8 @@ function EmptyCollectionState({
 }
 
 function EntityCard({ node, type }: { node: any; type: KnowledgeType }) {
-  // We can eventually split this into specific components (BookCard, CourseCard)
-  // For 3A.1, a shared base that highlights the cover URL if available.
-  const hasCover = !!node.coverUrl;
+  const coverImage = node.coverUrl || node.metadata?.cover_image;
+  const hasCover = !!coverImage;
 
   return (
     <Link to="/acervo/item/$slug" params={{ slug: node.slug }} className="block group">
@@ -158,7 +157,7 @@ function EntityCard({ node, type }: { node: any; type: KnowledgeType }) {
         {hasCover ? (
           <div className="aspect-video w-full bg-muted border-b overflow-hidden relative">
             <img
-              src={node.coverUrl}
+              src={coverImage}
               alt={node.title}
               className="object-cover w-full h-full opacity-90 group-hover:opacity-100 transition-opacity"
             />

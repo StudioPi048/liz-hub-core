@@ -28,23 +28,37 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
           return new Response("ok", { status: 200 });
         }
 
+        const data = payload?.data ?? payload;
+        const buyer = data?.buyer;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { getHotmartProductDetails } = await import("@/lib/hotmart.server");
 
-        const slug = `produto-${product.id}`;
-        const record = {
-          title: String(product.name),
-          slug,
-          type: "product",
-          status: "approved",
-          visibility: "public",
-          source_type: "hotmart",
-          source_id: String(product.id),
-          authority_level: "official",
-        };
+        console.log(`Enriching Hotmart product details for ID: ${product.id}...`);
+        const details = await getHotmartProductDetails(product.id);
+
+        const metadata: Record<string, any> = { source: "hotmart_webhook_purchase" };
+
+        if (details) {
+          if (details.ucb) metadata.cover_image = details.ucb;
+          if (details.description) metadata.hotmart_description = details.description;
+        }
 
         const { error } = await (supabaseAdmin as any)
           .from("knowledge_nodes")
-          .upsert(record, { onConflict: "slug" });
+          .upsert({
+            title: details?.name || product.name,
+            slug: `produto-${product.id}`,
+            type: "product",
+            status: "approved",
+            visibility: "public",
+            source_type: "hotmart",
+            source_id: String(product.id),
+            content: details?.description || `Produto importado. ID: ${product.id}`,
+            metadata: metadata,
+            authority_level: "official",
+          }, { onConflict: "slug" })
+          .select()
+          .single();
 
         if (error) {
           console.error("[hotmart-webhook] upsert failed", error);
