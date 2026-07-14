@@ -235,28 +235,28 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="bg-background">
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border/50 bg-background/95 backdrop-blur px-4">
-          <SidebarTrigger />
+      <SidebarInset className="bg-zinc-50/50 dark:bg-background/95">
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border/40 bg-background/70 backdrop-blur-xl px-6 transition-all duration-300">
+          <SidebarTrigger className="hover:bg-primary/5 transition-colors rounded-full" />
           <div className="flex-1 flex items-center">
             <Button
               variant="outline"
               size="sm"
-              className="h-8 w-64 justify-start text-muted-foreground font-normal"
+              className="h-9 w-64 justify-start text-muted-foreground font-normal bg-background/50 hover:bg-background/80 transition-all border-border/50 shadow-sm rounded-full px-4"
             >
-              <Search className="mr-2 h-3.5 w-3.5" />
+              <Search className="mr-2 h-4 w-4 opacity-70" />
               Buscar no LIZ HUB...
             </Button>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 relative">
-            <BellRing className="h-4 w-4" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-orange-500" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 relative hover:bg-primary/5 rounded-full transition-colors">
+            <BellRing className="h-4 w-4 text-foreground/80" />
+            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 relative">
-            <Zap className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 relative hover:bg-primary/5 rounded-full transition-colors">
+            <Zap className="h-4 w-4 text-foreground/80" />
           </Button>
         </header>
-        <main className="p-4 md:p-8 max-w-[1600px] mx-auto w-full">{children}</main>
+        <main className="p-6 md:p-10 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -251,41 +251,41 @@ function EntityCard({ node, type }: { node: any; type: KnowledgeType }) {
   const hasCover = !!coverImage;
 
   return (
-    <Link to="/acervo/item/$slug" params={{ slug: node.slug }} className="block group">
-      <Card className="h-full overflow-hidden hover:border-primary/50 transition-colors flex flex-col">
+    <Link to="/acervo/item/$slug" params={{ slug: node.slug }} className="block group h-full">
+      <Card className="h-full overflow-hidden border-border/40 bg-card/60 backdrop-blur-sm transition-all duration-500 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 hover:border-primary/30 hover:bg-card/90 flex flex-col">
         {hasCover ? (
-          <div className="aspect-video w-full bg-muted border-b overflow-hidden relative">
+          <div className="aspect-video w-full bg-muted border-b border-border/40 overflow-hidden relative">
             <img
               src={coverImage}
               alt={node.title}
-              className="object-cover w-full h-full opacity-90 group-hover:opacity-100 transition-opacity"
+              className="object-cover w-full h-full opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>
         ) : (
-          <div className="h-20 w-full bg-muted/50 border-b flex items-center justify-center">
-            <span className="text-xs text-muted-foreground uppercase tracking-widest">{type}</span>
+          <div className="h-32 w-full bg-muted/30 border-b border-border/40 flex items-center justify-center relative overflow-hidden">
+            <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-[0.3em] group-hover:text-muted-foreground/60 transition-colors z-10">{type}</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>
         )}
-        <CardContent className="p-4 flex-1 flex flex-col">
-          <div className="flex justify-between items-start gap-2 mb-2">
-            <h3 className="font-semibold text-base line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-              {node.title}
-            </h3>
-          </div>
-          <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-1">
+        <CardContent className="p-5 flex-1 flex flex-col gap-3">
+          <h3 className="font-semibold text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors duration-300">
+            {node.title}
+          </h3>
+          <p className="text-sm text-muted-foreground line-clamp-3 flex-1 leading-relaxed opacity-90">
             {node.summary || "Sem descrição disponível."}
           </p>
-          <div className="flex items-center gap-2 mt-auto">
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40">
             <Badge
               variant={node.status === "approved" ? "default" : "secondary"}
-              className="text-[10px] uppercase"
+              className={`text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 transition-all duration-300 ${node.status === 'approved' ? 'shadow-sm shadow-primary/20 bg-primary/90' : 'bg-muted/50 text-muted-foreground'}`}
             >
               {node.status}
             </Badge>
             {node.authority_level === "official" && (
               <Badge
                 variant="outline"
-                className="text-[10px] border-blue-500/30 text-blue-600 bg-blue-50/50"
+                className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 border-blue-500/20 text-blue-600 bg-blue-50/50"
               >
                 Oficial
               </Badge>

@@ -142,24 +142,24 @@ export function CurationStatusCard({
     currentStatus === "approved" && currentAuthority === "official";
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border bg-gradient-to-br from-card via-card to-primary/5 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="flex flex-col gap-5 rounded-2xl border border-border/40 bg-gradient-to-b from-card/80 to-card/40 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between group">
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 group-hover:text-primary/70 transition-colors">
           Curadoria
         </span>
         <Badge
           variant={isApproved ? "default" : "secondary"}
-          className="capitalize"
+          className={`capitalize transition-all duration-300 ${isApproved ? 'shadow-sm shadow-primary/20' : ''}`}
         >
           {currentStatus}
         </Badge>
-        <Badge variant="outline" className="capitalize">
+        <Badge variant="outline" className="capitalize bg-background/50 backdrop-blur-sm border-border/50">
           {currentAuthority}
         </Badge>
-        <Badge variant="outline" className="font-mono">
+        <Badge variant="outline" className="font-mono bg-background/50 backdrop-blur-sm border-border/50 text-muted-foreground">
           v{version}
         </Badge>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground/60">
           · atualizado {new Date(updatedAt).toLocaleDateString("pt-BR")}
         </span>
       </div>
@@ -168,7 +168,7 @@ export function CurationStatusCard({
         onClick={() => approve.mutate()}
         disabled={approve.isPending || isApproved}
         size="lg"
-        className="gap-2 shadow-md sm:shrink-0"
+        className="gap-2 rounded-xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-95 sm:shrink-0"
       >
         {approve.isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" />

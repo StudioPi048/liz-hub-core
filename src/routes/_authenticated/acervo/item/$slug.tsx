@@ -58,21 +58,21 @@ function ItemPage() {
     <div className="animate-in fade-in duration-500 pb-24 space-y-8">
       {/* Top nav */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild className="gap-2 -ml-3">
+        <Button variant="ghost" size="sm" asChild className="gap-2 -ml-3 hover:bg-muted/50 rounded-full px-4 transition-all duration-300">
           <Link to="/acervo">
             <ArrowLeft className="h-4 w-4" /> Voltar ao Acervo
           </Link>
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {node.source_uri && (
-            <Button variant="outline" size="sm" className="gap-2" asChild>
+            <Button variant="outline" size="sm" className="gap-2 rounded-full border-border/50 shadow-sm hover:shadow-md transition-all duration-300" asChild>
               <a href={node.source_uri} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4" /> Abrir Página de Vendas
+                <ExternalLink className="h-4 w-4 text-muted-foreground" /> Abrir Página de Vendas
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" className="gap-2">
-            <Edit className="h-4 w-4" /> Editar Rascunho
+          <Button variant="secondary" size="sm" className="gap-2 rounded-full shadow-sm hover:shadow-md transition-all duration-300 bg-secondary/80 hover:bg-secondary">
+            <Edit className="h-4 w-4 text-muted-foreground" /> Editar Rascunho
           </Button>
         </div>
       </div>
@@ -88,7 +88,7 @@ function ItemPage() {
       />
 
       {/* Title header */}
-      <header className="space-y-4">
+      <header className="space-y-6">
         <div className="flex flex-wrap items-center gap-3">
           <InlineTypePicker
             nodeId={node.id}
@@ -101,25 +101,25 @@ function ItemPage() {
             metadata={metadata}
           />
           {metadata.tags?.slice(0, 6).map((t: string) => (
-            <Badge key={t} variant="secondary" className="font-normal gap-1">
-              <Tag className="h-3 w-3" /> {t}
+            <Badge key={t} variant="secondary" className="font-medium bg-muted/50 text-muted-foreground hover:bg-muted transition-colors rounded-full px-3 gap-1.5">
+              <Tag className="h-3 w-3 opacity-60" /> {t}
             </Badge>
           ))}
         </div>
 
-        <div>
-          <h1 className="text-3xl md:text-5xl font-editorial tracking-tight leading-tight">
+        <div className="max-w-4xl">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-editorial tracking-tight leading-[1.1] text-foreground">
             {node.title}
           </h1>
           {metadata.subtitle && (
-            <h2 className="text-lg md:text-xl text-muted-foreground mt-3 font-editorial">
+            <h2 className="text-xl md:text-2xl text-muted-foreground mt-4 font-editorial leading-snug">
               {metadata.subtitle}
             </h2>
           )}
         </div>
 
         {node.summary && (
-          <p className="text-base md:text-lg leading-relaxed text-foreground/85 max-w-3xl">
+          <p className="text-lg md:text-xl leading-relaxed text-foreground/80 max-w-3xl font-light">
             {node.summary}
           </p>
         )}
@@ -130,24 +130,26 @@ function ItemPage() {
         {/* Left: cover + side panels */}
         <aside className="space-y-6">
           {coverUrl ? (
-            <div className="group relative overflow-hidden rounded-2xl border bg-muted shadow-sm aspect-[2/3]">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-muted/30 shadow-sm aspect-[2/3] transition-all hover:shadow-md">
               <img
                 src={coverUrl}
                 alt={node.title}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-105 group-hover:opacity-90"
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100">
                 <AssetUploadModal nodeId={node.id} nodeType={node.type}>
-                  <Button variant="secondary" size="sm">
+                  <Button variant="secondary" size="sm" className="rounded-full shadow-lg">
                     Trocar Capa
                   </Button>
                 </AssetUploadModal>
               </div>
             </div>
           ) : (
-            <div className="flex aspect-[2/3] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-muted/20 p-6 text-center">
-              <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">
+            <div className="flex aspect-[2/3] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border/60 bg-muted/10 p-6 text-center transition-colors hover:bg-muted/20 hover:border-border">
+              <div className="rounded-full bg-muted/50 p-4">
+                <ImageIcon className="h-8 w-8 text-muted-foreground/60" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">
                 Nenhuma capa cadastrada
               </p>
               <AssetUploadModal nodeId={node.id} nodeType={node.type} />
@@ -164,30 +166,30 @@ function ItemPage() {
             />
           )}
 
-          <div className="space-y-3 rounded-2xl border bg-card p-5">
-            <h3 className="border-b pb-2 text-sm font-semibold">
+          <div className="space-y-4 rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm p-6 shadow-sm">
+            <h3 className="border-b border-border/40 pb-3 text-sm font-bold tracking-wide uppercase text-muted-foreground/80">
               Metadados Técnicos
             </h3>
-            <dl className="space-y-2.5 text-sm">
-              <div className="flex justify-between">
+            <dl className="space-y-3.5 text-sm">
+              <div className="flex justify-between items-center">
                 <dt className="text-muted-foreground">Autoridade</dt>
-                <dd className="font-medium capitalize">
+                <dd className="font-semibold capitalize text-foreground/90">
                   {node.authority_level}
                 </dd>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <dt className="text-muted-foreground">Versão</dt>
-                <dd className="font-mono">v{node.version}</dd>
+                <dd className="font-mono bg-muted/50 px-2 py-0.5 rounded-md text-xs font-medium">v{node.version}</dd>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <dt className="text-muted-foreground">Atualizado</dt>
-                <dd>
+                <dd className="text-foreground/80 font-medium">
                   {new Date(node.updated_at).toLocaleDateString("pt-BR")}
                 </dd>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <dt className="text-muted-foreground">Slug</dt>
-                <dd className="truncate font-mono text-xs">{node.slug}</dd>
+                <dd className="truncate font-mono text-[11px] text-muted-foreground/80 max-w-[120px]" title={node.slug}>{node.slug}</dd>
               </div>
             </dl>
           </div>
@@ -201,18 +203,20 @@ function ItemPage() {
             </section>
           )}
 
-          <section className="space-y-5">
+          <section className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-editorial font-semibold">
+              <h3 className="text-2xl font-editorial font-semibold tracking-tight">
                 Ativos e Mídias (DAM)
               </h3>
               <AssetUploadModal nodeId={node.id} nodeType={node.type} />
             </div>
-            <AssetGallery assets={assets} />
+            <div className="rounded-2xl border border-border/40 bg-card/40 p-1">
+              <AssetGallery assets={assets} />
+            </div>
           </section>
 
-          <section className="space-y-5">
-            <h3 className="text-xl font-editorial font-semibold">
+          <section className="space-y-6">
+            <h3 className="text-2xl font-editorial font-semibold tracking-tight">
               Relacionamentos
             </h3>
 
@@ -234,15 +238,15 @@ function ItemPage() {
                           key={edge.id}
                           to="/acervo/item/$slug"
                           params={{ slug: edge.target.slug }}
-                          className="flex items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
+                          className="flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 p-3 transition-all duration-300 hover:shadow-sm hover:bg-muted/50 hover:border-primary/20"
                         >
                           <Badge
                             variant="outline"
-                            className="w-24 shrink-0 justify-center text-[10px]"
+                            className="w-24 shrink-0 justify-center text-[10px] uppercase font-semibold bg-background/50 border-border/50"
                           >
                             {edge.relation_type}
                           </Badge>
-                          <span className="truncate text-sm font-medium">
+                          <span className="truncate text-sm font-medium text-foreground/90">
                             {edge.target.title}
                           </span>
                         </Link>
@@ -262,15 +266,15 @@ function ItemPage() {
                           key={edge.id}
                           to="/acervo/item/$slug"
                           params={{ slug: edge.source.slug }}
-                          className="flex items-center gap-3 rounded-md border p-3 transition-colors hover:bg-muted/50"
+                          className="flex items-center gap-3 rounded-xl border border-border/40 bg-card/50 p-3 transition-all duration-300 hover:shadow-sm hover:bg-muted/50 hover:border-primary/20"
                         >
                           <Badge
                             variant="outline"
-                            className="w-24 shrink-0 justify-center text-[10px]"
+                            className="w-24 shrink-0 justify-center text-[10px] uppercase font-semibold bg-background/50 border-border/50"
                           >
                             {edge.relation_type}
                           </Badge>
-                          <span className="truncate text-sm font-medium">
+                          <span className="truncate text-sm font-medium text-foreground/90">
                             {edge.source.title}
                           </span>
                         </Link>
