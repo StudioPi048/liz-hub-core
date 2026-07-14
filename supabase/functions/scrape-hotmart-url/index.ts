@@ -163,6 +163,7 @@ Deno.serve(async (req) => {
         cover_image: coverImage,
         description,
         title,
+        sales_enabled: salesEnabled,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
