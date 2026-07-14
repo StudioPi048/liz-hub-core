@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
     if (description) {
       update.content = description;
       if (!current.summary || current.summary.trim().length === 0) {
-        update.summary = description.slice(0, 280);
+        update.summary = description;
       }
     }
 
