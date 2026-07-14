@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,10 @@ export function InlineTextEdit({ nodeId, slug, field, initialValue, className }:
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialValue || "");
   const qc = useQueryClient();
+
+  useEffect(() => {
+    setValue(initialValue || "");
+  }, [initialValue]);
 
   const mutation = useMutation({
     mutationFn: async (newValue: string) => {

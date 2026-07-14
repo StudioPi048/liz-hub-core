@@ -169,16 +169,15 @@ function ItemPage() {
             )}
           </header>
 
-          {node.content !== undefined && node.content !== node.summary && (
-            <section className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
-              <InlineTextEdit
-                nodeId={node.id}
-                slug={node.slug}
-                field="content"
-                initialValue={node.content}
-              />
-            </section>
-          )}
+          <section className="prose prose-sm md:prose-base dark:prose-invert max-w-none mt-8 border-t border-border/20 pt-8">
+            <h3 className="text-xl font-editorial font-medium mb-4 text-muted-foreground">Conteúdo Completo</h3>
+            <InlineTextEdit
+              nodeId={node.id}
+              slug={node.slug}
+              field="content"
+              initialValue={node.content}
+            />
+          </section>
 
           {(node.type === "product" || node.type === "course") && (
             <div className="max-w-md pt-4">
