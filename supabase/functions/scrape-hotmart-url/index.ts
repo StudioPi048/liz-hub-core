@@ -134,13 +134,15 @@ Deno.serve(async (req) => {
       ...((current.metadata as Record<string, unknown>) ?? {}),
       ...(coverImage ? { cover_image: coverImage, coverUrl: coverImage } : {}),
       ...(title ? { public_title: title } : {}),
-      ...(salesEnabled !== null ? { sales_enabled: salesEnabled } : {}),
+      sales_enabled: salesEnabled,
+      public_url: url,
       enriched_from_url: url,
       enriched_at: new Date().toISOString(),
     };
 
     const update: Record<string, unknown> = {
       metadata: mergedMetadata,
+      source_uri: url,
     };
 
     if (description) {
