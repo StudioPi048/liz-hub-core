@@ -9,6 +9,8 @@ interface HotmartProduct {
   status?: string;
 }
 
+
+
 export const syncHotmartCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -25,7 +27,7 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
         return { error: "Apenas admins ou editores podem sincronizar o catálogo Hotmart." };
       }
 
-      const { authenticateHotmart, getHotmartProductDetails } = await import("@/lib/hotmart.server");
+      const { authenticateHotmart } = await import("@/lib/hotmart.server");
       const token = await authenticateHotmart();
       if (!token) {
         return { error: "Falha ao autenticar com a Hotmart. Verifique as credenciais." };
@@ -76,25 +78,14 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
         if (!product?.id || !product?.name) continue;
         const slug = `produto-${product.id}`;
 
-        // Fetch rich details (description, cover image) — the list endpoint omits them
-        let details: Awaited<ReturnType<typeof getHotmartProductDetails>> = null;
-        try {
-          details = await getHotmartProductDetails(product.id);
-        } catch (e: any) {
-          console.error("[hotmart-sync] details fetch failed", product.id, e?.message);
-        }
-
-        const description = details?.description || product.description || "";
-        const content = description || "Sem descrição disponível.";
-        const coverImage = details?.ucb || product.ucb || null;
+        const content = "Produto sincronizado via Hotmart.";
+        const mappedStatus = product.status === "APPROVED" ? "approved" : "draft";
 
         const content_hash = createHash("sha256")
-          .update(`${product.id}|${product.name}|${content}|${coverImage ?? ""}`)
+          .update(`${product.id}|${product.name}|${content}|${mappedStatus}`)
           .digest("hex");
 
-        const metadata: Record<string, any> = { source: "hotmart_sync_bulk" };
-        if (coverImage) metadata.cover_image = coverImage;
-        if (description) metadata.hotmart_description = description;
+        const metadata: Record<string, any> = { source: "hotmart_sync" };
 
         const { data: existing } = await (supabaseAdmin as any)
           .from("knowledge_nodes")
@@ -109,13 +100,12 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
               title: product.name,
               slug,
               type: "product",
-              status: "approved",
+              status: mappedStatus,
               visibility: "public",
               source_type: "hotmart",
               source_id: String(product.id),
               content,
               content_hash,
-              summary: description?.slice(0, 280) || null,
               metadata,
               authority_level: "official",
               language: "pt-BR",
