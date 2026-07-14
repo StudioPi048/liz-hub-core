@@ -97,11 +97,11 @@ Deno.serve(async (req) => {
     const description = rawDescription ? decodeHtmlEntities(rawDescription) : null;
     const title = rawTitle ? decodeHtmlEntities(rawTitle) : null;
 
-    // Extrai salesEnabled do JSON embutido do Next.js (aceita espaços e aspas variadas)
-    const salesMatch = html.match(/["']salesEnabled["']\s*:\s*(true|false)/i);
-    const salesEnabled = salesMatch ? salesMatch[1].toLowerCase() === "true" : null;
+    // Extrai salesEnabled do JSON embutido do Next.js
+    const salesMatch = html.match(/"salesEnabled":\s*(true|false)/i);
+    const salesEnabled = salesMatch ? salesMatch[1].toLowerCase() === "true" : false;
 
-    if (!coverImage && !description && salesEnabled === null) {
+    if (!coverImage && !description && !salesMatch) {
       return new Response(
         JSON.stringify({
           error: "Nenhum metadado og:image / og:description encontrado na página",
