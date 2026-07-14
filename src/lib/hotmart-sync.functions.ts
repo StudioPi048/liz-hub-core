@@ -12,111 +12,115 @@ interface HotmartProduct {
 export const syncHotmartCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Authorize: only admin/editor can trigger sync
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId);
-    const isAllowed = roles?.some((r) => r.role === "admin" || r.role === "editor");
-    if (!isAllowed) {
-      throw new Error("Apenas admins ou editores podem sincronizar o catálogo Hotmart.");
-    }
-
-    const { authenticateHotmart } = await import("@/lib/hotmart.server");
-    const token = await authenticateHotmart();
-    if (!token) {
-      throw new Error("Falha ao autenticar com a Hotmart. Verifique as credenciais.");
-    }
-
-    // Paginate through the products listing
-    const allProducts: HotmartProduct[] = [];
-    let pageToken: string | undefined = undefined;
-    let safety = 0;
-
-    do {
-      const url = new URL("https://developers.hotmart.com/product/rest/v1/products");
-      url.searchParams.set("max_results", "50");
-      if (pageToken) url.searchParams.set("page_token", pageToken);
-
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-        redirect: "manual",
-      });
-      const raw = await res.text();
-      if (!res.ok || res.status >= 300) {
-        console.error("[hotmart-sync] HTTP", res.status, raw.slice(0, 300));
-        throw new Error(
-          `Hotmart API retornou ${res.status}. Verifique se o endpoint /product/rest/v1/products está habilitado para este app. Resposta: ${raw.slice(0, 200)}`,
-        );
+      // Authorize: only admin/editor can trigger sync
+      const { data: roles } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", context.userId);
+      const isAllowed = roles?.some((r) => r.role === "admin" || r.role === "editor");
+      if (!isAllowed) {
+        return { error: "Apenas admins ou editores podem sincronizar o catálogo Hotmart." };
       }
-      let json: { items?: HotmartProduct[]; page_info?: { next_page_token?: string } };
-      try {
-        json = JSON.parse(raw);
-      } catch {
-        console.error("[hotmart-sync] resposta não-JSON", raw.slice(0, 300));
-        throw new Error(
-          `Hotmart devolveu conteúdo não-JSON (provavelmente redirect/página HTML). Prévia: ${raw.slice(0, 200)}`,
-        );
+
+      const { authenticateHotmart } = await import("@/lib/hotmart.server");
+      const token = await authenticateHotmart();
+      if (!token) {
+        return { error: "Falha ao autenticar com a Hotmart. Verifique as credenciais." };
       }
-      if (Array.isArray(json.items)) allProducts.push(...json.items);
-      pageToken = json.page_info?.next_page_token;
-      safety += 1;
 
-    } while (pageToken && safety < 20);
+      // Paginate through the products listing
+      const allProducts: HotmartProduct[] = [];
+      let pageToken: string | undefined = undefined;
+      let safety = 0;
 
-    let created = 0;
-    let updated = 0;
-    let failed = 0;
+      do {
+        const url = new URL("https://developers.hotmart.com/products/api/v1/products");
+        url.searchParams.set("max_results", "50");
+        if (pageToken) url.searchParams.set("page_token", pageToken);
 
-    for (const product of allProducts) {
-      if (!product?.id || !product?.name) continue;
-      const slug = `produto-${product.id}`;
+        const res = await fetch(url.toString(), {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+          redirect: "manual",
+        });
+        const raw = await res.text();
+        if (!res.ok || res.status >= 300) {
+          console.error("[hotmart-sync] HTTP", res.status, raw.slice(0, 300));
+          return {
+            error: `Hotmart API retornou ${res.status}. Resposta: ${raw.slice(0, 200)}`,
+          };
+        }
+        let json: { items?: HotmartProduct[]; page_info?: { next_page_token?: string } };
+        try {
+          json = JSON.parse(raw);
+        } catch {
+          console.error("[hotmart-sync] resposta não-JSON", raw.slice(0, 300));
+          return {
+            error: `Hotmart devolveu conteúdo não-JSON. Prévia: ${raw.slice(0, 200)}`,
+          };
+        }
+        if (Array.isArray(json.items)) allProducts.push(...json.items);
+        pageToken = json.page_info?.next_page_token;
+        safety += 1;
+      } while (pageToken && safety < 20);
 
-      const metadata: Record<string, any> = { source: "hotmart_sync_bulk" };
-      if (product.ucb) metadata.cover_image = product.ucb;
-      if (product.description) metadata.hotmart_description = product.description;
+      let created = 0;
+      let updated = 0;
+      let failed = 0;
 
-      const { data: existing } = await (supabaseAdmin as any)
-        .from("knowledge_nodes")
-        .select("id")
-        .eq("slug", slug)
-        .maybeSingle();
+      for (const product of allProducts) {
+        if (!product?.id || !product?.name) continue;
+        const slug = `produto-${product.id}`;
 
-      const { error } = await (supabaseAdmin as any)
-        .from("knowledge_nodes")
-        .upsert(
-          {
-            title: product.name,
-            slug,
-            type: "product",
-            status: "approved",
-            visibility: "public",
-            source_type: "hotmart",
-            source_id: String(product.id),
-            content: product.description || `Produto importado da Hotmart. ID: ${product.id}`,
-            summary: product.description?.slice(0, 280) || null,
-            metadata,
-            authority_level: "official",
-          },
-          { onConflict: "slug" },
-        );
+        const metadata: Record<string, any> = { source: "hotmart_sync_bulk" };
+        if (product.ucb) metadata.cover_image = product.ucb;
+        if (product.description) metadata.hotmart_description = product.description;
 
-      if (error) {
-        console.error("[hotmart-sync] upsert failed", product.id, error.message);
-        failed += 1;
-      } else if (existing) {
-        updated += 1;
-      } else {
-        created += 1;
+        const { data: existing } = await (supabaseAdmin as any)
+          .from("knowledge_nodes")
+          .select("id")
+          .eq("slug", slug)
+          .maybeSingle();
+
+        const { error } = await (supabaseAdmin as any)
+          .from("knowledge_nodes")
+          .upsert(
+            {
+              title: product.name,
+              slug,
+              type: "product",
+              status: "approved",
+              visibility: "public",
+              source_type: "hotmart",
+              source_id: String(product.id),
+              content: product.description || `Produto importado da Hotmart. ID: ${product.id}`,
+              summary: product.description?.slice(0, 280) || null,
+              metadata,
+              authority_level: "official",
+            },
+            { onConflict: "slug" },
+          );
+
+        if (error) {
+          console.error("[hotmart-sync] upsert failed", product.id, error.message);
+          failed += 1;
+        } else if (existing) {
+          updated += 1;
+        } else {
+          created += 1;
+        }
       }
+
+      return {
+        total: allProducts.length,
+        created,
+        updated,
+        failed,
+      };
+    } catch (e: any) {
+      console.error("[hotmart-sync] erro inesperado", e);
+      return { error: e?.message || "Erro inesperado durante a sincronização." };
     }
-
-    return {
-      total: allProducts.length,
-      created,
-      updated,
-      failed,
-    };
   });
