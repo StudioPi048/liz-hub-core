@@ -76,6 +76,7 @@ export const BaseKnowledgeMetadataSchema = z.object({
   coverUrl: z.string().url().optional(),
   externalLinks: z.array(KnowledgeLinkSchema).optional(),
   internalNotes: z.string().optional(),
+  sales_enabled: z.boolean().optional(),
 });
 export type BaseKnowledgeMetadata = z.infer<typeof BaseKnowledgeMetadataSchema>;
 

@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { SemanticBadge } from "@/components/SemanticBadge";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,19 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/links")({
   component: LinksPage,
 });
+
+const PREDEFINED_VARIANTS: Record<string, "neutral" | "pending" | "success" | "critical"> = {
+  "Hotmart": "neutral",
+  "Plataformas LIZ": "pending",
+  "Redes Sociais": "success",
+  "Design": "critical",
+};
+
+function getCategoryVariant(name: string) {
+  if (PREDEFINED_VARIANTS[name]) return PREDEFINED_VARIANTS[name];
+  const variants = ["neutral", "pending", "success", "critical"] as const;
+  return variants[name.length % variants.length];
+}
 
 function LinksPage() {
   const [q, setQ] = useState("");
@@ -131,27 +144,27 @@ function LinksPage() {
   }
 
   return (
-    <div className="liz-archive-theme min-h-[calc(100vh-4rem)] p-2 space-y-4 max-w-6xl">
-      <div className="flex flex-wrap gap-2 justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-editorial tracking-tight text-archive-fg">
+    <div className="min-h-[calc(100vh-4rem)] p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-wrap gap-4 justify-between items-start">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-editorial tracking-tight text-foreground">
             Biblioteca de Links
           </h1>
-          <p className="text-sm text-archive-muted">Todos os links do Instituto em um só lugar.</p>
+          <p className="text-muted-foreground font-medium">Todos os links do Instituto em um só lugar.</p>
         </div>
-        <div className="flex gap-2 flex-1 md:flex-none md:w-96">
+        <div className="flex gap-3 flex-1 md:flex-none md:w-96">
           <div className="relative flex-1">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar link..."
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-background/50 backdrop-blur-sm"
             />
           </div>
           <Dialog open={openNew} onOpenChange={setOpenNew}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="shadow-sm">
                 <Plus className="h-4 w-4 mr-1" />
                 Novo
               </Button>
@@ -160,15 +173,15 @@ function LinksPage() {
               <DialogHeader>
                 <DialogTitle>Novo link</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3">
-                <div>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
                   <Label>Nome</Label>
                   <Input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label>URL</Label>
                   <Input
                     value={form.url}
@@ -176,7 +189,7 @@ function LinksPage() {
                     placeholder="https://..."
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label>Categoria</Label>
                   <Select
                     value={form.category_id}
@@ -194,7 +207,7 @@ function LinksPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label>Observações</Label>
                   <Textarea
                     value={form.notes || ""}
@@ -216,73 +229,83 @@ function LinksPage() {
       </div>
 
       {isLoadingLinks ? (
-        <div className="flex justify-center p-8">
+        <div className="flex justify-center p-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <>
+        <div className="space-y-10">
           {[...byCategory.entries()].map(([cat, list]) => (
-            <div key={cat}>
-              <h2 className="text-sm font-semibold mb-2 uppercase tracking-wider text-archive-muted">
+            <div key={cat} className="space-y-4">
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground pl-1 border-l-2 border-primary/20">
                 {cat}
               </h2>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {list.map((l) => (
                   <Card
                     key={l.id}
-                    className="bg-archive-surface border-archive-border shadow-sm hover:border-archive-accent transition-colors"
+                    className="group bg-card/60 backdrop-blur-sm border-border/40 hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                   >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="font-medium truncate">{l.name}</div>
-                          <div className="text-xs text-muted-foreground truncate">{l.url}</div>
-                          {l.notes && (
-                            <div className="text-xs mt-1 text-muted-foreground">{l.notes}</div>
-                          )}
+                    <CardContent className="p-5 flex flex-col gap-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="font-semibold truncate text-foreground group-hover:text-primary transition-colors">{l.name}</div>
+                          <div className="text-xs font-mono text-muted-foreground/80 truncate bg-muted/30 rounded px-1.5 py-0.5 inline-block max-w-full">{l.url}</div>
                         </div>
                         {l.link_categories && (
-                          <Badge
-                            variant="secondary"
-                            style={{ backgroundColor: (l.link_categories.color || "") + "20" }}
-                          >
+                          <SemanticBadge variant={getCategoryVariant(l.link_categories.name)}>
                             {l.link_categories.name}
-                          </Badge>
+                          </SemanticBadge>
                         )}
                       </div>
-                      <div className="flex gap-1 mt-2">
+                      
+                      {l.notes && (
+                        <p className="text-sm text-muted-foreground/90 line-clamp-2 leading-relaxed">
+                          {l.notes}
+                        </p>
+                      )}
+
+                      <div className="flex gap-2 pt-2 border-t border-border/40 mt-auto">
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            navigator.clipboard.writeText(l.url);
-                            toast.success("Link copiado");
-                          }}
+                          variant="secondary"
+                          className="flex-1 gap-2 shadow-sm"
+                          asChild
                         >
-                          <Copy className="h-3 w-3 mr-1" />
-                          Copiar
-                        </Button>
-                        <Button size="sm" variant="outline" asChild>
                           <a href={l.url} target="_blank" rel="noreferrer">
-                            <ExternalLink className="h-3 w-3 mr-1" />
+                            <ExternalLink className="h-3.5 w-3.5" />
                             Abrir
                           </a>
                         </Button>
                         <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => openEditFor(l)}
-                          title="Editar"
+                          size="icon"
+                          variant="outline"
+                          className="shrink-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(l.url);
+                            toast.success("Link copiado");
+                          }}
+                          title="Copiar link"
                         >
-                          <Pencil className="h-3 w-3" />
+                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>
                         <Button
-                          size="sm"
-                          variant="ghost"
+                          size="icon"
+                          variant="outline"
+                          className="shrink-0"
+                          onClick={() => openEditFor(l)}
+                          title="Editar link"
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="shrink-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-colors"
                           onClick={() => handleDelete(l.id)}
                           disabled={del.isPending}
+                          title="Remover link"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </CardContent>
@@ -292,9 +315,11 @@ function LinksPage() {
             </div>
           ))}
           {filtered.length === 0 && (
-            <p className="text-muted-foreground">Nenhum link encontrado.</p>
+            <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-2xl bg-muted/10">
+              <p className="text-muted-foreground text-lg">Nenhum link encontrado.</p>
+            </div>
           )}
-        </>
+        </div>
       )}
 
       <Dialog open={openEdit} onOpenChange={setOpenEdit}>
@@ -302,15 +327,15 @@ function LinksPage() {
           <DialogHeader>
             <DialogTitle>Editar link</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
               <Label>Nome</Label>
               <Input
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label>URL</Label>
               <Input
                 value={editForm.url}
@@ -318,7 +343,7 @@ function LinksPage() {
                 placeholder="https://..."
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label>Categoria</Label>
               <Select
                 value={editForm.category_id}
@@ -336,7 +361,7 @@ function LinksPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-2">
               <Label>Observações</Label>
               <Textarea
                 value={editForm.notes || ""}
@@ -349,7 +374,7 @@ function LinksPage() {
               onClick={handleUpdate}
               disabled={!editForm.name || !editForm.url || update.isPending}
             >
-              {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+              {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -357,3 +382,4 @@ function LinksPage() {
     </div>
   );
 }
+

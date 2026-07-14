@@ -125,13 +125,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 px-2 py-3">
-            <div className="h-9 w-9 rounded-lg bg-sidebar-primary flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-sidebar-primary-foreground" />
+          <div className="flex items-center gap-3 px-2 py-3">
+            <div className="h-10 w-10 flex items-center justify-center">
+              <img src="/liz-logo.png" alt="LIZ" className="h-full w-full object-contain drop-shadow-sm" />
             </div>
-            <div>
-              <div className="font-semibold text-sidebar-foreground">LIZ HUB</div>
-              <div className="text-xs text-sidebar-foreground/70">Instituto LIZ</div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-sidebar-foreground tracking-tight leading-none">LIZ HUB</span>
+              <span className="text-[10px] text-sidebar-foreground/70 uppercase tracking-widest mt-1">Instituto</span>
             </div>
           </div>
         </SidebarHeader>

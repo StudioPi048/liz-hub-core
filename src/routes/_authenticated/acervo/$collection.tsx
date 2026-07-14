@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SemanticBadge } from "@/components/SemanticBadge";
 import { Search, Loader2, ArrowLeft, Filter, FileText, RefreshCw, Check, CircleDot, CircleSlash } from "lucide-react";
 import { useState, useMemo } from "react";
 import {
@@ -249,6 +250,7 @@ function EmptyCollectionState({
 function EntityCard({ node, type }: { node: any; type: KnowledgeType }) {
   const coverImage = node.coverUrl || node.metadata?.cover_image;
   const hasCover = !!coverImage;
+  const salesEnabled = node.metadata?.sales_enabled;
 
   return (
     <Link to="/acervo/item/$slug" params={{ slug: node.slug }} className="block group h-full">
@@ -289,6 +291,11 @@ function EntityCard({ node, type }: { node: any; type: KnowledgeType }) {
               >
                 Oficial
               </Badge>
+            )}
+            {(type === "product" || type === "course" || type === "book" || type === "event") && salesEnabled !== undefined && (
+              <SemanticBadge variant={salesEnabled ? "success" : "neutral"} className="ml-auto">
+                {salesEnabled ? "Vendas abertas" : "Vendas fechadas"}
+              </SemanticBadge>
             )}
           </div>
         </CardContent>
