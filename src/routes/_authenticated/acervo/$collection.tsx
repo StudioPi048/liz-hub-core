@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { getKnowledgeNodes } from "@/features/knowledge/api/knowledge.server";
+import { syncHotmartCatalog } from "@/lib/hotmart-sync.functions";
 import {
   getTypeFromSlug,
   knowledgeTypeLabels,
@@ -10,9 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, ArrowLeft, Filter, FileText } from "lucide-react";
+import { Search, Loader2, ArrowLeft, Filter, FileText, RefreshCw } from "lucide-react";
 import { useState } from "react";
-import { useDebounce } from "@/hooks/use-debounce"; // Assuming this exists or will be created
+import { useDebounce } from "@/hooks/use-debounce";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/acervo/$collection")({
   component: CollectionPage,
@@ -71,6 +74,7 @@ function CollectionPage() {
         <Button variant="outline" className="gap-2">
           <Filter className="h-4 w-4" /> Filtros
         </Button>
+        {(type === "product" || type === "course") && <HotmartSyncButton />}
       </div>
 
       {isLoading ? (
@@ -111,6 +115,45 @@ function CollectionPage() {
         </>
       )}
     </div>
+  );
+}
+
+function HotmartSyncButton() {
+  const queryClient = useQueryClient();
+  const syncFn = useServerFn(syncHotmartCatalog);
+  const mutation = useMutation({
+    mutationFn: () => syncFn(),
+    onSuccess: (result) => {
+      toast.success("Catálogo Hotmart sincronizado", {
+        description: `${result.created} novos · ${result.updated} atualizados${result.failed ? ` · ${result.failed} falhas` : ""}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["knowledge-collection"] });
+      queryClient.invalidateQueries({ queryKey: ["knowledge-stats"] });
+    },
+    onError: (err: any) => {
+      toast.error("Falha ao sincronizar", { description: err?.message ?? "Erro desconhecido" });
+    },
+  });
+
+  return (
+    <Button
+      variant="secondary"
+      className="gap-2"
+      onClick={() => mutation.mutate()}
+      disabled={mutation.isPending}
+    >
+      {mutation.isPending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Sincronizando catálogo...
+        </>
+      ) : (
+        <>
+          <RefreshCw className="h-4 w-4" />
+          Sincronizar Hotmart
+        </>
+      )}
+    </Button>
   );
 }
 
