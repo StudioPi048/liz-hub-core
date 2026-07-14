@@ -136,8 +136,6 @@ Deno.serve(async (req) => {
 
     const update: Record<string, unknown> = {
       metadata: mergedMetadata,
-      status: "approved",
-      authority_level: "official",
     };
 
     if (description) {
