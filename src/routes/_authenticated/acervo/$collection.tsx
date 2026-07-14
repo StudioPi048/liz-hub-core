@@ -12,8 +12,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, ArrowLeft, Filter, FileText, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { Search, Loader2, ArrowLeft, Filter, FileText, RefreshCw, Check, CircleDot, CircleSlash } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
 
