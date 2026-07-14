@@ -21,9 +21,9 @@ import { CheckCircle2, Loader2, ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  KNOWLEDGE_TYPES,
-  knowledgeTypeLabels,
-  type KnowledgeType,
+  COMMERCIAL_TYPES,
+  commercialTypeLabels,
+  type CommercialType,
 } from "@/features/knowledge/model/knowledge-types";
 
 interface BaseProps {
@@ -44,12 +44,12 @@ export function InlineTypePicker({
   nodeId,
   slug,
   currentType,
-}: BaseProps & { currentType: KnowledgeType }) {
+}: BaseProps & { currentType: CommercialType }) {
   const invalidate = useInvalidate(slug);
-  const [type, setType] = useState<KnowledgeType>(currentType);
+  const [type, setType] = useState<CommercialType>(currentType);
 
   const mutation = useMutation({
-    mutationFn: async (newType: KnowledgeType) => {
+    mutationFn: async (newType: CommercialType) => {
       const { error } = await supabase
         .from("knowledge_nodes")
         .update({ type: newType })
@@ -74,14 +74,14 @@ export function InlineTypePicker({
           {mutation.isPending ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : null}
-          <span>{knowledgeTypeLabels[type] ?? type}</span>
+          <span>{commercialTypeLabels[type] ?? type}</span>
           <ChevronDown className="h-3 w-3 opacity-70" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuLabel>Alterar categoria</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {KNOWLEDGE_TYPES.map((t) => (
+        {COMMERCIAL_TYPES.map((t) => (
           <DropdownMenuItem
             key={t}
             onSelect={() => {
@@ -91,7 +91,7 @@ export function InlineTypePicker({
             }}
             className={t === type ? "bg-muted font-medium" : ""}
           >
-            {knowledgeTypeLabels[t]}
+            {commercialTypeLabels[t]}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -184,15 +184,15 @@ export function ItemCurationPanel({
   currentStatus,
   currentAuthority,
 }: BaseProps & {
-  currentType: KnowledgeType;
+  currentType: CommercialType;
   currentStatus: string;
   currentAuthority: string;
 }) {
   const invalidate = useInvalidate(slug);
-  const [type, setType] = useState<KnowledgeType>(currentType);
+  const [type, setType] = useState<CommercialType>(currentType);
 
   const typeMutation = useMutation({
-    mutationFn: async (newType: KnowledgeType) => {
+    mutationFn: async (newType: CommercialType) => {
       const { error } = await supabase
         .from("knowledge_nodes")
         .update({ type: newType })
@@ -234,8 +234,8 @@ export function ItemCurationPanel({
         <Select
           value={type}
           onValueChange={(v) => {
-            setType(v as KnowledgeType);
-            typeMutation.mutate(v as KnowledgeType);
+            setType(v as CommercialType);
+            typeMutation.mutate(v as CommercialType);
           }}
           disabled={typeMutation.isPending}
         >
@@ -243,9 +243,9 @@ export function ItemCurationPanel({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {KNOWLEDGE_TYPES.map((t) => (
+            {COMMERCIAL_TYPES.map((t) => (
               <SelectItem key={t} value={t}>
-                {knowledgeTypeLabels[t]}
+                {commercialTypeLabels[t]}
               </SelectItem>
             ))}
           </SelectContent>
