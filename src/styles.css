@@ -48,6 +48,27 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
+
+  /* LIZ HUB Rebrand Tokens */
+  --color-bg-page: var(--bg-page);
+  --color-bg-canvas: var(--bg-canvas);
+  --color-bg-panel: var(--bg-panel);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-sidebar-text-muted: var(--sidebar-text-muted);
+  --color-accent-lime: var(--accent-lime);
+  --color-accent-lime-text: var(--accent-lime-text);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  
+  --color-semantic-neutral-bg: var(--semantic-neutral-bg);
+  --color-semantic-neutral-fg: var(--semantic-neutral-fg);
+  --color-semantic-pending-bg: var(--semantic-pending-bg);
+  --color-semantic-pending-fg: var(--semantic-pending-fg);
+  --color-semantic-success-bg: var(--semantic-success-bg);
+  --color-semantic-success-fg: var(--semantic-success-fg);
+  --color-semantic-critical-bg: var(--semantic-critical-bg);
+  --color-semantic-critical-fg: var(--semantic-critical-fg);
 }
 
 :root {
@@ -79,14 +100,36 @@
   --chart-3: oklch(0.7 0.15 260);
   --chart-4: oklch(0.75 0.17 340);
   --chart-5: oklch(0.6 0.2 20);
-  --sidebar: oklch(0.28 0.09 295);
-  --sidebar-foreground: oklch(0.96 0.02 300);
-  --sidebar-primary: oklch(0.7 0.18 295);
-  --sidebar-primary-foreground: oklch(0.15 0.05 295);
-  --sidebar-accent: oklch(0.35 0.1 295);
-  --sidebar-accent-foreground: oklch(0.98 0.01 300);
+  --sidebar: var(--sidebar-bg);
+  --sidebar-foreground: var(--sidebar-text);
+  --sidebar-primary: var(--accent-lime);
+  --sidebar-primary-foreground: var(--accent-lime-text);
+  --sidebar-accent: var(--accent-lime);
+  --sidebar-accent-foreground: var(--accent-lime-text);
   --sidebar-border: oklch(0.35 0.08 295);
   --sidebar-ring: oklch(0.7 0.18 295);
+
+  /* LIZ HUB Rebrand Tokens */
+  --bg-page: #E3DEF6;
+  --bg-canvas: #FFFFFF;
+  --bg-panel: #F7F6FC;
+  --sidebar-bg: #1E1B2E;
+  --sidebar-text: #B4B0C9;
+  --sidebar-text-muted: #8B87A3;
+  --accent-lime: #CFF276;
+  --accent-lime-text: #33450F;
+  --text-primary: #211D33;
+  --text-secondary: #8C87A0;
+
+  /* Semantic Colors */
+  --semantic-neutral-bg: #FBE9DD;
+  --semantic-neutral-fg: #5C3417;
+  --semantic-pending-bg: #E4DEF9;
+  --semantic-pending-fg: #332A5C;
+  --semantic-success-bg: #DBEEDD;
+  --semantic-success-fg: #20431F;
+  --semantic-critical-bg: #FBE1E1;
+  --semantic-critical-fg: #5C1815;
 }
 
 .dark {
@@ -117,8 +160,8 @@
 @layer base {
   * { border-color: var(--color-border); }
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--bg-page);
+    color: var(--text-primary);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
 }

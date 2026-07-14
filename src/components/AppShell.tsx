@@ -235,8 +235,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="bg-zinc-50/50 dark:bg-background/95">
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border/40 bg-background/70 backdrop-blur-xl px-6 transition-all duration-300">
+      <SidebarInset className="bg-bg-page overflow-hidden p-3 md:p-4 h-screen">
+        <div className="bg-bg-canvas rounded-[18px] shadow-[0_4px_16px_rgba(30,27,46,0.08)] flex-1 overflow-auto flex flex-col h-full border border-border/30 relative">
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border/40 bg-bg-canvas/80 backdrop-blur-xl px-6 transition-all duration-300 rounded-t-[18px]">
           <SidebarTrigger className="hover:bg-primary/5 transition-colors rounded-full" />
           <div className="flex-1 flex items-center">
             <Button
@@ -257,6 +258,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Button>
         </header>
         <main className="p-6 md:p-10 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">{children}</main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
