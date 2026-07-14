@@ -33,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/acervo/$collection")({
 function CollectionPage() {
   const { collection } = Route.useParams();
   const type = getTypeFromSlug(collection);
+  const [salesFilter, setSalesFilter] = useState<"all" | "active" | "suspended">("all");
 
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
