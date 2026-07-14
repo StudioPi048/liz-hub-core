@@ -70,9 +70,15 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
       let updated = 0;
       let failed = 0;
 
+      const { createHash } = await import("crypto");
+
       for (const product of allProducts) {
         if (!product?.id || !product?.name) continue;
         const slug = `produto-${product.id}`;
+        const content = product.description || "Produto importado.";
+        const content_hash = createHash("sha256")
+          .update(`${product.id}|${product.name}|${content}`)
+          .digest("hex");
 
         const metadata: Record<string, any> = { source: "hotmart_sync_bulk" };
         if (product.ucb) metadata.cover_image = product.ucb;
@@ -95,16 +101,26 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
               visibility: "public",
               source_type: "hotmart",
               source_id: String(product.id),
-              content: product.description || `Produto importado da Hotmart. ID: ${product.id}`,
+              content,
+              content_hash,
               summary: product.description?.slice(0, 280) || null,
               metadata,
               authority_level: "official",
+              language: "pt-BR",
             },
             { onConflict: "slug" },
           );
 
         if (error) {
-          console.error("[hotmart-sync] upsert failed", product.id, error.message);
+          console.error(
+            "[hotmart-sync] upsert failed",
+            "product_id=", product.id,
+            "slug=", slug,
+            "code=", (error as any).code,
+            "message=", error.message,
+            "details=", (error as any).details,
+            "hint=", (error as any).hint,
+          );
           failed += 1;
         } else if (existing) {
           updated += 1;
@@ -112,6 +128,7 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
           created += 1;
         }
       }
+
 
       return {
         total: allProducts.length,
