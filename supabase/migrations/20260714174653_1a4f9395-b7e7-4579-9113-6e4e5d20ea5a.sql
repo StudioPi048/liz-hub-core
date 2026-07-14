@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.has_knowledge_admin_role() TO authenticated, anon;
