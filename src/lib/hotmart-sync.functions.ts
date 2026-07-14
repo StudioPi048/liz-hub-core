@@ -78,9 +78,9 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
         if (!product?.id || !product?.name) continue;
         const slug = `produto-${product.id}`;
 
-        const content = "Produto sincronizado via Hotmart.";
+        const content = "Produto importado via integração. Aguardando moderação.";
         const content_hash = createHash("sha256")
-          .update(`${product.id}|${product.name}|${content}|approved`)
+          .update(`${product.id}|${product.name}|${content}|draft`)
           .digest("hex");
 
         const metadata: Record<string, any> = { source: "hotmart_sync" };
@@ -98,14 +98,14 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
               title: product.name,
               slug,
               type: "product",
-              status: "approved",
+              status: "draft",
               visibility: "public",
               source_type: "hotmart",
               source_id: String(product.id),
               content,
               content_hash,
               metadata,
-              authority_level: "official",
+              authority_level: "unverified",
               language: "pt-BR",
             },
             { onConflict: "slug" },
