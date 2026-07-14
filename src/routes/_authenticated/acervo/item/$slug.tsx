@@ -8,6 +8,7 @@ import { KNOWLEDGE_TYPES, parseMetadata } from "@/features/knowledge/model/knowl
 import { AssetGallery } from "@/features/knowledge/components/AssetGallery";
 import { AssetUploadModal } from "@/features/knowledge/components/AssetUploadModal";
 import { HotmartEnrichPanel } from "@/features/knowledge/components/HotmartEnrichPanel";
+import { ItemCurationPanel } from "@/features/knowledge/components/ItemCurationPanel";
 
 export const Route = createFileRoute("/_authenticated/acervo/item/$slug")({
   component: ItemPage,
@@ -117,6 +118,14 @@ function ItemPage() {
               </div>
             </div>
           </div>
+
+          <ItemCurationPanel
+            nodeId={node.id}
+            slug={node.slug}
+            currentType={node.type}
+            currentStatus={node.status}
+            currentAuthority={node.authority_level}
+          />
 
           {(node.type === "product" || node.type === "course") && (
             <HotmartEnrichPanel
