@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   CopyX,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { knowledgeTypeLabels } from "@/features/knowledge/model/knowledge-types";
 
@@ -39,12 +40,22 @@ function AcervoDashboard() {
       </div>
 
       {/* Acesso Rápido */}
-      <div className="flex flex-wrap gap-3">
-        <Button variant="default" className="gap-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant="default"
+          className="gap-2"
+          disabled
+          title="Cadastro manual de novos registros ainda não implementado nesta versão."
+        >
           <Plus className="h-4 w-4" />
           Cadastrar Registro
         </Button>
-        <Button variant="outline" className="gap-2">
+        <Button
+          variant="outline"
+          className="gap-2"
+          disabled
+          title="Importação em lote ainda não implementada nesta versão."
+        >
           <Upload className="h-4 w-4" />
           Importar Dados
         </Button>
@@ -54,50 +65,58 @@ function AcervoDashboard() {
             Revisar Pendentes ({stats?.drafts || 0})
           </Link>
         </Button>
-        <Button variant="ghost" className="gap-2 text-muted-foreground">
+        <Button
+          variant="ghost"
+          className="gap-2 text-muted-foreground"
+          disabled
+          title="Detecção automática de duplicidades ainda não implementada nesta versão."
+        >
           <CopyX className="h-4 w-4" />
           Localizar Duplicidades
         </Button>
+        <span className="text-xs text-muted-foreground/70">
+          Recursos esmaecidos ainda dependem de estrutura não implementada.
+        </span>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
+        <CollectionStatCard
           title={knowledgeTypeLabels.book}
           value={stats?.books}
           icon={BookOpen}
           to="/acervo/livros"
         />
-        <StatCard
+        <CollectionStatCard
           title={knowledgeTypeLabels.course}
           value={stats?.courses}
           icon={GraduationCap}
           to="/acervo/cursos"
         />
-        <StatCard
+        <CollectionStatCard
           title={knowledgeTypeLabels.product}
           value={stats?.products}
           icon={Package}
           to="/acervo/produtos"
         />
-        <StatCard
+        <CollectionStatCard
           title={knowledgeTypeLabels.event}
           value={stats?.events}
           icon={CalendarDays}
           to="/acervo/eventos"
         />
-        <StatCard
+        <CollectionStatCard
           title={knowledgeTypeLabels.author}
           value={stats?.authors}
           icon={Users2}
           to="/acervo/autores"
         />
-        <StatCard
+        <CollectionStatCard
           title={knowledgeTypeLabels.methodological}
           value={stats?.concepts}
           icon={Network}
           to="/acervo/conceitos"
         />
-        <StatCard
+        <CollectionStatCard
           title={knowledgeTypeLabels.faq}
           value={stats?.faq || 0}
           icon={HelpCircle}
@@ -128,7 +147,17 @@ function AcervoDashboard() {
   );
 }
 
-function StatCard({ title, value, icon: Icon, to }: any) {
+function CollectionStatCard({
+  title,
+  value,
+  icon: Icon,
+  to,
+}: {
+  title: string;
+  value: number | undefined;
+  icon: LucideIcon;
+  to: string;
+}) {
   return (
     <Link to={to} className="block transition-transform hover:-translate-y-1">
       <Card className="h-full hover:border-primary/50 transition-colors">

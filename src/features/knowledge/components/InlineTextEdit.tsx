@@ -25,10 +25,8 @@ export function InlineTextEdit({ nodeId, slug, field, initialValue, className }:
 
   const mutation = useMutation({
     mutationFn: async (newValue: string) => {
-      const { error } = await supabase
-        .from("knowledge_nodes")
-        .update({ [field]: newValue })
-        .eq("id", nodeId);
+      const update = field === "summary" ? { summary: newValue } : { content: newValue };
+      const { error } = await supabase.from("knowledge_nodes").update(update).eq("id", nodeId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -36,9 +34,9 @@ export function InlineTextEdit({ nodeId, slug, field, initialValue, className }:
       setIsEditing(false);
       qc.invalidateQueries({ queryKey: ["knowledge-node", slug] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast.error("Erro ao atualizar texto", { description: err.message });
-    }
+    },
   });
 
   if (isEditing) {
@@ -51,21 +49,26 @@ export function InlineTextEdit({ nodeId, slug, field, initialValue, className }:
           autoFocus
         />
         <div className="flex gap-2">
-          <Button 
-            size="sm" 
-            onClick={() => mutation.mutate(value)} 
+          <Button
+            size="sm"
+            onClick={() => mutation.mutate(value)}
             disabled={mutation.isPending}
             className="h-8 gap-1"
           >
-            {mutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Salvar
+            {mutation.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Check className="h-3 w-3" />
+            )}{" "}
+            Salvar
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setValue(initialValue || "");
               setIsEditing(false);
-            }} 
+            }}
             disabled={mutation.isPending}
             className="h-8 gap-1"
           >
@@ -77,10 +80,13 @@ export function InlineTextEdit({ nodeId, slug, field, initialValue, className }:
   }
 
   return (
-    <div className={`group relative rounded-md -mx-3 px-3 py-2 hover:bg-muted/40 transition-colors cursor-pointer border border-transparent hover:border-border/40 ${className || ""}`} onClick={() => setIsEditing(true)}>
-      <Button 
-        variant="ghost" 
-        size="icon" 
+    <div
+      className={`group relative rounded-md -mx-3 px-3 py-2 hover:bg-muted/40 transition-colors cursor-pointer border border-transparent hover:border-border/40 ${className || ""}`}
+      onClick={() => setIsEditing(true)}
+    >
+      <Button
+        variant="ghost"
+        size="icon"
         className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 shadow-sm"
         onClick={(e) => {
           e.stopPropagation();

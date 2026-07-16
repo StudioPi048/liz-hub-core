@@ -88,7 +88,7 @@ export function HotmartEnrichPanel({ productId, slug, initialUrl }: Props) {
               </>
             )}
           </Button>
-          
+
           {url && (
             <Button
               variant="outline"

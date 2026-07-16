@@ -16,10 +16,16 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Copy, Plus, Search, Trash2 } from "lucide-react";
+import { Copy, Plus, Search, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Tables } from "@/integrations/supabase/types";
 
 const VARIANTS = ["longa", "media", "curta", "instagram", "whatsapp", "email"] as const;
+
+type TextSnippet = Tables<"text_snippets"> & {
+  text_snippet_variants: Tables<"text_snippet_variants">[];
+};
 
 export const Route = createFileRoute("/_authenticated/textos")({
   component: TextosPage,
@@ -36,11 +42,12 @@ function TextosPage() {
   const snippets = useQuery({
     queryKey: ["snippets"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("text_snippets")
         .select("*, text_snippet_variants(*)")
         .order("created_at", { ascending: false });
-      return data || [];
+      if (error) throw new Error("Não foi possível carregar a biblioteca de textos.");
+      return (data ?? []) as TextSnippet[];
     },
   });
 
@@ -68,7 +75,7 @@ function TextosPage() {
       setBodies({});
       qc.invalidateQueries({ queryKey: ["snippets"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const del = useMutation({
@@ -80,23 +87,22 @@ function TextosPage() {
       toast.success("Removido");
       qc.invalidateQueries({ queryKey: ["snippets"] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const filtered = (snippets.data || []).filter(
-    (s: any) =>
+    (s) =>
       !q ||
       s.title.toLowerCase().includes(q.toLowerCase()) ||
       (s.theme || "").toLowerCase().includes(q.toLowerCase()) ||
-      (s.text_snippet_variants || []).some((v: any) =>
-        v.body.toLowerCase().includes(q.toLowerCase()),
-      ),
+      (s.text_snippet_variants || []).some((v) => v.body.toLowerCase().includes(q.toLowerCase())),
   );
 
   return (
     <div className="space-y-4 max-w-5xl">
       <div className="flex flex-wrap gap-2 justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Biblioteca de Textos</h1>
+          <h1 className="text-2xl font-editorial tracking-tight">Biblioteca de Textos</h1>
           <p className="text-sm text-muted-foreground">Textos prontos com variações por canal.</p>
         </div>
         <div className="flex gap-2 flex-1 md:flex-none md:w-96">
@@ -154,59 +160,76 @@ function TextosPage() {
         </div>
       </div>
 
-      {filtered.length === 0 && <p className="text-muted-foreground">Nenhum texto ainda.</p>}
-
-      <div className="grid gap-3">
-        {filtered.map((s: any) => (
-          <Card key={s.id}>
-            <CardHeader className="flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-base">{s.title}</CardTitle>
-                {s.theme && (
-                  <Badge variant="secondary" className="mt-1">
-                    {s.theme}
-                  </Badge>
-                )}
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  if (confirm("Remover?")) del.mutate(s.id);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {(s.text_snippet_variants || []).length === 0 && (
-                <p className="text-sm text-muted-foreground">Sem variações.</p>
-              )}
-              {(s.text_snippet_variants || []).map((v: any) => (
-                <div key={v.id} className="border rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <Badge variant="outline" className="capitalize">
-                      {v.variant}
+      {snippets.isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-24 w-full rounded-lg" />
+        </div>
+      ) : snippets.isError ? (
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-card py-16 text-center">
+          <AlertTriangle className="h-6 w-6 text-[var(--semantic-critical-fg)]" />
+          <p className="font-medium">Não foi possível carregar a biblioteca de textos.</p>
+          <p className="text-sm text-muted-foreground max-w-sm">Tente novamente em instantes.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-muted-foreground">
+          {snippets.data && snippets.data.length > 0
+            ? "Nenhum texto encontrado para esta busca."
+            : "Nenhum texto ainda. Cadastre o primeiro texto pronto do Instituto."}
+        </p>
+      ) : (
+        <div className="grid gap-3">
+          {filtered.map((s) => (
+            <Card key={s.id}>
+              <CardHeader className="flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">{s.title}</CardTitle>
+                  {s.theme && (
+                    <Badge variant="secondary" className="mt-1">
+                      {s.theme}
                     </Badge>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        navigator.clipboard.writeText(v.body);
-                        toast.success("Copiado");
-                      }}
-                    >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copiar
-                    </Button>
-                  </div>
-                  <p className="text-sm whitespace-pre-wrap">{v.body}</p>
+                  )}
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    if (confirm("Remover?")) del.mutate(s.id);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {(s.text_snippet_variants || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">Sem variações.</p>
+                )}
+                {(s.text_snippet_variants || []).map((v) => (
+                  <div key={v.id} className="border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <Badge variant="outline" className="capitalize">
+                        {v.variant}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          navigator.clipboard.writeText(v.body);
+                          toast.success("Copiado");
+                        }}
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copiar
+                      </Button>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap">{v.body}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

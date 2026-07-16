@@ -23,35 +23,24 @@ import {
   Calendar,
   Link2,
   FileText,
-  Users,
   Contact,
-  Building2,
-  Briefcase,
-  Wallet,
   Sparkles,
-  FolderOpen,
-  Bot,
   LogOut,
   Settings,
   Search,
   BellRing,
-  Clock,
-  Star,
-  Zap,
   Library,
   BookOpen,
   GraduationCap,
   Package,
   CalendarDays,
-  Users2,
-  Network,
-  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/agenda", label: "Agenda", icon: Calendar },
+  { to: "/crm", label: "Clientes", icon: Contact },
   { to: "/links", label: "Links", icon: Link2 },
 ] as const;
 
@@ -88,6 +77,11 @@ const acervoNav = [
   //   label: "Conceitos e Metodologia",
   //   icon: Network,
   // },
+] as const;
+
+const conteudoNav = [
+  { to: "/textos", label: "Textos", icon: FileText },
+  { to: "/curadoria", label: "Curadoria", icon: Sparkles },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -127,11 +121,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         <SidebarHeader>
           <div className="flex items-center gap-3 px-2 py-3">
             <div className="h-10 w-10 flex items-center justify-center">
-              <img src="/liz-logo.png" alt="LIZ" className="h-full w-full object-contain drop-shadow-sm" />
+              <img
+                src="/liz-logo.png"
+                alt="LIZ"
+                className="h-full w-full object-contain drop-shadow-sm"
+              />
             </div>
             <div className="flex flex-col">
-              <span className="font-semibold text-sidebar-foreground tracking-tight leading-none">LIZ HUB</span>
-              <span className="text-[10px] text-sidebar-foreground/70 uppercase tracking-widest mt-1">Instituto</span>
+              <span className="font-semibold text-sidebar-foreground tracking-tight leading-none">
+                LIZ HUB
+              </span>
+              <span className="text-[10px] text-sidebar-foreground/70 uppercase tracking-widest mt-1">
+                Instituto
+              </span>
             </div>
           </div>
         </SidebarHeader>
@@ -164,18 +166,26 @@ export function AppShell({ children }: { children: ReactNode }) {
               <SidebarMenu>
                 {acervoNav.map((n) => {
                   const Icon = n.icon;
+                  const collection = "params" in n ? n.params.collection : undefined;
                   // Exact match for overview, prefix match for others to keep active state
                   const active =
                     n.to === "/acervo"
                       ? pathname === "/acervo"
-                      : pathname.startsWith("/acervo/" + (n as any).params?.collection);
+                      : pathname.startsWith("/acervo/" + collection);
                   return (
                     <SidebarMenuItem key={n.label}>
                       <SidebarMenuButton asChild isActive={active}>
-                        <Link to={n.to as any} params={(n as any).params}>
-                          <Icon />
-                          <span>{n.label}</span>
-                        </Link>
+                        {"params" in n ? (
+                          <Link to={n.to} params={n.params}>
+                            <Icon />
+                            <span>{n.label}</span>
+                          </Link>
+                        ) : (
+                          <Link to={n.to}>
+                            <Icon />
+                            <span>{n.label}</span>
+                          </Link>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -185,27 +195,23 @@ export function AppShell({ children }: { children: ReactNode }) {
           </SidebarGroup>
 
           <SidebarGroup>
-            <SidebarGroupLabel>Ações Rápidas</SidebarGroupLabel>
+            <SidebarGroupLabel>Conteúdo</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton>
-                    <Search className="h-4 w-4" />
-                    <span>Busca Global (Cmd+K)</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton>
-                    <BellRing className="h-4 w-4 text-orange-500" />
-                    <span>Pendências</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton>
-                    <Clock className="h-4 w-4" />
-                    <span>Recentes</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {conteudoNav.map((n) => {
+                  const Icon = n.icon;
+                  const active = pathname === n.to || pathname.startsWith(n.to + "/");
+                  return (
+                    <SidebarMenuItem key={n.to}>
+                      <SidebarMenuButton asChild isActive={active}>
+                        <Link to={n.to}>
+                          <Icon />
+                          <span>{n.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -238,26 +244,32 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SidebarInset className="bg-bg-page overflow-hidden p-3 md:p-4 h-screen">
         <div className="bg-bg-canvas rounded-[18px] shadow-[0_4px_16px_rgba(30,27,46,0.08)] flex-1 overflow-auto flex flex-col h-full border border-border/30 relative">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border/40 bg-bg-canvas/80 backdrop-blur-xl px-6 transition-all duration-300 rounded-t-[18px]">
-          <SidebarTrigger className="hover:bg-primary/5 transition-colors rounded-full" />
-          <div className="flex-1 flex items-center">
+            <SidebarTrigger className="hover:bg-primary/5 transition-colors rounded-full" />
+            <div className="flex-1 flex items-center min-w-0">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                title="Busca global ainda não implementada nesta versão."
+                className="h-9 w-40 sm:w-56 md:w-64 justify-start text-muted-foreground font-normal bg-background/50 border-border/50 shadow-sm rounded-full px-4 disabled:opacity-50"
+              >
+                <Search className="mr-2 h-4 w-4 opacity-70 shrink-0" />
+                <span className="truncate">Buscar no LIZ HUB...</span>
+              </Button>
+            </div>
             <Button
-              variant="outline"
-              size="sm"
-              className="h-9 w-64 justify-start text-muted-foreground font-normal bg-background/50 hover:bg-background/80 transition-all border-border/50 shadow-sm rounded-full px-4"
+              variant="ghost"
+              size="icon"
+              disabled
+              title="Notificações ainda não implementadas nesta versão."
+              className="h-9 w-9 relative hover:bg-primary/5 rounded-full transition-colors disabled:opacity-50"
             >
-              <Search className="mr-2 h-4 w-4 opacity-70" />
-              Buscar no LIZ HUB...
+              <BellRing className="h-4 w-4 text-foreground/80" />
             </Button>
-          </div>
-          <Button variant="ghost" size="icon" className="h-9 w-9 relative hover:bg-primary/5 rounded-full transition-colors">
-            <BellRing className="h-4 w-4 text-foreground/80" />
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9 relative hover:bg-primary/5 rounded-full transition-colors">
-            <Zap className="h-4 w-4 text-foreground/80" />
-          </Button>
-        </header>
-        <main className="p-6 md:p-10 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">{children}</main>
+          </header>
+          <main className="p-6 md:p-10 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">
+            {children}
+          </main>
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -209,29 +209,33 @@ export const createAssetUploadUrl = createServerFn({ method: "POST" })
       .createSignedUploadUrl(data.path);
 
     if (error) throw error;
-    return { 
-      signedUrl: uploadUrl.signedUrl, 
+    return {
+      signedUrl: uploadUrl.signedUrl,
       token: uploadUrl.token,
-      path: uploadUrl.path 
+      path: uploadUrl.path,
     };
   });
 
 export const registerAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ 
-    knowledge_node_id: z.string(),
-    stable_id: z.string(),
-    asset_type: z.string(),
-    asset_category: z.string(),
-    name: z.string(),
-    storage_provider: z.string(),
-    storage_bucket: z.string().optional(),
-    storage_path: z.string().optional(),
-    external_url: z.string().optional(),
-    visibility: z.string().default("internal"),
-    rights_status: z.string().default("unknown"),
-    is_primary: z.boolean().default(false),
-  }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        knowledge_node_id: z.string(),
+        stable_id: z.string(),
+        asset_type: z.string(),
+        asset_category: z.string(),
+        name: z.string(),
+        storage_provider: z.string(),
+        storage_bucket: z.string().optional(),
+        storage_path: z.string().optional(),
+        external_url: z.string().optional(),
+        visibility: z.string().default("internal"),
+        rights_status: z.string().default("unknown"),
+        is_primary: z.boolean().default(false),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -248,7 +252,7 @@ export const registerAsset = createServerFn({ method: "POST" })
         ...data,
         source_type: "ui_upload",
         status: "draft",
-        created_by: context.userId
+        created_by: context.userId,
       })
       .select()
       .single();

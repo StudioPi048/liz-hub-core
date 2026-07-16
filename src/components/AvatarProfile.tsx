@@ -15,7 +15,7 @@ const bgColors = {
 
 export function AvatarProfile({ name, email, className, variant = "lavender" }: AvatarProps) {
   const displayString = name || email || "?";
-  
+
   // Get up to 2 initials
   const initials = displayString
     .split(" ")
@@ -30,7 +30,7 @@ export function AvatarProfile({ name, email, className, variant = "lavender" }: 
       className={cn(
         "flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-medium shadow-sm",
         bgColors[variant],
-        className
+        className,
       )}
     >
       {initials}

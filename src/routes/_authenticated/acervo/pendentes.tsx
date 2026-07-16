@@ -11,13 +11,24 @@ export const Route = createFileRoute("/_authenticated/acervo/pendentes")({
   component: PendentesPage,
 });
 
+// Mesma ressalva de `acervo/$collection.tsx`: a query usa `as any` no servidor,
+// então tipamos aqui apenas os campos que este card consome.
+type PendingNode = {
+  id: string;
+  title: string;
+  slug: string;
+  type: string;
+  status: string;
+  authority_level: string | null;
+  summary: string | null;
+};
+
 function PendentesPage() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["knowledge-pendentes", page],
-    queryFn: () =>
-      getKnowledgeNodes({ data: { status: "draft", page, limit: 20, type: "all" } }),
+    queryFn: () => getKnowledgeNodes({ data: { status: "draft", page, limit: 20, type: "all" } }),
   });
 
   return (
@@ -57,11 +68,9 @@ function PendentesPage() {
         </div>
       ) : (
         <>
-          <div className="text-sm text-muted-foreground">
-            {data?.count} registro(s) em rascunho
-          </div>
+          <div className="text-sm text-muted-foreground">{data?.count} registro(s) em rascunho</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data?.nodes.map((node: any) => (
+            {(data?.nodes as PendingNode[] | undefined)?.map((node) => (
               <Link
                 key={node.id}
                 to="/acervo/item/$slug"

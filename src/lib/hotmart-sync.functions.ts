@@ -9,8 +9,6 @@ interface HotmartProduct {
   status?: string;
 }
 
-
-
 export const syncHotmartCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -91,36 +89,39 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
           .eq("slug", slug)
           .maybeSingle();
 
-        const { error } = await (supabaseAdmin as any)
-          .from("knowledge_nodes")
-          .upsert(
-            {
-              title: product.name,
-              slug,
-              type: "product",
-              status: "draft",
-              visibility: "public",
-              source_type: "hotmart",
-              source_id: String(product.id),
-              content,
-              content_hash,
-              metadata,
-              authority_level: "unverified",
-              language: "pt-BR",
-            },
-            { onConflict: "slug" },
-          );
-
+        const { error } = await (supabaseAdmin as any).from("knowledge_nodes").upsert(
+          {
+            title: product.name,
+            slug,
+            type: "product",
+            status: "draft",
+            visibility: "public",
+            source_type: "hotmart",
+            source_id: String(product.id),
+            content,
+            content_hash,
+            metadata,
+            authority_level: "unverified",
+            language: "pt-BR",
+          },
+          { onConflict: "slug" },
+        );
 
         if (error) {
           console.error(
             "[hotmart-sync] upsert failed",
-            "product_id=", product.id,
-            "slug=", slug,
-            "code=", (error as any).code,
-            "message=", error.message,
-            "details=", (error as any).details,
-            "hint=", (error as any).hint,
+            "product_id=",
+            product.id,
+            "slug=",
+            slug,
+            "code=",
+            (error as any).code,
+            "message=",
+            error.message,
+            "details=",
+            (error as any).details,
+            "hint=",
+            (error as any).hint,
           );
           failed += 1;
         } else if (existing) {
@@ -129,7 +130,6 @@ export const syncHotmartCatalog = createServerFn({ method: "POST" })
           created += 1;
         }
       }
-
 
       return {
         total: allProducts.length,

@@ -33,6 +33,7 @@ export type AgendaEvent = {
   ownerId?: string | null;
 
   status: AgendaEventStatus;
+  cancellationReason?: string | null;
   modality?: "online" | "in_person" | "hybrid" | null;
   location?: string | null;
   city?: string | null;

@@ -1,4 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import crypto from "node:crypto";
+
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 export const Route = createFileRoute("/api/public/webhooks/hotmart")({
   server: {
@@ -7,7 +15,7 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
         const hottok = request.headers.get("x-hotmart-hottok");
         const secret = process.env.HOTMART_WEBHOOK_SECRET;
 
-        if (!secret || !hottok || hottok !== secret) {
+        if (!secret || !hottok || !safeEqual(hottok, secret)) {
           return new Response("Unauthorized", { status: 401 });
         }
 
@@ -45,18 +53,21 @@ export const Route = createFileRoute("/api/public/webhooks/hotmart")({
 
         const { error } = await (supabaseAdmin as any)
           .from("knowledge_nodes")
-          .upsert({
-            title: details?.name || product.name,
-            slug: `produto-${product.id}`,
-            type: "product",
-            status: "approved",
-            visibility: "public",
-            source_type: "hotmart",
-            source_id: String(product.id),
-            content: details?.description || `Produto importado. ID: ${product.id}`,
-            metadata: metadata,
-            authority_level: "official",
-          }, { onConflict: "slug" })
+          .upsert(
+            {
+              title: details?.name || product.name,
+              slug: `produto-${product.id}`,
+              type: "product",
+              status: "approved",
+              visibility: "public",
+              source_type: "hotmart",
+              source_id: String(product.id),
+              content: details?.description || `Produto importado. ID: ${product.id}`,
+              metadata: metadata,
+              authority_level: "official",
+            },
+            { onConflict: "slug" },
+          )
           .select()
           .single();
 

@@ -7,10 +7,12 @@ declare global {
 }
 
 // Mock dependencies
+//
+// getValidAccessToken() (src/lib/google-calendar.server.ts) reads the token
+// via `.from("google_oauth_tokens").select("*").limit(1).maybeSingle()` —
+// a system-wide singleton lookup, no `.eq()` in the chain. The mock below
+// mirrors that exact chain shape.
 vi.mock("@/integrations/supabase/client.server", () => {
-  const select = vi.fn();
-  const eq = vi.fn().mockReturnValue({ maybeSingle: vi.fn() });
-  const update = vi.fn().mockReturnValue({ eq: vi.fn() });
   const deleteFn = vi.fn().mockReturnValue({ eq: vi.fn() });
 
   return {
@@ -18,7 +20,7 @@ vi.mock("@/integrations/supabase/client.server", () => {
       from: vi.fn((table) => {
         return {
           select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
+            limit: vi.fn().mockReturnValue({
               maybeSingle: vi.fn().mockImplementation(() => {
                 if (table === "google_oauth_tokens") {
                   return Promise.resolve({ data: globalThis.mockRow });
@@ -40,6 +42,13 @@ describe("getValidAccessToken", () => {
     globalThis.mockRow = null;
     vi.clearAllMocks();
 
+    // refreshAccessToken() calls requireGoogleEnv() before touching the
+    // network; without these, it throws early and every refresh attempt
+    // would be misclassified as "temporarily_unavailable".
+    vi.stubEnv("GOOGLE_OAUTH_CLIENT_ID", "test-client-id");
+    vi.stubEnv("GOOGLE_OAUTH_CLIENT_SECRET", "test-client-secret");
+    vi.stubEnv("GOOGLE_OAUTH_STATE_SECRET", "test-state-secret");
+
     vi.stubGlobal(
       "fetch",
       vi.fn().mockImplementation(() => {
@@ -57,6 +66,7 @@ describe("getValidAccessToken", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("should return disconnected when no token exists", async () => {

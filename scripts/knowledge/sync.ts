@@ -275,7 +275,7 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
     unchanged: 0,
     missing_from_manifest: 0,
     missing_targets: 0,
-    errors: 0
+    errors: 0,
   };
 
   if (!supabase) {
@@ -299,7 +299,7 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
     }
 
     const manifestAssets = node.assets || [];
-    const stableIdsInManifest = new Set(manifestAssets.map(a => a.id));
+    const stableIdsInManifest = new Set(manifestAssets.map((a) => a.id));
 
     // Buscar assets existentes para este node
     const { data: existingAssets, error: fetchErr } = await supabase
@@ -308,12 +308,16 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
       .eq("knowledge_node_id", dbNode.id);
 
     if (fetchErr) {
-      logEvent("SYNC_ASSETS", "ERROR", `Failed to fetch assets for node ${node.id}: ${fetchErr.message}`);
+      logEvent(
+        "SYNC_ASSETS",
+        "ERROR",
+        `Failed to fetch assets for node ${node.id}: ${fetchErr.message}`,
+      );
       stats.errors++;
       continue;
     }
 
-    const existingAssetMap = new Map(existingAssets?.map(a => [a.stable_id, a]) || []);
+    const existingAssetMap = new Map(existingAssets?.map((a) => [a.stable_id, a]) || []);
 
     // 1. Processar assets declarados no manifesto
     for (const asset of manifestAssets) {
@@ -340,8 +344,8 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
         source_type: "repository_file",
         source_reference: node.source_uri,
         metadata: {
-          manifest_hash: manifestHash
-        }
+          manifest_hash: manifestHash,
+        },
       };
 
       if (!existing) {
@@ -351,12 +355,14 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
           continue;
         }
 
-        const { error: insertErr } = await supabase
-          .from("knowledge_assets")
-          .insert(assetPayload);
+        const { error: insertErr } = await supabase.from("knowledge_assets").insert(assetPayload);
 
         if (insertErr) {
-          logEvent("SYNC_ASSETS", "ERROR", `Failed to create asset ${asset.id}: ${insertErr.message}`);
+          logEvent(
+            "SYNC_ASSETS",
+            "ERROR",
+            `Failed to create asset ${asset.id}: ${insertErr.message}`,
+          );
           stats.errors++;
         } else {
           logEvent("SYNC_ASSETS", "CREATED", `${node.id} -> ${asset.id}`);
@@ -364,7 +370,7 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
         }
       } else {
         const existingManifestHash = existing.metadata?.manifest_hash;
-        
+
         if (existingManifestHash === manifestHash) {
           logEvent("SYNC_ASSETS", "UNCHANGED", `${node.id} -> ${asset.id}`);
           stats.unchanged++;
@@ -397,8 +403,8 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
             proposed_rights_status: asset.rights_status,
             proposed_metadata: { manifest_hash: manifestHash },
             proposed_manifest_hash: manifestHash,
-            reason: 'repository_manifest_changed',
-            status: 'proposed'
+            reason: "repository_manifest_changed",
+            status: "proposed",
           };
 
           const { error: revErr } = await supabase
@@ -406,10 +412,18 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
             .upsert(revisionPayload, { onConflict: "knowledge_asset_id, proposed_manifest_hash" });
 
           if (revErr) {
-            logEvent("SYNC_ASSETS", "ERROR_REVISION", `Failed to create revision for ${asset.id}: ${revErr.message}`);
+            logEvent(
+              "SYNC_ASSETS",
+              "ERROR_REVISION",
+              `Failed to create revision for ${asset.id}: ${revErr.message}`,
+            );
             stats.errors++;
           } else {
-            logEvent("SYNC_ASSETS", "CREATED_REVISION", `Asset ${asset.id} approved but changed. Revision pending.`);
+            logEvent(
+              "SYNC_ASSETS",
+              "CREATED_REVISION",
+              `Asset ${asset.id} approved but changed. Revision pending.`,
+            );
             stats.pending_revision++;
           }
         } else {
@@ -426,7 +440,11 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
             .eq("id", existing.id);
 
           if (updErr) {
-            logEvent("SYNC_ASSETS", "ERROR", `Failed to update asset ${asset.id}: ${updErr.message}`);
+            logEvent(
+              "SYNC_ASSETS",
+              "ERROR",
+              `Failed to update asset ${asset.id}: ${updErr.message}`,
+            );
             stats.errors++;
           } else {
             logEvent("SYNC_ASSETS", "UPDATED_DRAFT", `${node.id} -> ${asset.id}`);
@@ -441,7 +459,11 @@ export async function syncAssets(nodes: ParsedNode[], dryRun: boolean = true) {
       for (const exAsset of existingAssets) {
         if (!stableIdsInManifest.has(exAsset.stable_id)) {
           // Não apagar automaticamente. Apenas logar.
-          logEvent("SYNC_ASSETS", "MISSING_FROM_MANIFEST", `Asset ${exAsset.stable_id} is in DB but not in manifest for ${node.id}`);
+          logEvent(
+            "SYNC_ASSETS",
+            "MISSING_FROM_MANIFEST",
+            `Asset ${exAsset.stable_id} is in DB but not in manifest for ${node.id}`,
+          );
           stats.missing_from_manifest++;
         }
       }

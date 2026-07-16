@@ -13,7 +13,17 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SemanticBadge } from "@/components/SemanticBadge";
-import { Search, Loader2, ArrowLeft, Filter, FileText, RefreshCw, Check, CircleDot, CircleSlash } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  ArrowLeft,
+  Filter,
+  FileText,
+  RefreshCw,
+  Check,
+  CircleDot,
+  CircleSlash,
+} from "lucide-react";
 import { useState, useMemo } from "react";
 import {
   DropdownMenu,
@@ -31,6 +41,21 @@ export const Route = createFileRoute("/_authenticated/acervo/$collection")({
   component: CollectionPage,
 });
 
+// A query usa uma coluna computada (`coverUrl:metadata->coverUrl`) e o client
+// Supabase é acessado via `as any` no servidor, então o retorno não carrega um
+// tipo gerado — descrevemos aqui apenas os campos que a UI de fato consome.
+type CollectionNode = {
+  id: string;
+  title: string;
+  slug: string;
+  type: string;
+  status: string;
+  authority_level: string | null;
+  summary: string | null;
+  coverUrl?: string | null;
+  metadata?: { sales_enabled?: boolean; cover_image?: string } | null;
+};
+
 function CollectionPage() {
   const { collection } = Route.useParams();
   const type = getTypeFromSlug(collection);
@@ -40,7 +65,27 @@ function CollectionPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // If type is not mapped, show 404-like state
+  // Hooks precisam rodar em toda renderização, mesmo quando `type` é inválido —
+  // por isso a validação abaixo só decide o que é renderizado, nunca se os
+  // hooks são chamados.
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["knowledge-collection", type, page, debouncedSearch],
+    queryFn: () =>
+      getKnowledgeNodes({ data: { type: type ?? "all", page, limit: 12, query: debouncedSearch } }),
+    enabled: Boolean(type),
+  });
+
+  const filteredNodes = useMemo(() => {
+    const nodes = (data?.nodes ?? []) as CollectionNode[];
+    if (salesFilter === "all") return nodes;
+    return nodes.filter((n) => {
+      const enabled = n.metadata?.sales_enabled;
+      return salesFilter === "active" ? enabled === true : enabled !== true;
+    });
+  }, [data?.nodes, salesFilter]);
+
+  // Se o tipo não está mapeado, mostramos um estado de "não encontrado" —
+  // depois de todos os hooks já terem sido chamados.
   if (!type) {
     return (
       <div className="p-8 text-center">
@@ -52,22 +97,7 @@ function CollectionPage() {
     );
   }
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["knowledge-collection", type, page, debouncedSearch],
-    queryFn: () => getKnowledgeNodes({ data: { type, page, limit: 12, query: debouncedSearch } }),
-  });
-
   const label = knowledgeTypeLabels[type];
-
-  const filteredNodes = useMemo(() => {
-    const nodes = data?.nodes ?? [];
-    if (salesFilter === "all") return nodes;
-    return nodes.filter((n: any) => {
-      const enabled = n.metadata?.sales_enabled;
-      return salesFilter === "active" ? enabled === true : enabled !== true;
-    });
-  }, [data?.nodes, salesFilter]);
-
   const filterActive = salesFilter !== "all";
 
   return (
@@ -139,11 +169,15 @@ function CollectionPage() {
           Erro ao carregar registros.
         </div>
       ) : filteredNodes.length === 0 ? (
-        <EmptyCollectionState type={type} label={label} hasSearch={debouncedSearch.length > 0 || filterActive} />
+        <EmptyCollectionState
+          type={type}
+          label={label}
+          hasSearch={debouncedSearch.length > 0 || filterActive}
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredNodes.map((node: any) => (
+            {filteredNodes.map((node) => (
               <EntityCard key={node.id} node={node} type={type} />
             ))}
           </div>
@@ -176,18 +210,20 @@ function HotmartSyncButton() {
   const syncFn = useServerFn(syncHotmartCatalog);
   const mutation = useMutation({
     mutationFn: () => syncFn(),
-    onSuccess: (result: any) => {
-      if (result?.error) {
+    onSuccess: (result) => {
+      if ("error" in result && result.error) {
         toast.error("Falha ao sincronizar", { description: result.error });
         return;
       }
-      toast.success("Catálogo Hotmart sincronizado", {
-        description: `${result.created} novos · ${result.updated} atualizados${result.failed ? ` · ${result.failed} falhas` : ""}`,
-      });
+      if ("created" in result) {
+        toast.success("Catálogo Hotmart sincronizado", {
+          description: `${result.created} novos · ${result.updated} atualizados${result.failed ? ` · ${result.failed} falhas` : ""}`,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["knowledge-collection"] });
       queryClient.invalidateQueries({ queryKey: ["knowledge-stats"] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast.error("Falha ao sincronizar", { description: err?.message ?? "Erro desconhecido" });
     },
   });
@@ -240,14 +276,22 @@ function EmptyCollectionState({
         no banco operacional.
       </p>
       <div className="flex gap-3 mt-6">
-        <Button>Cadastrar {label.replace(/s$/, "")}</Button>
-        <Button variant="outline">Importar Dados</Button>
+        <Button disabled title="Cadastro manual ainda não implementado nesta versão.">
+          Cadastrar {label.replace(/s$/, "")}
+        </Button>
+        <Button
+          variant="outline"
+          disabled
+          title="Importação em lote ainda não implementada nesta versão."
+        >
+          Importar Dados
+        </Button>
       </div>
     </div>
   );
 }
 
-function EntityCard({ node, type }: { node: any; type: KnowledgeType }) {
+function EntityCard({ node, type }: { node: CollectionNode; type: KnowledgeType }) {
   const coverImage = node.coverUrl || node.metadata?.cover_image;
   const hasCover = !!coverImage;
   const salesEnabled = node.metadata?.sales_enabled;
@@ -266,7 +310,9 @@ function EntityCard({ node, type }: { node: any; type: KnowledgeType }) {
           </div>
         ) : (
           <div className="h-32 w-full bg-muted/30 border-b border-border/40 flex items-center justify-center relative overflow-hidden">
-            <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-[0.3em] group-hover:text-muted-foreground/60 transition-colors z-10">{type}</span>
+            <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-[0.3em] group-hover:text-muted-foreground/60 transition-colors z-10">
+              {type}
+            </span>
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>
         )}
@@ -280,23 +326,24 @@ function EntityCard({ node, type }: { node: any; type: KnowledgeType }) {
           <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border/40">
             <Badge
               variant={node.status === "approved" ? "default" : "secondary"}
-              className={`text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 transition-all duration-300 ${node.status === 'approved' ? 'shadow-sm shadow-primary/20 bg-primary/90' : 'bg-muted/50 text-muted-foreground'}`}
+              className={`text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 transition-all duration-300 ${node.status === "approved" ? "shadow-sm shadow-primary/20 bg-primary/90" : "bg-muted/50 text-muted-foreground"}`}
             >
               {node.status}
             </Badge>
             {node.authority_level === "official" && (
               <Badge
                 variant="outline"
-                className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 border-blue-500/20 text-blue-600 bg-blue-50/50"
+                className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 border-[var(--brand)]/25 text-[var(--brand)] bg-[var(--brand-soft)]"
               >
                 Oficial
               </Badge>
             )}
-            {(type === "product" || type === "course" || type === "book" || type === "event") && salesEnabled !== undefined && (
-              <SemanticBadge variant={salesEnabled ? "success" : "neutral"} className="ml-auto">
-                {salesEnabled ? "Vendas abertas" : "Vendas fechadas"}
-              </SemanticBadge>
-            )}
+            {(type === "product" || type === "course" || type === "book" || type === "event") &&
+              salesEnabled !== undefined && (
+                <SemanticBadge variant={salesEnabled ? "success" : "neutral"} className="ml-auto">
+                  {salesEnabled ? "Vendas abertas" : "Vendas fechadas"}
+                </SemanticBadge>
+              )}
           </div>
         </CardContent>
       </Card>

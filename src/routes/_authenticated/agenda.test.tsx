@@ -16,21 +16,43 @@ vi.mock("@tanstack/react-query", () => ({
   QueryClientProvider: ({ children }: any) => React.createElement("div", null, children),
 }));
 
-vi.mock("@tanstack/react-start", () => ({
-  useServerFn: vi.fn().mockReturnValue(vi.fn()),
-}));
+// AgendaEventDialog (rendered by AgendaPage) pulls in the real
+// src/features/agenda/api/agenda-events.functions.ts module, whose top-level
+// `createServerFn(...).middleware([requireSupabaseAuth])...` chain — and
+// requireSupabaseAuth's own `createMiddleware(...)` — must resolve to
+// *something* at import time. None of it actually runs in these tests
+// (useQuery/useMutation/useServerFn are all mocked below), so simple
+// chainable stubs are enough.
+vi.mock("@tanstack/react-start", () => {
+  const chainable: any = {
+    middleware: () => chainable,
+    inputValidator: () => chainable,
+    validator: () => chainable,
+    handler: () => vi.fn(),
+  };
+  return {
+    useServerFn: vi.fn().mockReturnValue(vi.fn()),
+    createServerFn: () => chainable,
+    createMiddleware: () => ({ server: () => ({}) }),
+  };
+});
 
 // Mock the actual functions
 vi.mock("@/lib/google-calendar.functions", () => ({
   getGoogleStatus: vi.fn(),
   getGoogleAuthUrl: vi.fn(),
   disconnectGoogle: vi.fn(),
-  listRangeEvents: vi.fn(),
+  getAgendaEvents: vi.fn(),
+  syncGoogleCalendarToDatabase: vi.fn(),
 }));
 
 import { useQuery } from "@tanstack/react-query";
 import { AgendaPage } from "./agenda";
 
+// A agenda local (tabela `agenda_events`) é sempre consultada, independentemente
+// do status da integração com o Google Calendar — a integração é apenas uma
+// fonte de sincronização, não um pré-requisito para ver a agenda. Estes testes
+// refletem esse contrato atual (ver src/routes/_authenticated/agenda.tsx).
 describe("AgendaPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,77 +62,66 @@ describe("AgendaPage", () => {
     return (useQuery as any).mock.calls.find((call: any) => call[0].queryKey[0] === "events");
   };
 
-  it("Status ainda carregando -> eventsQuery não executa (enabled: false)", () => {
+  function mockGoogleStatus(data: any, extra: Record<string, any> = {}) {
     (useQuery as any).mockImplementation(({ queryKey }: any) => {
       if (queryKey[0] === "google-status") {
-        return { data: undefined, refetch: vi.fn(), isLoading: true };
+        return { data, refetch: vi.fn(), isLoading: false, ...extra };
       }
       if (queryKey[0] === "events") {
         return { data: { events: [] }, isLoading: false, refetch: vi.fn() };
       }
       return {};
     });
+  }
+
+  it("busca a agenda local independentemente do status da integração Google", () => {
+    mockGoogleStatus({ status: "disconnected", reason: "not_connected" });
 
     render(React.createElement(AgendaPage));
     const eventsCall = getEventsQueryCall();
-    expect(eventsCall[0].enabled).toBe(false);
+
+    expect(eventsCall).toBeTruthy();
+    // Não há gate de `enabled` — a agenda local é sempre buscada.
+    expect(eventsCall[0].enabled).not.toBe(false);
+    expect(eventsCall[0].queryKey[0]).toBe("events");
   });
 
-  it("Desconectado -> eventsQuery não executa (enabled: false) mas a Agenda renderiza", () => {
-    (useQuery as any).mockImplementation(({ queryKey }: any) => {
-      if (queryKey[0] === "google-status") {
-        return { data: { status: "disconnected", reason: "not_connected" }, refetch: vi.fn() };
-      }
-      if (queryKey[0] === "events") {
-        return { data: { events: [] }, isLoading: false, refetch: vi.fn() };
-      }
-      return {};
-    });
+  it("Painel de Bordo aparece para administradores conectados", () => {
+    mockGoogleStatus({ status: "connected", isAdmin: true });
 
     render(React.createElement(AgendaPage));
 
-    // Verifica enabled
-    const eventsCall = getEventsQueryCall();
-    expect(eventsCall[0].enabled).toBe(false);
-
-    // Verifica renderização da Agenda Interna (Cockpit)
     expect(screen.getByText("Painel de Bordo")).toBeInTheDocument();
+    expect(screen.getByText("Sincronizado")).toBeInTheDocument();
+  });
+
+  it("Painel de Bordo não aparece para usuários sem privilégio de administrador", () => {
+    mockGoogleStatus({ status: "connected", isAdmin: false });
+
+    render(React.createElement(AgendaPage));
+
+    expect(screen.queryByText("Painel de Bordo")).not.toBeInTheDocument();
+  });
+
+  it("Desconectado (admin) exibe aviso para conectar a integração", () => {
+    mockGoogleStatus({ status: "disconnected", reason: "not_connected", isAdmin: true });
+
+    render(React.createElement(AgendaPage));
+
     expect(
       screen.getByText("Sua agenda externa está desconectada. Conecte para visualizar eventos."),
     ).toBeInTheDocument();
   });
 
-  it("Conectado -> eventsQuery executa (enabled: true)", () => {
-    (useQuery as any).mockImplementation(({ queryKey }: any) => {
-      if (queryKey[0] === "google-status") {
-        return { data: { status: "connected" }, refetch: vi.fn() };
-      }
-      if (queryKey[0] === "events") {
-        return { data: { events: [] }, isLoading: false, refetch: vi.fn() };
-      }
-      return {};
-    });
+  it("needs_reconnect (admin) exibe aviso de reconexão", () => {
+    mockGoogleStatus({ status: "needs_reconnect", reason: "invalid_grant", isAdmin: true });
 
     render(React.createElement(AgendaPage));
 
-    const eventsCall = getEventsQueryCall();
-    expect(eventsCall[0].enabled).toBe(true);
-  });
-
-  it("Reconexão (mudança de status) reflete no queryKey", () => {
-    (useQuery as any).mockImplementation(({ queryKey }: any) => {
-      if (queryKey[0] === "google-status") {
-        return { data: { status: "connected" }, refetch: vi.fn() };
-      }
-      if (queryKey[0] === "events") {
-        return { data: { events: [] }, isLoading: false, refetch: vi.fn() };
-      }
-      return {};
-    });
-
-    render(React.createElement(AgendaPage));
-    const eventsCall = getEventsQueryCall();
-    // O queryKey tem o status na última posição
-    expect(eventsCall[0].queryKey).toContain("connected");
+    expect(
+      screen.getByText(
+        "A conexão com o Google Calendar expirou ou ficou inválida. Reconecte sua conta para voltar a visualizar os eventos externos.",
+      ),
+    ).toBeInTheDocument();
   });
 });

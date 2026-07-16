@@ -1,18 +1,31 @@
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createAssetUploadUrl, registerAsset } from "../api/knowledge.server";
-import { 
-  AssetCategory, 
-  StorageProvider, 
-  RightsStatus, 
-  Visibility, 
-  NODE_CATEGORY_MAPPING 
+import {
+  AssetCategory,
+  StorageProvider,
+  RightsStatus,
+  Visibility,
+  NODE_CATEGORY_MAPPING,
 } from "../model/asset-vocabulary";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,19 +42,20 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
   const [name, setName] = useState<string>("");
   const queryClient = useQueryClient();
 
-  const validCategories = NODE_CATEGORY_MAPPING[nodeType as keyof typeof NODE_CATEGORY_MAPPING] || [];
+  const validCategories =
+    NODE_CATEGORY_MAPPING[nodeType as keyof typeof NODE_CATEGORY_MAPPING] || [];
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!file || !category || !name) throw new Error("Preencha os campos obrigatórios");
 
       // 1. Get Signed Upload URL
-      const ext = file.name.split('.').pop();
+      const ext = file.name.split(".").pop();
       const stableId = crypto.randomUUID();
       const path = `${nodeType}s/${nodeId}/${stableId}.${ext}`;
-      
+
       const { signedUrl } = await createAssetUploadUrl({
-        data: { bucket: "knowledge-assets", path }
+        data: { bucket: "knowledge-assets", path },
       });
 
       // 2. Upload file directly to Supabase Storage via signed URL
@@ -50,7 +64,7 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
         body: file,
         headers: {
           "Content-Type": file.type || "application/octet-stream",
-        }
+        },
       });
 
       if (!uploadRes.ok) {
@@ -75,7 +89,7 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
           storage_provider: "supabase",
           storage_bucket: "knowledge-assets",
           storage_path: path,
-        }
+        },
       });
 
       return asset;
@@ -91,7 +105,7 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
     },
     onError: (err: any) => {
       toast.error(err.message || "Erro ao fazer upload");
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -119,8 +133,8 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Arquivo</Label>
-            <Input 
-              type="file" 
+            <Input
+              type="file"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               disabled={uploadMutation.isPending}
             />
@@ -128,7 +142,7 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
 
           <div className="space-y-2">
             <Label>Nome de Exibição</Label>
-            <Input 
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Capa Oficial, E-book V1"
@@ -138,21 +152,33 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
 
           <div className="space-y-2">
             <Label>Categoria</Label>
-            <Select value={category} onValueChange={setCategory} disabled={uploadMutation.isPending}>
+            <Select
+              value={category}
+              onValueChange={setCategory}
+              disabled={uploadMutation.isPending}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a categoria..." />
               </SelectTrigger>
               <SelectContent>
-                {validCategories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                {validCategories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <Button type="submit" className="w-full" disabled={uploadMutation.isPending || !file || !category || !name}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={uploadMutation.isPending || !file || !category || !name}
+          >
             {uploadMutation.isPending ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Salvando...</>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Salvando...
+              </>
             ) : (
               "Salvar Ativo"
             )}

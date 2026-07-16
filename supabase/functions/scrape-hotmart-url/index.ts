@@ -6,8 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -60,17 +59,16 @@ Deno.serve(async (req) => {
     const { productId, url } = await req.json();
 
     if (!productId || !url) {
-      return new Response(
-        JSON.stringify({ error: "productId e url são obrigatórios" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "productId e url são obrigatórios" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Fetch da página pública
     const pageRes = await fetch(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; LizHubBot/1.0; +https://liz-hub-core.lovable.app)",
+        "User-Agent": "Mozilla/5.0 (compatible; LizHubBot/1.0; +https://liz-hub-core.lovable.app)",
         Accept: "text/html,application/xhtml+xml",
       },
       redirect: "follow",
@@ -88,9 +86,7 @@ Deno.serve(async (req) => {
     const html = await pageRes.text();
 
     const rawImage = extractMeta(html, "og:image");
-    const rawDescription =
-      extractMeta(html, "og:description") ??
-      extractMeta(html, "description");
+    const rawDescription = extractMeta(html, "og:description") ?? extractMeta(html, "description");
     const rawTitle = extractMeta(html, "og:title");
 
     const coverImage = rawImage ? decodeHtmlEntities(rawImage) : null;
@@ -124,10 +120,10 @@ Deno.serve(async (req) => {
 
     if (fetchErr) throw fetchErr;
     if (!current) {
-      return new Response(
-        JSON.stringify({ error: "Produto não encontrado" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Produto não encontrado" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const mergedMetadata = {
@@ -171,9 +167,9 @@ Deno.serve(async (req) => {
     );
   } catch (e) {
     console.error("scrape-hotmart-url error", e);
-    return new Response(
-      JSON.stringify({ error: (e as Error).message ?? "Erro interno" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: (e as Error).message ?? "Erro interno" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

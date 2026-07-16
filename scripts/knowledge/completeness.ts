@@ -10,11 +10,23 @@ interface TypeRequirements {
 const REQUIREMENTS_BY_TYPE: Record<string, TypeRequirements> = {
   book: {
     essential: ["title", "author", "summary", "source_type"],
-    recommended: ["asset:cover", "asset:checkout", "asset:interior_pdf", "metadata:isbn", "metadata:publisher"],
+    recommended: [
+      "asset:cover",
+      "asset:checkout",
+      "asset:interior_pdf",
+      "metadata:isbn",
+      "metadata:publisher",
+    ],
   },
   course: {
-    essential: ["title", "summary", "source_type"], 
-    recommended: ["asset:landing_page", "asset:checkout", "asset:slide_deck", "metadata:professors", "metadata:program"],
+    essential: ["title", "summary", "source_type"],
+    recommended: [
+      "asset:landing_page",
+      "asset:checkout",
+      "asset:slide_deck",
+      "metadata:professors",
+      "metadata:program",
+    ],
   },
   author: {
     essential: ["title", "summary", "source_type"],
@@ -22,7 +34,13 @@ const REQUIREMENTS_BY_TYPE: Record<string, TypeRequirements> = {
   },
   event: {
     essential: ["title", "summary", "source_type"],
-    recommended: ["asset:registration_page", "asset:schedule", "asset:gallery", "metadata:location", "metadata:organizer"],
+    recommended: [
+      "asset:registration_page",
+      "asset:schedule",
+      "asset:gallery",
+      "metadata:location",
+      "metadata:organizer",
+    ],
   },
   product: {
     essential: ["title", "summary", "source_type"],
@@ -70,7 +88,7 @@ export function evaluateCompleteness(node: ParsedNode): CompletenessReport {
   for (const field of reqs.recommended) {
     if (field.startsWith("asset:")) {
       const category = field.split(":")[1];
-      const hasAsset = node.assets?.some(a => a.category === category);
+      const hasAsset = node.assets?.some((a) => a.category === category);
       if (hasAsset) presentRecommended.push(field);
       else missingRecommended.push(field);
     } else if (field.startsWith("metadata:")) {

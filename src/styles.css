@@ -4,7 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* LIZ HUB — paleta roxa institucional */
+/*
+ * LIZ HUB — Design System "Arquivo Histórico Clínico"
+ *
+ * Uma única paleta, aplicada globalmente (não como tema opcional).
+ * Superfícies em marfim / bege quente / branco osso. Acentos em bronze,
+ * oliva e terracota. Tipografia serifada (Newsreader) para títulos e
+ * elementos editoriais; sans-serif (Inter) para corpo, dados e navegação.
+ */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -49,7 +56,7 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
 
-  /* LIZ HUB Rebrand Tokens */
+  /* Superfícies e acentos do Instituto LIZ */
   --color-bg-page: var(--bg-page);
   --color-bg-canvas: var(--bg-canvas);
   --color-bg-panel: var(--bg-panel);
@@ -60,7 +67,7 @@
   --color-accent-lime-text: var(--accent-lime-text);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
-  
+
   --color-semantic-neutral-bg: var(--semantic-neutral-bg);
   --color-semantic-neutral-fg: var(--semantic-neutral-fg);
   --color-semantic-pending-bg: var(--semantic-pending-bg);
@@ -69,130 +76,146 @@
   --color-semantic-success-fg: var(--semantic-success-fg);
   --color-semantic-critical-bg: var(--semantic-critical-bg);
   --color-semantic-critical-fg: var(--semantic-critical-fg);
+
+  --font-editorial: "Newsreader", "Georgia", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.995 0.005 300);
-  --foreground: oklch(0.22 0.05 295);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.05 295);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.05 295);
-  --primary: oklch(0.48 0.19 295);
-  --primary-foreground: oklch(0.99 0.005 295);
-  --secondary: oklch(0.96 0.02 300);
-  --secondary-foreground: oklch(0.32 0.1 295);
-  --muted: oklch(0.965 0.012 300);
-  --muted-foreground: oklch(0.5 0.03 295);
-  --accent: oklch(0.94 0.05 300);
-  --accent-foreground: oklch(0.32 0.12 295);
-  --destructive: oklch(0.58 0.22 27);
-  --destructive-foreground: oklch(0.99 0.005 300);
-  --border: oklch(0.92 0.015 295);
-  --input: oklch(0.92 0.015 295);
-  --ring: oklch(0.55 0.2 295);
-  --brand: oklch(0.48 0.19 295);
-  --brand-foreground: oklch(0.99 0.005 295);
-  --brand-soft: oklch(0.94 0.05 300);
-  --chart-1: oklch(0.55 0.2 295);
-  --chart-2: oklch(0.65 0.18 310);
-  --chart-3: oklch(0.7 0.15 260);
-  --chart-4: oklch(0.75 0.17 340);
-  --chart-5: oklch(0.6 0.2 20);
+  --radius: 0.625rem;
+
+  /* Base (usada pelos primitivos shadcn/radix) */
+  --background: oklch(0.97 0.012 75);
+  --foreground: oklch(0.24 0.02 50);
+  --card: oklch(0.995 0.004 80);
+  --card-foreground: oklch(0.24 0.02 50);
+  --popover: oklch(0.995 0.004 80);
+  --popover-foreground: oklch(0.24 0.02 50);
+  --primary: oklch(0.42 0.1 40);
+  --primary-foreground: oklch(0.99 0.006 80);
+  --secondary: oklch(0.93 0.018 70);
+  --secondary-foreground: oklch(0.32 0.03 50);
+  --muted: oklch(0.94 0.014 72);
+  --muted-foreground: oklch(0.5 0.025 55);
+  --accent: oklch(0.89 0.03 65);
+  --accent-foreground: oklch(0.3 0.04 50);
+  --destructive: oklch(0.5 0.16 27);
+  --destructive-foreground: oklch(0.99 0.006 80);
+  --border: oklch(0.87 0.018 65);
+  --input: oklch(0.87 0.018 65);
+  --ring: oklch(0.55 0.1 45);
+  --brand: oklch(0.42 0.1 40);
+  --brand-foreground: oklch(0.99 0.006 80);
+  --brand-soft: oklch(0.89 0.03 65);
+  --chart-1: oklch(0.55 0.13 45);
+  --chart-2: oklch(0.55 0.09 120);
+  --chart-3: oklch(0.6 0.14 30);
+  --chart-4: oklch(0.7 0.11 85);
+  --chart-5: oklch(0.5 0.05 230);
+
   --sidebar: var(--sidebar-bg);
   --sidebar-foreground: var(--sidebar-text);
   --sidebar-primary: var(--accent-lime);
   --sidebar-primary-foreground: var(--accent-lime-text);
-  --sidebar-accent: var(--accent-lime);
-  --sidebar-accent-foreground: var(--accent-lime-text);
-  --sidebar-border: oklch(0.35 0.08 295);
-  --sidebar-ring: oklch(0.7 0.18 295);
+  --sidebar-accent: oklch(0.28 0.02 50);
+  --sidebar-accent-foreground: var(--sidebar-text);
+  --sidebar-border: oklch(0.3 0.02 50);
+  --sidebar-ring: oklch(0.6 0.1 45);
 
-  /* LIZ HUB Rebrand Tokens */
-  --bg-page: #E3DEF6;
-  --bg-canvas: #FFFFFF;
-  --bg-panel: #F7F6FC;
-  --sidebar-bg: #1E1B2E;
-  --sidebar-text: #B4B0C9;
-  --sidebar-text-muted: #8B87A3;
-  --accent-lime: #CFF276;
-  --accent-lime-text: #33450F;
-  --text-primary: #211D33;
-  --text-secondary: #8C87A0;
+  /* Superfícies do Instituto LIZ — marfim / bege quente / branco osso */
+  --bg-page: #f1ead9;
+  --bg-canvas: #fffdf8;
+  --bg-panel: #f6f0e3;
+  --sidebar-bg: #211a14;
+  --sidebar-text: #d9d0c1;
+  --sidebar-text-muted: #97897a;
+  --accent-lime: #7a4f28;
+  --accent-lime-text: #fbf6ec;
+  --text-primary: #26201a;
+  --text-secondary: #6f675c;
 
-  /* Semantic Colors */
-  --semantic-neutral-bg: #FBE9DD;
-  --semantic-neutral-fg: #5C3417;
-  --semantic-pending-bg: #E4DEF9;
-  --semantic-pending-fg: #332A5C;
-  --semantic-success-bg: #DBEEDD;
-  --semantic-success-fg: #20431F;
-  --semantic-critical-bg: #FBE1E1;
-  --semantic-critical-fg: #5C1815;
+  /* Cores semânticas — neutro / pendente / sucesso / crítico */
+  --semantic-neutral-bg: #f1e7d6;
+  --semantic-neutral-fg: #5c4726;
+  --semantic-pending-bg: #ece3c9;
+  --semantic-pending-fg: #5c4b1f;
+  --semantic-success-bg: #dce7d6;
+  --semantic-success-fg: #33502b;
+  --semantic-critical-bg: #f3ded2;
+  --semantic-critical-fg: #7a3420;
 }
 
 .dark {
-  --background: oklch(0.15 0.03 295);
-  --foreground: oklch(0.97 0.01 300);
-  --card: oklch(0.2 0.05 295);
-  --card-foreground: oklch(0.97 0.01 300);
-  --popover: oklch(0.2 0.05 295);
-  --popover-foreground: oklch(0.97 0.01 300);
-  --primary: oklch(0.7 0.18 295);
-  --primary-foreground: oklch(0.15 0.05 295);
-  --secondary: oklch(0.27 0.06 295);
-  --secondary-foreground: oklch(0.97 0.01 300);
-  --muted: oklch(0.27 0.06 295);
-  --muted-foreground: oklch(0.7 0.03 295);
-  --accent: oklch(0.32 0.08 295);
-  --accent-foreground: oklch(0.97 0.01 300);
-  --destructive: oklch(0.7 0.19 22);
-  --destructive-foreground: oklch(0.99 0.005 300);
+  --background: oklch(0.19 0.015 55);
+  --foreground: oklch(0.93 0.012 75);
+  --card: oklch(0.23 0.018 55);
+  --card-foreground: oklch(0.93 0.012 75);
+  --popover: oklch(0.23 0.018 55);
+  --popover-foreground: oklch(0.93 0.012 75);
+  --primary: oklch(0.72 0.1 55);
+  --primary-foreground: oklch(0.19 0.02 50);
+  --secondary: oklch(0.29 0.02 55);
+  --secondary-foreground: oklch(0.93 0.012 75);
+  --muted: oklch(0.29 0.02 55);
+  --muted-foreground: oklch(0.68 0.02 65);
+  --accent: oklch(0.33 0.03 55);
+  --accent-foreground: oklch(0.93 0.012 75);
+  --destructive: oklch(0.68 0.15 27);
+  --destructive-foreground: oklch(0.99 0.006 80);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.65 0.15 295);
-  --brand: oklch(0.7 0.18 295);
-  --brand-foreground: oklch(0.15 0.05 295);
-  --brand-soft: oklch(0.3 0.08 295);
+  --ring: oklch(0.65 0.1 55);
+  --brand: oklch(0.72 0.1 55);
+  --brand-foreground: oklch(0.19 0.02 50);
+  --brand-soft: oklch(0.33 0.06 55);
+
+  --bg-page: #171310;
+  --bg-canvas: #1d1712;
+  --bg-panel: #241d17;
+  --sidebar-bg: #14100c;
+  --sidebar-text: #d9d0c1;
+  --sidebar-text-muted: #8c8172;
+  --accent-lime: #b8863e;
+  --accent-lime-text: #211a14;
+  --text-primary: #f1ead9;
+  --text-secondary: #a89f8f;
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--bg-page);
     color: var(--text-primary);
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-editorial);
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 
-@theme inline {
-  --color-archive-bg: var(--archive-bg);
-  --color-archive-surface: var(--archive-surface);
-  --color-archive-fg: var(--archive-fg);
-  --color-archive-muted: var(--archive-muted);
-  --color-archive-border: var(--archive-border);
-  --color-archive-accent: var(--archive-accent);
-  --font-editorial: "Newsreader", serif;
+/* Usado em barras de rolagem horizontal secundárias (ex.: seletor de visão da
+   Agenda) onde a rolagem continua funcional via toque/roda do mouse, apenas
+   sem a barra visível ocupando espaço vertical extra. */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-
-.liz-archive-theme {
-  --archive-bg: oklch(0.98 0.01 60);
-  --archive-surface: oklch(0.99 0.005 60);
-  --archive-fg: oklch(0.2 0.05 60);
-  --archive-muted: oklch(0.4 0.05 60);
-  --archive-border: oklch(0.9 0.02 60);
-  --archive-accent: oklch(0.3 0.1 295);
-
-  background-color: var(--archive-bg);
-  color: var(--archive-fg);
-}
-
-.dark .liz-archive-theme {
-  --archive-bg: oklch(0.18 0.02 295);
-  --archive-surface: oklch(0.22 0.03 295);
-  --archive-fg: oklch(0.95 0.01 60);
-  --archive-muted: oklch(0.7 0.02 295);
-  --archive-border: oklch(0.3 0.03 295);
-  --archive-accent: oklch(0.7 0.1 295);
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }

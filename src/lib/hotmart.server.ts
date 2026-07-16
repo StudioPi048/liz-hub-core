@@ -4,27 +4,29 @@ export async function authenticateHotmart(): Promise<string | null> {
   const basicToken = process.env.HOTMART_BASIC_TOKEN;
 
   if (!basicToken && (!clientId || !clientSecret)) {
-     console.error("Credenciais do Hotmart não configuradas (.env)");
-     return null;
+    console.error("Credenciais do Hotmart não configuradas (.env)");
+    return null;
   }
 
   const tokenParams = new URLSearchParams();
   tokenParams.append("grant_type", "client_credentials");
-  
+
   if (clientId && clientSecret) {
     tokenParams.append("client_id", clientId);
     tokenParams.append("client_secret", clientSecret);
   }
 
   const headers: Record<string, string> = {
-     "Content-Type": "application/x-www-form-urlencoded"
+    "Content-Type": "application/x-www-form-urlencoded",
   };
 
   if (basicToken) headers["Authorization"] = `Basic ${basicToken}`;
 
   try {
     const res = await fetch("https://api-sec-vlc.hotmart.com/security/oauth/token", {
-      method: "POST", headers, body: tokenParams.toString()
+      method: "POST",
+      headers,
+      body: tokenParams.toString(),
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -41,16 +43,21 @@ export interface HotmartProductDetails {
   ucb?: string;
 }
 
-export async function getHotmartProductDetails(productId: string | number): Promise<HotmartProductDetails | null> {
+export async function getHotmartProductDetails(
+  productId: string | number,
+): Promise<HotmartProductDetails | null> {
   const token = await authenticateHotmart();
   if (!token) return null;
   try {
-    const res = await fetch(`https://developers.hotmart.com/product/rest/v1/products/${productId}`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+    const res = await fetch(
+      `https://developers.hotmart.com/product/rest/v1/products/${productId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     if (!res.ok) return null;
     return await res.json();
-  } catch(e) {
+  } catch (e) {
     return null;
   }
 }

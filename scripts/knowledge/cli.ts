@@ -238,7 +238,7 @@ async function run() {
     unchanged: 0,
     missing_from_manifest: 0,
     missing_targets: 0,
-    errors: 0
+    errors: 0,
   };
 
   try {
@@ -275,7 +275,8 @@ async function run() {
     edgesCreated: edgeStats.created,
     edgesIgnored: edgeStats.ignored,
     unresolvedRelations: edgeStats.missingTargets,
-    warnings: edgeStats.missingTargets + assetStats.missing_targets + assetStats.missing_from_manifest, 
+    warnings:
+      edgeStats.missingTargets + assetStats.missing_targets + assetStats.missing_from_manifest,
     errors,
     assetsCreated: assetStats.created,
     assetsUpdated: assetStats.updated_draft,

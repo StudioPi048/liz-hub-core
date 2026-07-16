@@ -18,9 +18,17 @@ const variantStyles: Record<SemanticVariant, string> = {
   critical: "bg-[var(--semantic-critical-bg)] text-[var(--semantic-critical-fg)]",
 };
 
-export function StatCard({ title, value, icon: Icon, variant = "neutral", className }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  icon: Icon,
+  variant = "neutral",
+  className,
+}: StatCardProps) {
   return (
-    <div className={cn("rounded-[14px] p-4 flex flex-col gap-3", variantStyles[variant], className)}>
+    <div
+      className={cn("rounded-[14px] p-4 flex flex-col gap-3", variantStyles[variant], className)}
+    >
       <div className="w-[30px] h-[30px] rounded-[9px] bg-white flex items-center justify-center shadow-sm">
         <Icon className="h-4 w-4" />
       </div>

@@ -18,13 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  CheckCircle2,
-  Loader2,
-  ChevronDown,
-  Sparkles,
-  Store,
-} from "lucide-react";
+import { CheckCircle2, Loader2, ChevronDown, Sparkles, Store } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -67,8 +61,7 @@ export function InlineTypePicker({
       toast.success("Categoria atualizada");
       invalidate();
     },
-    onError: (err: any) =>
-      toast.error("Falha ao alterar tipo", { description: err?.message }),
+    onError: (err: any) => toast.error("Falha ao alterar tipo", { description: err?.message }),
   });
 
   return (
@@ -78,9 +71,7 @@ export function InlineTypePicker({
           className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium uppercase tracking-wide text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
           type="button"
         >
-          {mutation.isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : null}
+          {mutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
           <span>{commercialTypeLabels[type] ?? type}</span>
           <ChevronDown className="h-3 w-3 opacity-70" />
         </button>
@@ -134,12 +125,10 @@ export function CurationStatusCard({
       toast.success("Item aprovado e publicado!");
       invalidate();
     },
-    onError: (err: any) =>
-      toast.error("Falha ao aprovar", { description: err?.message }),
+    onError: (err: any) => toast.error("Falha ao aprovar", { description: err?.message }),
   });
 
-  const isApproved =
-    currentStatus === "approved" && currentAuthority === "official";
+  const isApproved = currentStatus === "approved" && currentAuthority === "official";
 
   return (
     <div className="flex flex-col gap-5 rounded-2xl border border-border/40 bg-gradient-to-b from-card/80 to-card/40 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between group">
@@ -149,14 +138,20 @@ export function CurationStatusCard({
         </span>
         <Badge
           variant={isApproved ? "default" : "secondary"}
-          className={`capitalize transition-all duration-300 ${isApproved ? 'shadow-sm shadow-primary/20' : ''}`}
+          className={`capitalize transition-all duration-300 ${isApproved ? "shadow-sm shadow-primary/20" : ""}`}
         >
           {currentStatus}
         </Badge>
-        <Badge variant="outline" className="capitalize bg-background/50 backdrop-blur-sm border-border/50">
+        <Badge
+          variant="outline"
+          className="capitalize bg-background/50 backdrop-blur-sm border-border/50"
+        >
           {currentAuthority}
         </Badge>
-        <Badge variant="outline" className="font-mono bg-background/50 backdrop-blur-sm border-border/50 text-muted-foreground">
+        <Badge
+          variant="outline"
+          className="font-mono bg-background/50 backdrop-blur-sm border-border/50 text-muted-foreground"
+        >
           v{version}
         </Badge>
         <span className="text-xs font-medium text-muted-foreground/60">
@@ -210,8 +205,7 @@ export function ItemCurationPanel({
       toast.success("Tipo atualizado");
       invalidate();
     },
-    onError: (err: any) =>
-      toast.error("Falha ao alterar tipo", { description: err?.message }),
+    onError: (err: any) => toast.error("Falha ao alterar tipo", { description: err?.message }),
   });
 
   const approveMutation = useMutation({
@@ -226,12 +220,10 @@ export function ItemCurationPanel({
       toast.success("Item aprovado e publicado!");
       invalidate();
     },
-    onError: (err: any) =>
-      toast.error("Falha ao aprovar", { description: err?.message }),
+    onError: (err: any) => toast.error("Falha ao aprovar", { description: err?.message }),
   });
 
-  const isApproved =
-    currentStatus === "approved" && currentAuthority === "official";
+  const isApproved = currentStatus === "approved" && currentAuthority === "official";
 
   return (
     <div className="border rounded-lg p-5 bg-card space-y-4">

@@ -15,15 +15,12 @@ const badgeVariants = cva(
     defaultVariants: {
       variant: "neutral",
     },
-  }
+  },
 );
 
 export interface SemanticBadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
 
 export function SemanticBadge({ className, variant, ...props }: SemanticBadgeProps) {
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
 }

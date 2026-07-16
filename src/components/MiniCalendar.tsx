@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 export function MiniCalendar({ className }: { className?: string }) {
   const today = new Date();
-  
+
   const weekDays = useMemo(() => {
     const start = startOfWeek(today, { weekStartsOn: 0 });
     return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
@@ -19,26 +19,29 @@ export function MiniCalendar({ className }: { className?: string }) {
           {format(today, "MMMM yyyy", { locale: ptBR })}
         </span>
       </div>
-      
+
       <div className="grid grid-cols-7 gap-1 text-center">
         {/* Headers */}
         {weekDays.map((day) => (
-          <div key={day.toISOString()} className="text-[10px] font-medium text-muted-foreground mb-1 uppercase">
+          <div
+            key={day.toISOString()}
+            className="text-[10px] font-medium text-muted-foreground mb-1 uppercase"
+          >
             {format(day, "eeeee", { locale: ptBR })}
           </div>
         ))}
-        
+
         {/* Days */}
         {weekDays.map((day) => {
           const isToday = isSameDay(day, today);
           return (
             <div key={day.toISOString()} className="flex justify-center">
-              <div 
+              <div
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-colors",
-                  isToday 
-                    ? "bg-[var(--accent-lime)] text-[var(--accent-lime-text)]" 
-                    : "text-foreground hover:bg-muted cursor-pointer"
+                  isToday
+                    ? "bg-[var(--accent-lime)] text-[var(--accent-lime-text)]"
+                    : "text-foreground hover:bg-muted cursor-pointer",
                 )}
               >
                 {format(day, "d")}

@@ -6,6 +6,20 @@ export const getGoogleAuthUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ origin: z.string().url() }).parse(d))
   .handler(async ({ data, context }) => {
+    // A integração é system-wide (compartilhada por todo o Instituto): permitir
+    // que qualquer usuário autenticado inicie o fluxo trocaria a conta Google
+    // conectada para a conta pessoal de quem clicou. Só administradores podem
+    // conectar/reconectar — mesma regra já aplicada a sincronizar e desconectar.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAdmin = roles?.some((r) => r.role === "admin");
+    if (!isAdmin) {
+      throw new Error("Apenas administradores podem conectar a integração com o Google.");
+    }
+
     const { requireGoogleEnv, signState, buildGoogleAuthUrl } =
       await import("./google-calendar.server");
     const { clientId, stateSecret } = requireGoogleEnv();
@@ -18,18 +32,40 @@ export const getGoogleStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { getValidAccessToken } = await import("./google-calendar.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: roles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", context.userId);
-    const isAdmin = roles?.some(r => r.role === "admin") || false;
-    
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAdmin = roles?.some((r) => r.role === "admin") || false;
+
     const tokenResult = await getValidAccessToken(context.userId);
-    return { ...tokenResult, isAdmin };
+    // Nunca devolvemos `accessToken` (nem `ownerUserId`) ao navegador: a UI só
+    // precisa do status da conexão e, quando conectado, do e-mail do Google
+    // vinculado. Expor o access_token vivo no payload da rota permitiria que
+    // qualquer usuário autenticado (não só admins) o lesse via devtools/rede.
+    const safeStatus =
+      tokenResult.status === "connected"
+        ? { status: "connected" as const, googleEmail: tokenResult.googleEmail }
+        : tokenResult;
+    return { ...safeStatus, isAdmin };
   });
 
 export const disconnectGoogle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // System-wide: any authenticated user (ideally admin) disconnecting removes the integration
+    // A integração é compartilhada por todo o Instituto (system-wide), então
+    // desconectá-la afeta todos os usuários — só administradores podem fazê-lo.
+    // (A UI já esconde este botão para não-admins; esta checagem evita que a
+    // ação seja disparada diretamente contra a função de servidor.)
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAdmin = roles?.some((r) => r.role === "admin");
+    if (!isAdmin) {
+      throw new Error("Apenas administradores podem desconectar a integração com o Google.");
+    }
     await supabaseAdmin.from("google_oauth_tokens").delete().neq("user_id", "");
     return { ok: true };
   });
@@ -72,23 +108,33 @@ export const getAgendaEvents = createServerFn({ method: "POST" })
 
     // Adapt to frontend AgendaEvent model
     const adapted = (events || []).map((e: any) => ({
-        id: e.id,
-        source: e.source,
-        title: e.title,
-        description: e.description,
-        startsAt: e.starts_at,
-        endsAt: e.ends_at,
-        allDay: e.all_day,
-        timezone: e.timezone,
-        calendarId: e.external_calendar_id,
-        calendarName: null,
-        location: e.location,
-        isEditable: false,
-        isExternal: e.source === 'google',
-        visibility: e.visibility,
-        isBlocking: e.is_blocking,
-        isRecurring: e.is_recurring,
-        status: e.status,
+      id: e.id,
+      source: e.source,
+      sourceRecordId: e.source_record_id,
+      title: e.title,
+      description: e.description,
+      notes: e.notes,
+      startsAt: e.starts_at,
+      endsAt: e.ends_at,
+      allDay: e.all_day,
+      timezone: e.timezone,
+      calendarId: e.external_calendar_id,
+      calendarName: null,
+      location: e.location,
+      meetingUrl: e.meeting_url,
+      modality: e.modality,
+      city: e.city,
+      country: e.country,
+      responsibleId: e.responsible_id,
+      // Eventos criados dentro do LIZ HUB ("agenda") são editáveis por aqui;
+      // eventos vindos do Google ("google") são somente-leitura — editar lá.
+      isEditable: e.source === "agenda",
+      isExternal: e.source === "google",
+      visibility: e.visibility,
+      isBlocking: e.is_blocking,
+      isRecurring: e.is_recurring,
+      status: e.status,
+      cancellationReason: e.cancellation_reason,
     }));
 
     return { events: adapted };
@@ -104,27 +150,27 @@ export const listTodayEvents = createServerFn({ method: "GET" })
       .gte("starts_at", startOfDay())
       .lte("ends_at", endOfDay())
       .order("starts_at", { ascending: true });
-    
+
     if (error) throw error;
-    
+
     const adapted = (events || []).map((e: any) => ({
-        id: e.id,
-        source: e.source,
-        title: e.title,
-        description: e.description,
-        startsAt: e.starts_at,
-        endsAt: e.ends_at,
-        allDay: e.all_day,
-        timezone: e.timezone,
-        calendarId: e.external_calendar_id,
-        calendarName: null,
-        location: e.location,
-        isEditable: false,
-        isExternal: e.source === 'google',
-        visibility: e.visibility,
-        isBlocking: e.is_blocking,
-        isRecurring: e.is_recurring,
-        status: e.status,
+      id: e.id,
+      source: e.source,
+      title: e.title,
+      description: e.description,
+      startsAt: e.starts_at,
+      endsAt: e.ends_at,
+      allDay: e.all_day,
+      timezone: e.timezone,
+      calendarId: e.external_calendar_id,
+      calendarName: null,
+      location: e.location,
+      isEditable: false,
+      isExternal: e.source === "google",
+      visibility: e.visibility,
+      isBlocking: e.is_blocking,
+      isRecurring: e.is_recurring,
+      status: e.status,
     }));
     return { events: adapted };
   });
@@ -135,16 +181,20 @@ export const syncGoogleCalendarToDatabase = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Only allow admin
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: roles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", context.userId);
-    const isAdmin = roles?.some(r => r.role === "admin");
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const isAdmin = roles?.some((r) => r.role === "admin");
     if (!isAdmin) throw new Error("Apenas administradores podem sincronizar a agenda do sistema.");
 
     // Fetch from google
     const result = await fetchRangeEvents(context.userId, data.from, data.to);
-    if (result.needsAuth) throw new Error("A integração do sistema com Google Calendar está desconectada ou expirada.");
+    if (result.needsAuth)
+      throw new Error("A integração do sistema com Google Calendar está desconectada ou expirada.");
 
     // Upsert into Supabase
-    const eventsToUpsert = result.events.map(ev => ({
+    const eventsToUpsert = result.events.map((ev) => ({
       source: "google",
       external_calendar_id: ev.calendarId,
       external_event_id: ev.id,
@@ -155,7 +205,7 @@ export const syncGoogleCalendarToDatabase = createServerFn({ method: "POST" })
       all_day: ev.allDay,
       location: ev.location || null,
       color_key: ev.color,
-      status: "confirmed"
+      status: "confirmed",
     }));
 
     for (const ev of eventsToUpsert) {

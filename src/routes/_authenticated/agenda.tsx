@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Filter,
   PanelLeft,
+  Plus,
 } from "lucide-react";
 import {
   format,
@@ -45,6 +46,7 @@ import { filterAgendaEvents } from "@/features/agenda/utils/agenda-filters";
 import { MonthGrid } from "@/features/agenda/views/MonthGrid";
 import { TrimestralGrid } from "@/features/agenda/views/TrimestralGrid";
 import { TimelineView } from "@/features/agenda/views/TimelineView";
+import { AgendaEventDialog } from "@/features/agenda/components/AgendaEventDialog";
 
 const searchSchema = z.object({
   google_connected: z.string().optional(),
@@ -61,6 +63,21 @@ export function AgendaPage() {
   const qc = useQueryClient();
   const { prefs, updatePrefs, updateFilters } = useAgendaPreferences();
   const [showFilters, setShowFilters] = useState(false);
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<AgendaEvent | null>(null);
+  const [newEventDate, setNewEventDate] = useState<Date | undefined>(undefined);
+
+  function openNewEventDialog(date?: Date) {
+    setSelectedEvent(null);
+    setNewEventDate(date);
+    setEventDialogOpen(true);
+  }
+
+  function openEventDetail(event: AgendaEvent) {
+    setSelectedEvent(event);
+    setNewEventDate(undefined);
+    setEventDialogOpen(true);
+  }
 
   const view = prefs.view;
   const focusDate = new Date(prefs.focusDate);
@@ -120,16 +137,16 @@ export function AgendaPage() {
     mutationFn: async () => {
       if (!status.data?.isAdmin) return;
       await syncGoogleCalendarToDatabase({
-        data: { from: fromDate.toISOString(), to: toDate.toISOString() }
+        data: { from: fromDate.toISOString(), to: toDate.toISOString() },
       });
     },
     onSuccess: () => {
       toast.success("Agenda sincronizada com o Google Calendar");
       eventsQuery.refetch();
     },
-    onError: (e: any) => {
+    onError: (e: Error) => {
       toast.error(e.message || "Erro ao sincronizar agenda externa");
-    }
+    },
   });
 
   const getUrl = useServerFn(getGoogleAuthUrl);
@@ -146,8 +163,8 @@ export function AgendaPage() {
     try {
       const { url } = await getUrl({ data: { origin: window.location.origin } });
       window.location.href = url;
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao iniciar OAuth");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao iniciar OAuth");
     }
   }
 
@@ -275,7 +292,7 @@ export function AgendaPage() {
                 <div className="text-2xl font-semibold">
                   {
                     allEvents.filter(
-                      (e: any) =>
+                      (e: AgendaEvent) =>
                         format(new Date(e.startsAt), "yyyy-MM-dd") ===
                         format(new Date(), "yyyy-MM-dd"),
                     ).length
@@ -288,7 +305,9 @@ export function AgendaPage() {
                 <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">
                   Pendências
                 </div>
-                <div className="text-2xl font-semibold text-orange-600">0</div>
+                <div className="text-2xl font-semibold text-orange-600">
+                  {allEvents.filter((e: AgendaEvent) => e.status === "pending").length}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -299,25 +318,25 @@ export function AgendaPage() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background rounded-lg border shadow-sm">
         <header className="p-3 border-b flex flex-wrap items-center gap-2 justify-between bg-muted/20">
           <div className="flex gap-1 overflow-x-auto hide-scrollbar">
-          {(["today", "week", "month", "quarter", "timeline"] as const).map((v) => (
-            <Button
-              key={v}
-              variant={view === v ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => updatePrefs({ view: v })}
-              className={view === v ? "bg-background shadow-sm" : ""}
-            >
-              {v === "today"
-                ? "Hoje"
-                : v === "week"
-                  ? "Semana"
-                  : v === "month"
-                    ? "Mês"
-                    : v === "quarter"
-                      ? "Trimestre"
-                      : "Semestre (Lista)"}
-            </Button>
-          ))}
+            {(["today", "week", "month", "quarter", "timeline"] as const).map((v) => (
+              <Button
+                key={v}
+                variant={view === v ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => updatePrefs({ view: v })}
+                className={view === v ? "bg-background shadow-sm" : ""}
+              >
+                {v === "today"
+                  ? "Hoje"
+                  : v === "week"
+                    ? "Semana"
+                    : v === "month"
+                      ? "Mês"
+                      : v === "quarter"
+                        ? "Trimestre"
+                        : "Semestre (Lista)"}
+              </Button>
+            ))}
           </div>
 
           <div className="flex items-center gap-2">
@@ -366,6 +385,10 @@ export function AgendaPage() {
               <Filter className="h-3.5 w-3.5 mr-2" />
               Filtros
             </Button>
+            <Button size="sm" className="h-8" onClick={() => openNewEventDialog(focusDate)}>
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Novo Compromisso
+            </Button>
             {status.data?.isAdmin && (
               <Button
                 variant="outline"
@@ -409,26 +432,72 @@ export function AgendaPage() {
         <div className="flex-1 overflow-y-auto p-4 bg-muted/5">
           {eventsQuery.isLoading && (
             <div className="flex justify-center p-8 text-muted-foreground text-sm">
-              Sincronizando radares operacionais...
+              Carregando compromissos...
             </div>
           )}
 
-          {!eventsQuery.isLoading && (
+          {eventsQuery.isError && (
+            <div className="flex flex-col items-center gap-2 p-8 text-center">
+              <AlertTriangle className="h-6 w-6 text-[var(--semantic-critical-fg)]" />
+              <p className="font-medium text-sm">Não foi possível carregar a agenda.</p>
+              <p className="text-xs text-muted-foreground max-w-sm">
+                Verifique sua conexão e tente novamente.
+              </p>
+              <Button size="sm" variant="outline" onClick={() => eventsQuery.refetch()}>
+                <RefreshCcw className="h-3.5 w-3.5" /> Tentar novamente
+              </Button>
+            </div>
+          )}
+
+          {!eventsQuery.isLoading && !eventsQuery.isError && (
             <>
-              {view === "month" && <MonthGrid currentDate={focusDate} events={filteredEvents} />}
+              {view === "month" && (
+                // Grade de 7 colunas fica ilegível se espremida abaixo de ~640px;
+                // preferimos rolagem horizontal a texto cortado em telas pequenas.
+                <div className="overflow-x-auto">
+                  <div className="min-w-[640px]">
+                    <MonthGrid
+                      currentDate={focusDate}
+                      events={filteredEvents}
+                      onDayClick={openNewEventDialog}
+                      onEventClick={openEventDetail}
+                    />
+                  </div>
+                </div>
+              )}
               {view === "quarter" && (
-                <TrimestralGrid currentDate={focusDate} events={filteredEvents} />
+                <div className="overflow-x-auto">
+                  <div className="min-w-[720px]">
+                    <TrimestralGrid
+                      currentDate={focusDate}
+                      events={filteredEvents}
+                      onDayClick={openNewEventDialog}
+                      onEventClick={openEventDetail}
+                    />
+                  </div>
+                </div>
               )}
               {(view === "week" ||
                 view === "today" ||
                 view === "tomorrow" ||
                 view === "timeline") && (
-                <TimelineView events={filteredEvents} showStrategicHighlights={view === "timeline"} />
+                <TimelineView
+                  events={filteredEvents}
+                  showStrategicHighlights={view === "timeline"}
+                  onEventClick={openEventDetail}
+                />
               )}
             </>
           )}
         </div>
       </main>
+
+      <AgendaEventDialog
+        open={eventDialogOpen}
+        onOpenChange={setEventDialogOpen}
+        event={selectedEvent}
+        initialDate={newEventDate}
+      />
     </div>
   );
 }

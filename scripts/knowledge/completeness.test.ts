@@ -41,12 +41,8 @@ describe("Completeness evaluation", () => {
       author: "Author",
       summary: "Summary",
       source_type: "source",
-      assets: [
-        { category: "cover" },
-        { category: "checkout" },
-        { category: "interior_pdf" }
-      ],
-      metadata: { isbn: "123", publisher: "Ed" }
+      assets: [{ category: "cover" }, { category: "checkout" }, { category: "interior_pdf" }],
+      metadata: { isbn: "123", publisher: "Ed" },
     } as unknown as ParsedNode;
     expect(evaluateCompleteness(node).score).toBe("complete");
   });

@@ -21,12 +21,14 @@ import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCuradoriaRouteImport } from './routes/_authenticated/curadoria'
-import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedArquivosRouteImport } from './routes/_authenticated/arquivos'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedCrmRouteRouteImport } from './routes/_authenticated/crm/route'
 import { Route as AuthenticatedAcervoRouteRouteImport } from './routes/_authenticated/acervo/route'
+import { Route as AuthenticatedCrmIndexRouteImport } from './routes/_authenticated/crm/index'
 import { Route as AuthenticatedAcervoIndexRouteImport } from './routes/_authenticated/acervo/index'
+import { Route as AuthenticatedCrmIdRouteImport } from './routes/_authenticated/crm/$id'
 import { Route as AuthenticatedAcervoPendentesRouteImport } from './routes/_authenticated/acervo/pendentes'
 import { Route as AuthenticatedAcervoCollectionRouteImport } from './routes/_authenticated/acervo/$collection'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
@@ -93,11 +95,6 @@ const AuthenticatedCuradoriaRoute = AuthenticatedCuradoriaRouteImport.update({
   path: '/curadoria',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
-  id: '/crm',
-  path: '/crm',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedConfiguracoesRoute =
   AuthenticatedConfiguracoesRouteImport.update({
     id: '/configuracoes',
@@ -114,18 +111,33 @@ const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCrmRouteRoute = AuthenticatedCrmRouteRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAcervoRouteRoute =
   AuthenticatedAcervoRouteRouteImport.update({
     id: '/acervo',
     path: '/acervo',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCrmIndexRoute = AuthenticatedCrmIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedCrmRouteRoute,
+} as any)
 const AuthenticatedAcervoIndexRoute =
   AuthenticatedAcervoIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAcervoRouteRoute,
   } as any)
+const AuthenticatedCrmIdRoute = AuthenticatedCrmIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedCrmRouteRoute,
+} as any)
 const AuthenticatedAcervoPendentesRoute =
   AuthenticatedAcervoPendentesRouteImport.update({
     id: '/pendentes',
@@ -160,10 +172,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/acervo': typeof AuthenticatedAcervoRouteRouteWithChildren
+  '/crm': typeof AuthenticatedCrmRouteRouteWithChildren
   '/agenda': typeof AuthenticatedAgendaRoute
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/crm': typeof AuthenticatedCrmRoute
   '/curadoria': typeof AuthenticatedCuradoriaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
@@ -175,7 +187,9 @@ export interface FileRoutesByFullPath {
   '/textos': typeof AuthenticatedTextosRoute
   '/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
   '/acervo/pendentes': typeof AuthenticatedAcervoPendentesRoute
+  '/crm/$id': typeof AuthenticatedCrmIdRoute
   '/acervo/': typeof AuthenticatedAcervoIndexRoute
+  '/crm/': typeof AuthenticatedCrmIndexRoute
   '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
@@ -186,7 +200,6 @@ export interface FileRoutesByTo {
   '/agenda': typeof AuthenticatedAgendaRoute
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/crm': typeof AuthenticatedCrmRoute
   '/curadoria': typeof AuthenticatedCuradoriaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
@@ -198,7 +211,9 @@ export interface FileRoutesByTo {
   '/textos': typeof AuthenticatedTextosRoute
   '/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
   '/acervo/pendentes': typeof AuthenticatedAcervoPendentesRoute
+  '/crm/$id': typeof AuthenticatedCrmIdRoute
   '/acervo': typeof AuthenticatedAcervoIndexRoute
+  '/crm': typeof AuthenticatedCrmIndexRoute
   '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
@@ -209,10 +224,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/acervo': typeof AuthenticatedAcervoRouteRouteWithChildren
+  '/_authenticated/crm': typeof AuthenticatedCrmRouteRouteWithChildren
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/arquivos': typeof AuthenticatedArquivosRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/curadoria': typeof AuthenticatedCuradoriaRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
@@ -224,7 +239,9 @@ export interface FileRoutesById {
   '/_authenticated/textos': typeof AuthenticatedTextosRoute
   '/_authenticated/acervo/$collection': typeof AuthenticatedAcervoCollectionRoute
   '/_authenticated/acervo/pendentes': typeof AuthenticatedAcervoPendentesRoute
+  '/_authenticated/crm/$id': typeof AuthenticatedCrmIdRoute
   '/_authenticated/acervo/': typeof AuthenticatedAcervoIndexRoute
+  '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/_authenticated/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
@@ -235,10 +252,10 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/acervo'
+    | '/crm'
     | '/agenda'
     | '/arquivos'
     | '/configuracoes'
-    | '/crm'
     | '/curadoria'
     | '/dashboard'
     | '/equipe'
@@ -250,7 +267,9 @@ export interface FileRouteTypes {
     | '/textos'
     | '/acervo/$collection'
     | '/acervo/pendentes'
+    | '/crm/$id'
     | '/acervo/'
+    | '/crm/'
     | '/acervo/item/$slug'
     | '/api/public/google/callback'
     | '/api/public/webhooks/hotmart'
@@ -261,7 +280,6 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/arquivos'
     | '/configuracoes'
-    | '/crm'
     | '/curadoria'
     | '/dashboard'
     | '/equipe'
@@ -273,7 +291,9 @@ export interface FileRouteTypes {
     | '/textos'
     | '/acervo/$collection'
     | '/acervo/pendentes'
+    | '/crm/$id'
     | '/acervo'
+    | '/crm'
     | '/acervo/item/$slug'
     | '/api/public/google/callback'
     | '/api/public/webhooks/hotmart'
@@ -283,10 +303,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/acervo'
+    | '/_authenticated/crm'
     | '/_authenticated/agenda'
     | '/_authenticated/arquivos'
     | '/_authenticated/configuracoes'
-    | '/_authenticated/crm'
     | '/_authenticated/curadoria'
     | '/_authenticated/dashboard'
     | '/_authenticated/equipe'
@@ -298,7 +318,9 @@ export interface FileRouteTypes {
     | '/_authenticated/textos'
     | '/_authenticated/acervo/$collection'
     | '/_authenticated/acervo/pendentes'
+    | '/_authenticated/crm/$id'
     | '/_authenticated/acervo/'
+    | '/_authenticated/crm/'
     | '/_authenticated/acervo/item/$slug'
     | '/api/public/google/callback'
     | '/api/public/webhooks/hotmart'
@@ -398,13 +420,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCuradoriaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/crm': {
-      id: '/_authenticated/crm'
-      path: '/crm'
-      fullPath: '/crm'
-      preLoaderRoute: typeof AuthenticatedCrmRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/configuracoes': {
       id: '/_authenticated/configuracoes'
       path: '/configuracoes'
@@ -426,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgendaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crm': {
+      id: '/_authenticated/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof AuthenticatedCrmRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/acervo': {
       id: '/_authenticated/acervo'
       path: '/acervo'
@@ -433,12 +455,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcervoRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crm/': {
+      id: '/_authenticated/crm/'
+      path: '/'
+      fullPath: '/crm/'
+      preLoaderRoute: typeof AuthenticatedCrmIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
     '/_authenticated/acervo/': {
       id: '/_authenticated/acervo/'
       path: '/'
       fullPath: '/acervo/'
       preLoaderRoute: typeof AuthenticatedAcervoIndexRouteImport
       parentRoute: typeof AuthenticatedAcervoRouteRoute
+    }
+    '/_authenticated/crm/$id': {
+      id: '/_authenticated/crm/$id'
+      path: '/$id'
+      fullPath: '/crm/$id'
+      preLoaderRoute: typeof AuthenticatedCrmIdRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
     }
     '/_authenticated/acervo/pendentes': {
       id: '/_authenticated/acervo/pendentes'
@@ -498,12 +534,27 @@ const AuthenticatedAcervoRouteRouteWithChildren =
     AuthenticatedAcervoRouteRouteChildren,
   )
 
+interface AuthenticatedCrmRouteRouteChildren {
+  AuthenticatedCrmIdRoute: typeof AuthenticatedCrmIdRoute
+  AuthenticatedCrmIndexRoute: typeof AuthenticatedCrmIndexRoute
+}
+
+const AuthenticatedCrmRouteRouteChildren: AuthenticatedCrmRouteRouteChildren = {
+  AuthenticatedCrmIdRoute: AuthenticatedCrmIdRoute,
+  AuthenticatedCrmIndexRoute: AuthenticatedCrmIndexRoute,
+}
+
+const AuthenticatedCrmRouteRouteWithChildren =
+  AuthenticatedCrmRouteRoute._addFileChildren(
+    AuthenticatedCrmRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcervoRouteRoute: typeof AuthenticatedAcervoRouteRouteWithChildren
+  AuthenticatedCrmRouteRoute: typeof AuthenticatedCrmRouteRouteWithChildren
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedArquivosRoute: typeof AuthenticatedArquivosRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
-  AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedCuradoriaRoute: typeof AuthenticatedCuradoriaRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
@@ -517,10 +568,10 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcervoRouteRoute: AuthenticatedAcervoRouteRouteWithChildren,
+  AuthenticatedCrmRouteRoute: AuthenticatedCrmRouteRouteWithChildren,
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedArquivosRoute: AuthenticatedArquivosRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
-  AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedCuradoriaRoute: AuthenticatedCuradoriaRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,

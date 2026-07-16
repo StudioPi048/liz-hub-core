@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useLinks, useLinkCategories, useCreateLink, useDeleteLink, useUpdateLink } from "@/features/links";
+import {
+  useLinks,
+  useLinkCategories,
+  useCreateLink,
+  useDeleteLink,
+  useUpdateLink,
+} from "@/features/links";
 import type { LinkWithCategory } from "@/features/links";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,10 +37,10 @@ export const Route = createFileRoute("/_authenticated/links")({
 });
 
 const PREDEFINED_VARIANTS: Record<string, "neutral" | "pending" | "success" | "critical"> = {
-  "Hotmart": "neutral",
+  Hotmart: "neutral",
   "Plataformas LIZ": "pending",
   "Redes Sociais": "success",
-  "Design": "critical",
+  Design: "critical",
 };
 
 function getCategoryVariant(name: string) {
@@ -150,7 +156,9 @@ function LinksPage() {
           <h1 className="text-3xl md:text-4xl font-editorial tracking-tight text-foreground">
             Biblioteca de Links
           </h1>
-          <p className="text-muted-foreground font-medium">Todos os links do Instituto em um só lugar.</p>
+          <p className="text-muted-foreground font-medium">
+            Todos os links do Instituto em um só lugar.
+          </p>
         </div>
         <div className="flex gap-3 flex-1 md:flex-none md:w-96">
           <div className="relative flex-1">
@@ -248,8 +256,12 @@ function LinksPage() {
                     <CardContent className="p-5 flex flex-col gap-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1 space-y-1">
-                          <div className="font-semibold truncate text-foreground group-hover:text-primary transition-colors">{l.name}</div>
-                          <div className="text-xs font-mono text-muted-foreground/80 truncate bg-muted/30 rounded px-1.5 py-0.5 inline-block max-w-full">{l.url}</div>
+                          <div className="font-semibold truncate text-foreground group-hover:text-primary transition-colors">
+                            {l.name}
+                          </div>
+                          <div className="text-xs font-mono text-muted-foreground/80 truncate bg-muted/30 rounded px-1.5 py-0.5 inline-block max-w-full">
+                            {l.url}
+                          </div>
                         </div>
                         {l.link_categories && (
                           <SemanticBadge variant={getCategoryVariant(l.link_categories.name)}>
@@ -257,7 +269,7 @@ function LinksPage() {
                           </SemanticBadge>
                         )}
                       </div>
-                      
+
                       {l.notes && (
                         <p className="text-sm text-muted-foreground/90 line-clamp-2 leading-relaxed">
                           {l.notes}
@@ -374,7 +386,11 @@ function LinksPage() {
               onClick={handleUpdate}
               disabled={!editForm.name || !editForm.url || update.isPending}
             >
-              {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar alterações"}
+              {update.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Salvar alterações"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -382,4 +398,3 @@ function LinksPage() {
     </div>
   );
 }
-
