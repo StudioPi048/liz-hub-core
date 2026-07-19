@@ -16,13 +16,15 @@ export const getContaAzulAuthUrl = createServerFn({ method: "POST" })
     return { url: buildContaAzulAuthUrl(state) };
   });
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
 export type ContaAzulStatusResult = {
   status: string;
   isAdmin: boolean;
   reason?: string;
   connectedAt?: string | null;
   connectedBy?: string | null;
-  identity?: unknown;
+  identity?: JsonValue | null;
   tokenExpiresAt?: string | null;
   lastError?: string | null;
 };
