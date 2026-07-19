@@ -2,9 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { FatParcela } from "./faturamento.server";
+import type { FatNfFila, FatNotaFiscal, FatParcela } from "./faturamento.server";
 
-export type ParcelaRow = FatParcela & { id: number };
+export type ParcelaRow = FatParcela & { id: number; fone?: string | null };
 
 export type FaturamentoResumo = {
   aReceberMes: { total: number; quantidade: number };
@@ -168,5 +168,35 @@ export const getFaturamentoParcelas = createServerFn({ method: "GET" })
 
     const { data: rows, error } = await q.limit(300);
     if (error) throw new Error(error.message);
-    return { parcelas: (rows ?? []) as ParcelaRow[] };
+    const parcelas = (rows ?? []) as ParcelaRow[];
+
+    // Anexa o telefone do cadastro para o botao de cobranca via WhatsApp.
+    const cpfs = [...new Set(parcelas.map((p) => p.cpf).filter(Boolean))] as string[];
+    if (cpfs.length > 0) {
+      const { data: clientes } = await db.from("fat_clientes").select("cpf, fone").in("cpf", cpfs);
+      const fones = new Map(
+        ((clientes ?? []) as { cpf: string; fone: string | null }[]).map((c) => [c.cpf, c.fone]),
+      );
+      for (const p of parcelas) p.fone = p.cpf ? (fones.get(p.cpf) ?? null) : null;
+    }
+    return { parcelas };
+  });
+
+export type NotaFiscalRow = FatNotaFiscal & { id: number };
+export type NfFilaRow = FatNfFila & { id: number };
+
+export const getNotasFiscais = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<{ fila: NfFilaRow[]; emitidas: NotaFiscalRow[] }> => {
+    const db = await untypedDb();
+    const [fila, emitidas] = await Promise.all([
+      db.from("fat_nfs_fila").select("*").order("nome"),
+      db.from("fat_notas_fiscais").select("*").order("data", { ascending: false }).limit(300),
+    ]);
+    if (fila.error) throw new Error(fila.error.message);
+    if (emitidas.error) throw new Error(emitidas.error.message);
+    return {
+      fila: (fila.data ?? []) as NfFilaRow[],
+      emitidas: (emitidas.data ?? []) as NotaFiscalRow[],
+    };
   });

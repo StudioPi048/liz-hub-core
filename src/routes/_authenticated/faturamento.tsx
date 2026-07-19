@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getFaturamentoParcelas,
   getFaturamentoResumo,
+  getNotasFiscais,
   importarFaturamento,
+  type NfFilaRow,
   type ParcelaRow,
 } from "@/lib/faturamento.functions";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/StatCard";
 import { SemanticBadge } from "@/components/SemanticBadge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarClock, CheckCircle2, AlertTriangle, RefreshCw, Search } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  Search,
+  MessageCircle,
+  Copy,
+  FileText,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -51,7 +62,21 @@ const STATUS_VARIANT: Record<string, "neutral" | "pending" | "success" | "critic
   outro: "neutral",
 };
 
-type Escopo = "mes" | "atrasadas" | "busca";
+type Escopo = "mes" | "atrasadas" | "busca" | "notas";
+
+function waLink(fone: string, mensagem: string): string {
+  let digits = fone.replace(/\D/g, "");
+  if (!digits.startsWith("55")) digits = `55${digits}`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(mensagem)}`;
+}
+
+function mensagemCobranca(p: ParcelaRow): string {
+  const primeiroNome = (p.nome_cliente ?? "").trim().split(/\s+/)[0] || "tudo bem";
+  const valor = brl.format(p.valor_liquido ?? p.valor_parcela ?? 0);
+  const venc = p.vcto ? ` com vencimento em ${dataBR(p.vcto)}` : "";
+  const curso = p.curso_nome ? ` referente a ${p.curso_nome}` : "";
+  return `Olá, ${primeiroNome}! Passando para lembrar da parcela de ${valor}${curso}${venc}. Qualquer dúvida, estou à disposição. Instituto Liz`;
+}
 
 function FaturamentoPage() {
   const queryClient = useQueryClient();
@@ -68,11 +93,18 @@ function FaturamentoPage() {
     queryKey: ["faturamento-parcelas", escopo, buscaAtiva],
     queryFn: async () => {
       const res = await getFaturamentoParcelas({
-        data: { escopo, busca: buscaAtiva || undefined },
+        data: { escopo: escopo as "mes" | "atrasadas" | "busca", busca: buscaAtiva || undefined },
       });
       return res.parcelas;
     },
-    enabled: escopo !== "busca" || buscaAtiva.length > 0,
+    enabled:
+      escopo === "mes" || escopo === "atrasadas" || (escopo === "busca" && buscaAtiva.length > 0),
+  });
+
+  const notasQuery = useQuery({
+    queryKey: ["faturamento-notas"],
+    queryFn: () => getNotasFiscais(),
+    enabled: escopo === "notas",
   });
 
   const importar = useMutation({
@@ -151,6 +183,7 @@ function FaturamentoPage() {
             Em atraso{resumo ? ` (${resumo.emAtraso.quantidade})` : ""}
           </TabsTrigger>
           <TabsTrigger value="busca">Buscar cliente</TabsTrigger>
+          <TabsTrigger value="notas">Notas fiscais</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -175,12 +208,20 @@ function FaturamentoPage() {
         </form>
       )}
 
-      <ParcelasLista
-        parcelas={parcelasQuery.data ?? []}
-        loading={parcelasQuery.isLoading}
-        escopo={escopo}
-        buscou={buscaAtiva.length > 0}
-      />
+      {escopo === "notas" ? (
+        <NotasFiscaisSecao
+          fila={notasQuery.data?.fila ?? []}
+          emitidas={notasQuery.data?.emitidas ?? []}
+          loading={notasQuery.isLoading}
+        />
+      ) : (
+        <ParcelasLista
+          parcelas={parcelasQuery.data ?? []}
+          loading={parcelasQuery.isLoading}
+          escopo={escopo}
+          buscou={buscaAtiva.length > 0}
+        />
+      )}
     </div>
   );
 }
@@ -244,6 +285,14 @@ function ParcelasLista({
                 ? ` · ${p.atraso_dias}d atraso`
                 : ""}
             </SemanticBadge>
+            {p.status === "aberto" && p.fone && (
+              <Button variant="secondary" size="sm" asChild>
+                <a href={waLink(p.fone, mensagemCobranca(p))} target="_blank" rel="noreferrer">
+                  <MessageCircle />
+                  Cobrar no WhatsApp
+                </a>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ))}
@@ -252,6 +301,119 @@ function ParcelasLista({
           Mostrando as primeiras 300 parcelas. Use a busca para encontrar um cliente específico.
         </p>
       )}
+    </div>
+  );
+}
+
+function dadosNfParaCopiar(nf: NfFilaRow): string {
+  return [
+    `Nome: ${nf.nome ?? ""}`,
+    `CPF: ${nf.cpf ?? ""}`,
+    `E-mail: ${nf.email ?? ""}`,
+    `Endereço: ${nf.endereco ?? ""}`,
+    `Cidade/UF: ${nf.cidade_uf ?? ""}`,
+    `Telefone: ${nf.fone ?? ""}`,
+    `Serviço: ${nf.curso_nome ?? ""}`,
+    `Valor: ${brl.format(nf.valor_venda ?? 0)}`,
+    `Plano: ${nf.plano_nome ?? ""}`,
+  ].join("\n");
+}
+
+function NotasFiscaisSecao({
+  fila,
+  emitidas,
+  loading,
+}: {
+  fila: NfFilaRow[];
+  emitidas: {
+    id: number;
+    data: string | null;
+    cliente: string | null;
+    numero: string | null;
+    valor: number | null;
+  }[];
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Notas para emitir ({fila.length})
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Lista da aba "Nfs. Dressler" da planilha. Clique em copiar e cole os dados no sistema
+          Senior para emitir a nota.
+        </p>
+        {fila.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground">
+            Nenhuma nota aguardando emissão. Tudo em dia!
+          </p>
+        ) : (
+          fila.map((nf) => (
+            <Card key={nf.id}>
+              <CardContent className="py-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+                <div className="min-w-0 flex-1 basis-64">
+                  <p className="text-base font-medium truncate">{nf.nome ?? "Sem nome"}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {nf.curso_nome ?? "—"}
+                    {nf.plano_nome ? ` · ${nf.plano_nome}` : ""}
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    CPF {nf.cpf ?? "—"} · {nf.cidade_uf ?? "—"}
+                  </p>
+                </div>
+                <div className="text-sm text-right">
+                  <p className="text-muted-foreground">Valor</p>
+                  <p className="font-medium">{brl.format(nf.valor_venda ?? 0)}</p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(dadosNfParaCopiar(nf));
+                    toast.success(`Dados de ${nf.nome ?? "cliente"} copiados`);
+                  }}
+                >
+                  <Copy />
+                  Copiar dados
+                </Button>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium">Notas já emitidas ({emitidas.length})</h2>
+        {emitidas.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground">Nenhuma nota registrada.</p>
+        ) : (
+          <div className="space-y-2">
+            {emitidas.map((nf) => (
+              <Card key={nf.id}>
+                <CardContent className="py-3 flex flex-wrap items-center gap-x-6 gap-y-1">
+                  <p className="min-w-0 flex-1 basis-64 text-base font-medium truncate">
+                    {nf.cliente ?? "Sem nome"}
+                  </p>
+                  <span className="text-sm text-muted-foreground">NF {nf.numero ?? "—"}</span>
+                  <span className="text-sm text-muted-foreground">{dataBR(nf.data)}</span>
+                  <span className="text-sm font-medium">{brl.format(nf.valor ?? 0)}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

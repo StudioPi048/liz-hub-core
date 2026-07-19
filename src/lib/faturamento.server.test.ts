@@ -84,8 +84,20 @@ describe("parseFaturamentoWorkbook", () => {
       ]),
       "PLANOS",
     );
+    // "Nota Fiscal": a ancora e a 3a coluna do cabecalho; data/cliente ficam antes dela.
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet([
+        ["Data", "Cliente", "Nota Fiscal", "Valor"],
+        ["14/05/24", "Carolina Costa", 733, 1970],
+      ]),
+      "Nota Fiscal",
+    );
     const parsed = parseFaturamentoWorkbook(XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
 
+    expect(parsed.notasFiscais).toEqual([
+      { data: "2024-05-14", cliente: "Carolina Costa", numero: "733", valor: 1970 },
+    ]);
     expect(parsed.planos).toHaveLength(2);
     expect(parsed.planos[0]).toMatchObject({ id_plano: "2.1", nome: "PIX 1X", parcelas: 1 });
     expect(parsed.clientes).toHaveLength(1);

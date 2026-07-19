@@ -145,11 +145,34 @@ function findHeader(rows: unknown[][], label: string): { row: number; col: numbe
   return null;
 }
 
+export type FatNotaFiscal = {
+  data: string | null;
+  cliente: string | null;
+  numero: string | null;
+  valor: number | null;
+};
+
+export type FatNfFila = {
+  cpf: string | null;
+  nome: string | null;
+  email: string | null;
+  endereco: string | null;
+  cidade_uf: string | null;
+  fone: string | null;
+  id_curso: string | null;
+  curso_nome: string | null;
+  valor_venda: number | null;
+  id_plano: string | null;
+  plano_nome: string | null;
+};
+
 export type FaturamentoParsed = {
   clientes: FatCliente[];
   cursos: FatCurso[];
   planos: FatPlano[];
   parcelas: FatParcela[];
+  notasFiscais: FatNotaFiscal[];
+  nfsFila: FatNfFila[];
 };
 
 export function parseFaturamentoWorkbook(data: ArrayBuffer | Buffer): FaturamentoParsed {
@@ -275,11 +298,60 @@ export function parseFaturamentoWorkbook(data: ArrayBuffer | Buffer): Faturament
     }
   }
 
+  // Nota Fiscal (historico de NFs emitidas): Data | Cliente | Nota Fiscal | Valor
+  const notasFiscais: FatNotaFiscal[] = [];
+  const nfRows = sheetRows(wb, "Nota Fiscal");
+  const nfHeader = findHeader(nfRows, "Nota Fiscal");
+  if (nfHeader) {
+    const c = nfHeader.col; // rotulo fica na 3a coluna; data/cliente ficam antes
+    for (const r of nfRows.slice(nfHeader.row + 1)) {
+      const cliente = text(r[c - 1]);
+      const numeroNum = toNumber(r[c]);
+      if (!cliente) continue;
+      notasFiscais.push({
+        data: toDateISO(r[c - 2]),
+        cliente,
+        numero: numeroNum !== null ? String(Math.round(numeroNum)) : text(r[c]),
+        valor: toNumber(r[c + 1]),
+      });
+    }
+  }
+
+  // Nfs. Dressler (fila de NFs a emitir via Senior):
+  // CPF | NOME | E-MAIL | ENDERECO | CIDADE/UF | FONE | ID_Curso | Modulos | R$_Venda | ID_plano | Plano
+  const nfsFila: FatNfFila[] = [];
+  const filaRows = sheetRows(wb, "Nfs. Dressler");
+  const filaHeader = findHeader(filaRows, "CPF");
+  if (filaHeader) {
+    const c = filaHeader.col;
+    for (const r of filaRows.slice(filaHeader.row + 1)) {
+      const cpf = normalizeCpf(r[c]);
+      const nome = text(r[c + 1]);
+      if (!cpf && !nome) continue;
+      const idCursoNum = toNumber(r[c + 6]);
+      nfsFila.push({
+        cpf,
+        nome,
+        email: text(r[c + 2]),
+        endereco: text(r[c + 3]),
+        cidade_uf: text(r[c + 4]),
+        fone: text(r[c + 5]),
+        id_curso: idCursoNum !== null ? String(Math.round(idCursoNum)) : text(r[c + 6]),
+        curso_nome: text(r[c + 7]),
+        valor_venda: toNumber(r[c + 8]),
+        id_plano: text(r[c + 9]),
+        plano_nome: text(r[c + 10]),
+      });
+    }
+  }
+
   return {
     clientes: [...clientesMap.values()],
     cursos: [...cursosMap.values()],
     planos: [...planosMap.values()],
     parcelas,
+    notasFiscais,
+    nfsFila,
   };
 }
 
@@ -324,6 +396,8 @@ export async function runFaturamentoImport(userId: string): Promise<{
     ["fat_clientes", "cpf"],
     ["fat_cursos", "codigo"],
     ["fat_planos", "id_plano"],
+    ["fat_notas_fiscais", "id"],
+    ["fat_nfs_fila", "id"],
   ] as const) {
     const { error } = await db.from(table).delete().not(key, "is", null);
     if (error) throw new Error(`Falha ao limpar ${table}: ${error.message}`);
@@ -333,12 +407,16 @@ export async function runFaturamentoImport(userId: string): Promise<{
   await insertBatches(db, "fat_cursos", parsed.cursos);
   await insertBatches(db, "fat_planos", parsed.planos);
   await insertBatches(db, "fat_parcelas", parsed.parcelas);
+  await insertBatches(db, "fat_notas_fiscais", parsed.notasFiscais);
+  await insertBatches(db, "fat_nfs_fila", parsed.nfsFila);
 
   const counts = {
     clientes: parsed.clientes.length,
     cursos: parsed.cursos.length,
     planos: parsed.planos.length,
     parcelas: parsed.parcelas.length,
+    notasFiscais: parsed.notasFiscais.length,
+    nfsFila: parsed.nfsFila.length,
   };
 
   await db.from("fat_import_status").upsert({
