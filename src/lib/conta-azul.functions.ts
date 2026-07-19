@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type {
+  ContaAPagarRow,
   ContaAzulBackofficeModule,
   ContaAzulJsonRecord,
   ContaAzulJsonValue,
@@ -107,6 +108,50 @@ export const listContaAzulCategories = createServerFn({ method: "GET" })
     const { listContaAzulCategorias } = await import("./conta-azul.server");
     const result = await listContaAzulCategorias();
     return JSON.parse(JSON.stringify(result)) as ContaAzulCategoriesResult;
+  });
+
+export type ContasAPagarResult = {
+  ok: boolean;
+  message?: string;
+  contas: ContaAPagarRow[];
+};
+
+// Leitura amigavel de contas a pagar (GET). Janela: 12 meses atras ate o fim do
+// mes atual, para trazer vencidas + as do mes numa chamada so.
+export const getContasAPagar = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<ContasAPagarResult> => {
+    const { runContaAzulOperation, normalizeContaAPagar } = await import("./conta-azul.server");
+
+    const hoje = new Date();
+    const de = new Date(hoje.getFullYear() - 1, hoje.getMonth(), 1);
+    const ate = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    try {
+      const result = await runContaAzulOperation({
+        moduleId: "financeiro",
+        actionId: "search-payables",
+        query: {
+          pagina: 1,
+          tamanho_pagina: 200,
+          data_vencimento_de: fmt(de),
+          data_vencimento_ate: fmt(ate),
+        },
+      });
+
+      const contas = result.items
+        .filter(
+          (item): item is ContaAzulJsonRecord =>
+            Boolean(item) && typeof item === "object" && !Array.isArray(item),
+        )
+        .map((item) => normalizeContaAPagar(item));
+
+      return { ok: true, contas };
+    } catch (error) {
+      return { ok: false, message: errorMessage(error), contas: [] };
+    }
   });
 
 export const executeContaAzulOperation = createServerFn({ method: "POST" })

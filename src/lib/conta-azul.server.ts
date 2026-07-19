@@ -1570,3 +1570,83 @@ function withoutTrailingSlash(value: string): string {
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+// --- Contas a pagar: leitura amigavel -------------------------------------
+// A Conta Azul nao documenta o formato exato de cada campo e ja mudou nomes
+// entre versoes (o modulo de categorias precisou do mesmo tratamento). Por isso
+// a leitura tenta uma lista de nomes candidatos em vez de fixar uma chave so.
+
+export type ContaAPagarRow = {
+  id: string | null;
+  descricao: string;
+  fornecedor: string | null;
+  vencimento: string | null;
+  valor: number | null;
+  pago: boolean;
+  statusLabel: string | null;
+};
+
+function pickString(row: Record<string, unknown>, keys: string[]): string | null {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+    // Campos como "contato" costumam vir aninhados: { id, nome }.
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const nome = (value as Record<string, unknown>).nome;
+      if (typeof nome === "string" && nome.trim()) return nome.trim();
+    }
+  }
+  return null;
+}
+
+function pickNumber(row: Record<string, unknown>, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim()) {
+      // Aceita "1.234,56" (BR) e "1234.56" (ISO).
+      const brl = /,\d{1,2}$/.test(value.trim());
+      const cleaned = brl
+        ? value
+            .replace(/[^\d,-]/g, "")
+            .replace(/\./g, "")
+            .replace(",", ".")
+        : value.replace(/[^\d.-]/g, "");
+      const parsed = Number(cleaned);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return null;
+}
+
+export function toISODateCA(value: string | null): string | null {
+  if (!value) return null;
+  const s = value.trim();
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const br = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (br) return `${br[3]}-${br[2].padStart(2, "0")}-${br[1].padStart(2, "0")}`;
+  return null;
+}
+
+export function isPagoStatus(status: string | null): boolean {
+  if (!status) return false;
+  return /pag|quitad|liquidad|baixad/i.test(status);
+}
+
+export function normalizeContaAPagar(row: Record<string, unknown>): ContaAPagarRow {
+  const status = pickString(row, ["status", "situacao", "situacao_pagamento", "status_pagamento"]);
+  return {
+    id: pickString(row, ["id", "uuid", "id_evento", "id_evento_financeiro", "codigo"]),
+    descricao:
+      pickString(row, ["descricao", "description", "observacao", "nome"]) ?? "Sem descrição",
+    fornecedor: pickString(row, ["contato", "fornecedor", "pessoa", "cliente", "nome_contato"]),
+    vencimento: toISODateCA(
+      pickString(row, ["data_vencimento", "vencimento", "data_vencimento_parcela", "data"]),
+    ),
+    valor: pickNumber(row, ["valor", "valor_total", "valor_parcela", "total", "valor_liquido"]),
+    pago: isPagoStatus(status),
+    statusLabel: status,
+  };
+}

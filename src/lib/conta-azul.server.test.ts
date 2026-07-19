@@ -3,9 +3,79 @@ import {
   buildContaAzulAuthUrl,
   buildContaAzulOperationRequest,
   getContaAzulBackofficeModules,
+  isPagoStatus,
+  normalizeContaAPagar,
   signContaAzulState,
+  toISODateCA,
   verifyContaAzulState,
 } from "./conta-azul.server";
+
+describe("Contas a pagar: leitura tolerante de campos", () => {
+  it("normaliza datas ISO, ISO com hora e formato BR", () => {
+    expect(toISODateCA("2026-07-19")).toBe("2026-07-19");
+    expect(toISODateCA("2026-07-19T00:00:00Z")).toBe("2026-07-19");
+    expect(toISODateCA("19/07/2026")).toBe("2026-07-19");
+    expect(toISODateCA("5/7/2026")).toBe("2026-07-05");
+    expect(toISODateCA(null)).toBeNull();
+    expect(toISODateCA("sem data")).toBeNull();
+  });
+
+  it("reconhece status de pago em variacoes da Conta Azul", () => {
+    expect(isPagoStatus("PAGO")).toBe(true);
+    expect(isPagoStatus("Quitado")).toBe(true);
+    expect(isPagoStatus("LIQUIDADO")).toBe(true);
+    expect(isPagoStatus("EM_ABERTO")).toBe(false);
+    expect(isPagoStatus(null)).toBe(false);
+  });
+
+  it("le uma conta a pagar com nomes de campo diretos", () => {
+    const conta = normalizeContaAPagar({
+      id: "abc-1",
+      descricao: "Aluguel da sala",
+      contato: { id: "f1", nome: "Imobiliária Central" },
+      data_vencimento: "2026-07-25",
+      valor: 3200.5,
+      status: "EM_ABERTO",
+    });
+
+    expect(conta).toMatchObject({
+      id: "abc-1",
+      descricao: "Aluguel da sala",
+      fornecedor: "Imobiliária Central",
+      vencimento: "2026-07-25",
+      valor: 3200.5,
+      pago: false,
+    });
+  });
+
+  it("cai para nomes alternativos e valor em formato BR", () => {
+    const conta = normalizeContaAPagar({
+      uuid: "xyz-9",
+      observacao: "Energia elétrica",
+      fornecedor: "Celesc",
+      vencimento: "01/08/2026",
+      valor_total: "1.234,56",
+      situacao: "PAGO",
+    });
+
+    expect(conta).toMatchObject({
+      id: "xyz-9",
+      descricao: "Energia elétrica",
+      fornecedor: "Celesc",
+      vencimento: "2026-08-01",
+      valor: 1234.56,
+      pago: true,
+    });
+  });
+
+  it("nao quebra quando a Conta Azul manda um objeto sem os campos esperados", () => {
+    const conta = normalizeContaAPagar({ algo: "inesperado" });
+    expect(conta.descricao).toBe("Sem descrição");
+    expect(conta.valor).toBeNull();
+    expect(conta.vencimento).toBeNull();
+    expect(conta.pago).toBe(false);
+  });
+});
 
 describe("Conta Azul OAuth helpers", () => {
   afterEach(() => {

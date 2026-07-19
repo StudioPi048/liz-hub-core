@@ -9,8 +9,12 @@ import {
   getContaAzulAuthUrl,
   getContaAzulBackofficeCatalog,
   getContaAzulStatus,
+  getContasAPagar,
 } from "@/lib/conta-azul.functions";
+import { StatCard } from "@/components/StatCard";
+import { SemanticBadge } from "@/components/SemanticBadge";
 import type {
+  ContaAPagarRow,
   ContaAzulBackofficeAction,
   ContaAzulBackofficeModule,
   ContaAzulJsonRecord,
@@ -46,6 +50,7 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Box,
+  CalendarClock,
   Building2,
   CheckCircle2,
   ClipboardList,
@@ -83,6 +88,7 @@ function FinanceiroPage() {
   const getAuthUrl = useServerFn(getContaAzulAuthUrl);
   const executeOperation = useServerFn(executeContaAzulOperation);
   const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
+  const [avancado, setAvancado] = useState(false);
   const [moduleId, setModuleId] = useState("financeiro");
   const [actionId, setActionId] = useState("");
   const [idValue, setIdValue] = useState("");
@@ -215,173 +221,328 @@ function FinanceiroPage() {
         <div>
           <h1 className="text-2xl font-editorial tracking-tight">Financeiro</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Backoffice operacional com a Conta Azul como motor financeiro, comercial e fiscal.
+            {avancado
+              ? "Console técnico da Conta Azul. Use só se souber o que está fazendo."
+              : "Contas do Instituto a pagar, direto da Conta Azul."}
           </p>
         </div>
-        <ConnectionBadge status={status.data?.status} isLoading={status.isLoading} />
+        <div className="flex items-center gap-2">
+          <ConnectionBadge status={status.data?.status} isLoading={status.isLoading} />
+          <Button variant="ghost" size="sm" onClick={() => setAvancado((v) => !v)}>
+            <TerminalSquare className="h-4 w-4" />
+            {avancado ? "Voltar ao normal" : "Modo avançado"}
+          </Button>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader className="space-y-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <WalletCards className="h-4 w-4" /> Conta Azul
-              </CardTitle>
-              <CardDescription>
-                Conexão OAuth 2.0 do Instituto LIZ com a API da Conta Azul Pro.
-              </CardDescription>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                onClick={connect}
-                disabled={status.isLoading || !isAdmin || isConnected || isSetupRequired}
-              >
-                {status.isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
+      {!avancado ? <ContasAPagarSecao isConnected={isConnected} /> : null}
+
+      {!avancado ? null : (
+        <>
+          <Card>
+            <CardHeader className="space-y-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <WalletCards className="h-4 w-4" /> Conta Azul
+                  </CardTitle>
+                  <CardDescription>
+                    Conexão OAuth 2.0 do Instituto LIZ com a API da Conta Azul Pro.
+                  </CardDescription>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={connect}
+                    disabled={status.isLoading || !isAdmin || isConnected || isSetupRequired}
+                  >
+                    {status.isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    Conectar Conta Azul
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => disconnect.mutate()}
+                    disabled={!isConnected || !isAdmin || disconnect.isPending}
+                  >
+                    {disconnect.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Power className="h-4 w-4" />
+                    )}
+                    Desconectar
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {isSetupRequired && !status.isLoading ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Configuração da Conta Azul pendente</AlertTitle>
+                  <AlertDescription>
+                    {setupRequiredMessage(status.data?.reason, status.error)}
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              {!isSetupRequired && !isAdmin && !status.isLoading ? (
+                <Alert>
+                  <ShieldCheck className="h-4 w-4" />
+                  <AlertTitle>Acesso administrativo limitado</AlertTitle>
+                  <AlertDescription>
+                    Você pode consultar dados conectados. Criações, atualizações, baixas e exclusões
+                    exigem perfil admin.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              {status.data?.status === "needs_reconnect" ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Reconexão necessária</AlertTitle>
+                  <AlertDescription>
+                    A autorização da Conta Azul expirou ou foi revogada. Conecte novamente para
+                    renovar o acesso.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              {pendingAuthUrl ? (
+                <Alert>
                   <Send className="h-4 w-4" />
-                )}
-                Conectar Conta Azul
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => disconnect.mutate()}
-                disabled={!isConnected || !isAdmin || disconnect.isPending}
-              >
-                {disconnect.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Power className="h-4 w-4" />
-                )}
-                Desconectar
-              </Button>
+                  <AlertTitle>Autorização pronta para abrir</AlertTitle>
+                  <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      O preview do Lovable bloqueou o redirecionamento automático. Abra a
+                      autorização da Conta Azul em uma nova aba.
+                    </span>
+                    <Button asChild size="sm" className="shrink-0">
+                      <a href={pendingAuthUrl} target="_blank" rel="noreferrer">
+                        Abrir autorização
+                      </a>
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              <div className="grid gap-3 md:grid-cols-4">
+                <Metric label="Status" value={statusLabel(status.data?.status, status.isLoading)} />
+                <Metric
+                  label="Conectada em"
+                  value={
+                    status.data?.status === "connected"
+                      ? formatDateTime(status.data.connectedAt ?? null)
+                      : "Sem conexão"
+                  }
+                />
+                <Metric
+                  label="Módulos operacionais"
+                  value={catalog.isLoading ? "Carregando..." : String(modules.length)}
+                />
+                <Metric
+                  label="Operações Conta Azul"
+                  value={catalog.isLoading ? "Carregando..." : String(operationCount)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {catalog.isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-72 w-full" />
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {isSetupRequired && !status.isLoading ? (
+          ) : catalog.isError ? (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Configuração da Conta Azul pendente</AlertTitle>
-              <AlertDescription>
-                {setupRequiredMessage(status.data?.reason, status.error)}
-              </AlertDescription>
+              <AlertTitle>Falha ao carregar operações</AlertTitle>
+              <AlertDescription>{errorMessage(catalog.error)}</AlertDescription>
             </Alert>
-          ) : null}
+          ) : (
+            <Tabs value={selectedModule?.id || moduleId} onValueChange={setModuleId}>
+              <TabsList className="h-auto flex-wrap justify-start">
+                {modules.map((module) => {
+                  const Icon = moduleIcon(module.id);
+                  return (
+                    <TabsTrigger key={module.id} value={module.id} className="gap-2">
+                      <Icon className="h-4 w-4" />
+                      {module.label}
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
 
-          {!isSetupRequired && !isAdmin && !status.isLoading ? (
-            <Alert>
-              <ShieldCheck className="h-4 w-4" />
-              <AlertTitle>Acesso administrativo limitado</AlertTitle>
-              <AlertDescription>
-                Você pode consultar dados conectados. Criações, atualizações, baixas e exclusões
-                exigem perfil admin.
-              </AlertDescription>
-            </Alert>
-          ) : null}
+              {modules.map((module) => (
+                <TabsContent key={module.id} value={module.id} className="mt-4">
+                  <BackofficePanel
+                    module={module}
+                    actionId={actionId}
+                    onActionChange={setActionId}
+                    action={selectedModule?.id === module.id ? selectedAction : undefined}
+                    idValue={idValue}
+                    onIdChange={setIdValue}
+                    queryText={queryText}
+                    onQueryTextChange={setQueryText}
+                    bodyText={bodyText}
+                    onBodyTextChange={setBodyText}
+                    isConnected={isConnected}
+                    isAdmin={isAdmin}
+                    canExecute={canExecute}
+                    isExecuting={operation.isPending}
+                    onExecute={() => operation.mutate()}
+                    lastResult={selectedModule?.id === module.id ? lastResult : null}
+                  />
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
-          {status.data?.status === "needs_reconnect" ? (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Reconexão necessária</AlertTitle>
-              <AlertDescription>
-                A autorização da Conta Azul expirou ou foi revogada. Conecte novamente para renovar
-                o acesso.
-              </AlertDescription>
-            </Alert>
-          ) : null}
+const brlFmt = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-          {pendingAuthUrl ? (
-            <Alert>
-              <Send className="h-4 w-4" />
-              <AlertTitle>Autorização pronta para abrir</AlertTitle>
-              <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  O preview do Lovable bloqueou o redirecionamento automático. Abra a autorização da
-                  Conta Azul em uma nova aba.
-                </span>
-                <Button asChild size="sm" className="shrink-0">
-                  <a href={pendingAuthUrl} target="_blank" rel="noreferrer">
-                    Abrir autorização
-                  </a>
-                </Button>
-              </AlertDescription>
-            </Alert>
-          ) : null}
+function dataBR(iso: string | null): string {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
 
-          <div className="grid gap-3 md:grid-cols-4">
-            <Metric label="Status" value={statusLabel(status.data?.status, status.isLoading)} />
-            <Metric
-              label="Conectada em"
-              value={
-                status.data?.status === "connected"
-                  ? formatDateTime(status.data.connectedAt ?? null)
-                  : "Sem conexão"
-              }
-            />
-            <Metric
-              label="Módulos operacionais"
-              value={catalog.isLoading ? "Carregando..." : String(modules.length)}
-            />
-            <Metric
-              label="Operações Conta Azul"
-              value={catalog.isLoading ? "Carregando..." : String(operationCount)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+function todayISOLocal(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
-      {catalog.isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-72 w-full" />
-        </div>
-      ) : catalog.isError ? (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Falha ao carregar operações</AlertTitle>
-          <AlertDescription>{errorMessage(catalog.error)}</AlertDescription>
-        </Alert>
+type FiltroPagar = "abertas" | "vencidas" | "pagas";
+
+function ContasAPagarSecao({ isConnected }: { isConnected: boolean }) {
+  const [filtro, setFiltro] = useState<FiltroPagar>("abertas");
+  const contasQuery = useQuery({
+    queryKey: ["conta-azul-contas-a-pagar"],
+    queryFn: () => getContasAPagar(),
+    enabled: isConnected,
+  });
+
+  if (!isConnected) {
+    return (
+      <Alert>
+        <PlugZap className="h-4 w-4" />
+        <AlertTitle>Conta Azul desconectada</AlertTitle>
+        <AlertDescription>
+          As contas a pagar vêm da Conta Azul. Reconecte a integração para ver os dados.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (contasQuery.isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
+  const resultado = contasQuery.data;
+  if (!resultado?.ok) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Não consegui buscar as contas a pagar</AlertTitle>
+        <AlertDescription>{resultado?.message ?? "Tente de novo em instantes."}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  const hoje = todayISOLocal();
+  const mes = hoje.slice(0, 7);
+  const naoPagas = resultado.contas.filter((c) => !c.pago);
+  const vencidas = naoPagas.filter((c) => c.vencimento && c.vencimento < hoje);
+  const aPagarMes = naoPagas.filter((c) => c.vencimento?.startsWith(mes));
+  const pagasMes = resultado.contas.filter((c) => c.pago && c.vencimento?.startsWith(mes));
+  const soma = (rows: ContaAPagarRow[]) => rows.reduce((t, c) => t + (c.valor ?? 0), 0);
+  const lista = filtro === "vencidas" ? vencidas : filtro === "pagas" ? pagasMes : naoPagas;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-5 md:grid-cols-3">
+        <StatCard
+          title="A pagar neste mês"
+          value={brlFmt.format(soma(aPagarMes))}
+          icon={CalendarClock}
+          variant="pending"
+        />
+        <StatCard
+          title="Vencidas"
+          value={brlFmt.format(soma(vencidas))}
+          icon={AlertTriangle}
+          variant="critical"
+        />
+        <StatCard
+          title="Pagas neste mês"
+          value={brlFmt.format(soma(pagasMes))}
+          icon={CheckCircle2}
+          variant="success"
+        />
+      </div>
+
+      <Tabs value={filtro} onValueChange={(v) => setFiltro(v as FiltroPagar)}>
+        <TabsList>
+          <TabsTrigger value="abertas">Em aberto ({naoPagas.length})</TabsTrigger>
+          <TabsTrigger value="vencidas">Vencidas ({vencidas.length})</TabsTrigger>
+          <TabsTrigger value="pagas">Pagas no mês ({pagasMes.length})</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {lista.length === 0 ? (
+        <p className="text-muted-foreground py-8 text-center text-base">
+          {filtro === "vencidas"
+            ? "Nenhuma conta vencida. Tudo em dia!"
+            : filtro === "pagas"
+              ? "Nenhuma conta paga neste mês."
+              : "Nenhuma conta em aberto."}
+        </p>
       ) : (
-        <Tabs value={selectedModule?.id || moduleId} onValueChange={setModuleId}>
-          <TabsList className="h-auto flex-wrap justify-start">
-            {modules.map((module) => {
-              const Icon = moduleIcon(module.id);
-              return (
-                <TabsTrigger key={module.id} value={module.id} className="gap-2">
-                  <Icon className="h-4 w-4" />
-                  {module.label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-
-          {modules.map((module) => (
-            <TabsContent key={module.id} value={module.id} className="mt-4">
-              <BackofficePanel
-                module={module}
-                actionId={actionId}
-                onActionChange={setActionId}
-                action={selectedModule?.id === module.id ? selectedAction : undefined}
-                idValue={idValue}
-                onIdChange={setIdValue}
-                queryText={queryText}
-                onQueryTextChange={setQueryText}
-                bodyText={bodyText}
-                onBodyTextChange={setBodyText}
-                isConnected={isConnected}
-                isAdmin={isAdmin}
-                canExecute={canExecute}
-                isExecuting={operation.isPending}
-                onExecute={() => operation.mutate()}
-                lastResult={selectedModule?.id === module.id ? lastResult : null}
-              />
-            </TabsContent>
-          ))}
-        </Tabs>
+        <div className="space-y-3">
+          {lista.map((conta, index) => {
+            const vencida = !conta.pago && Boolean(conta.vencimento && conta.vencimento < hoje);
+            return (
+              <Card key={conta.id ?? index}>
+                <CardContent className="py-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <div className="min-w-0 flex-1 basis-64">
+                    <p className="text-base font-medium truncate">{conta.descricao}</p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {conta.fornecedor ?? "—"}
+                    </p>
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Vencimento</p>
+                    <p className="font-medium">{dataBR(conta.vencimento)}</p>
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Valor</p>
+                    <p className="font-medium">
+                      {conta.valor === null ? "—" : brlFmt.format(conta.valor)}
+                    </p>
+                  </div>
+                  <SemanticBadge
+                    variant={conta.pago ? "success" : vencida ? "critical" : "pending"}
+                  >
+                    {conta.pago ? "Paga" : vencida ? "Vencida" : "Em aberto"}
+                  </SemanticBadge>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );
