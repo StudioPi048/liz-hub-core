@@ -189,7 +189,7 @@ function FinanceiroPage() {
               label="Conectada em"
               value={
                 status.data?.status === "connected"
-                  ? formatDateTime(status.data.connectedAt)
+                  ? formatDateTime(status.data.connectedAt ?? null)
                   : "Sem conexão"
               }
             />
