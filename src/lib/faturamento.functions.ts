@@ -119,13 +119,21 @@ export const getAlunos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<{ alunos: AlunoResumo[] }> => {
     const db = await untypedDb();
-    const { data, error } = await db
-      .from("fat_alunos_resumo")
-      .select("*")
-      .order("nome")
-      .range(0, 4999);
-    if (error) throw new Error(error.message);
-    return { alunos: (data ?? []) as AlunoResumo[] };
+    // O PostgREST corta respostas em 1000 linhas; busca em paginas ate esgotar.
+    const PAGE = 1000;
+    const alunos: AlunoResumo[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await db
+        .from("fat_alunos_resumo")
+        .select("*")
+        .order("cpf")
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      alunos.push(...((data ?? []) as AlunoResumo[]));
+      if (!data || data.length < PAGE) break;
+    }
+    alunos.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    return { alunos };
   });
 
 const parcelasInput = z.object({
