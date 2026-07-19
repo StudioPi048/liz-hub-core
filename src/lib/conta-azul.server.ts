@@ -1037,7 +1037,19 @@ export async function listContaAzulCategorias() {
 }
 
 export function getContaAzulBackofficeModules(): ContaAzulBackofficeModule[] {
-  return cloneStructured(CONTA_AZUL_BACKOFFICE_MODULES);
+  const modules = cloneStructured(CONTA_AZUL_BACKOFFICE_MODULES);
+  // Datas preenchidas por requisicao: em Cloudflare Workers, new Date() avaliado
+  // no carregamento do modulo retorna a epoca zero (1970-01-01).
+  for (const module of modules) {
+    for (const action of module.actions) {
+      const query = action.queryTemplate;
+      if (query && "data_vencimento_de" in query) {
+        query.data_vencimento_de = monthStartISO();
+        query.data_vencimento_ate = monthEndISO();
+      }
+    }
+  }
+  return modules;
 }
 
 export async function runContaAzulOperation(
