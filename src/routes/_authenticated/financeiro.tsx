@@ -97,7 +97,9 @@ function FinanceiroPage() {
   const isConnected = status.data?.status === "connected";
   const isAdmin = status.data?.isAdmin ?? false;
   const isSetupRequired = status.data?.status === "setup_required" || status.isError;
-  const categoryRows = categories.data?.categorias || [];
+  const categoryRows = (categories.data?.categorias || []).filter(
+    (c): c is ContaAzulCategory => typeof c === "object" && c !== null && !Array.isArray(c),
+  );
 
   return (
     <div className="max-w-6xl space-y-6">
