@@ -34,6 +34,7 @@ import {
   GraduationCap,
   Package,
   CalendarDays,
+  WalletCards,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,6 +42,7 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/agenda", label: "Agenda", icon: Calendar },
   { to: "/crm", label: "Clientes", icon: Contact },
+  { to: "/financeiro", label: "Financeiro", icon: WalletCards },
   { to: "/links", label: "Links", icon: Link2 },
 ] as const;
 

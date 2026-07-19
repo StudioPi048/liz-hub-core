@@ -33,6 +33,7 @@ import { Route as AuthenticatedAcervoPendentesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAcervoCollectionRouteImport } from './routes/_authenticated/acervo/$collection'
 import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
 import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google/callback'
+import { Route as ApiPublicContaAzulCallbackRouteImport } from './routes/api/public/conta-azul/callback'
 import { Route as AuthenticatedAcervoItemSlugRouteImport } from './routes/_authenticated/acervo/item/$slug'
 
 const AuthRoute = AuthRouteImport.update({
@@ -161,6 +162,12 @@ const ApiPublicGoogleCallbackRoute = ApiPublicGoogleCallbackRouteImport.update({
   path: '/api/public/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicContaAzulCallbackRoute =
+  ApiPublicContaAzulCallbackRouteImport.update({
+    id: '/api/public/conta-azul/callback',
+    path: '/api/public/conta-azul/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAcervoItemSlugRoute =
   AuthenticatedAcervoItemSlugRouteImport.update({
     id: '/item/$slug',
@@ -191,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/acervo/': typeof AuthenticatedAcervoIndexRoute
   '/crm/': typeof AuthenticatedCrmIndexRoute
   '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
+  '/api/public/conta-azul/callback': typeof ApiPublicContaAzulCallbackRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
@@ -215,6 +223,7 @@ export interface FileRoutesByTo {
   '/acervo': typeof AuthenticatedAcervoIndexRoute
   '/crm': typeof AuthenticatedCrmIndexRoute
   '/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
+  '/api/public/conta-azul/callback': typeof ApiPublicContaAzulCallbackRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
@@ -243,6 +252,7 @@ export interface FileRoutesById {
   '/_authenticated/acervo/': typeof AuthenticatedAcervoIndexRoute
   '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/_authenticated/acervo/item/$slug': typeof AuthenticatedAcervoItemSlugRoute
+  '/api/public/conta-azul/callback': typeof ApiPublicContaAzulCallbackRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/webhooks/hotmart': typeof ApiPublicWebhooksHotmartRoute
 }
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/acervo/'
     | '/crm/'
     | '/acervo/item/$slug'
+    | '/api/public/conta-azul/callback'
     | '/api/public/google/callback'
     | '/api/public/webhooks/hotmart'
   fileRoutesByTo: FileRoutesByTo
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/acervo'
     | '/crm'
     | '/acervo/item/$slug'
+    | '/api/public/conta-azul/callback'
     | '/api/public/google/callback'
     | '/api/public/webhooks/hotmart'
   id:
@@ -322,6 +334,7 @@ export interface FileRouteTypes {
     | '/_authenticated/acervo/'
     | '/_authenticated/crm/'
     | '/_authenticated/acervo/item/$slug'
+    | '/api/public/conta-azul/callback'
     | '/api/public/google/callback'
     | '/api/public/webhooks/hotmart'
   fileRoutesById: FileRoutesById
@@ -330,6 +343,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicContaAzulCallbackRoute: typeof ApiPublicContaAzulCallbackRoute
   ApiPublicGoogleCallbackRoute: typeof ApiPublicGoogleCallbackRoute
   ApiPublicWebhooksHotmartRoute: typeof ApiPublicWebhooksHotmartRoute
 }
@@ -504,6 +518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/conta-azul/callback': {
+      id: '/api/public/conta-azul/callback'
+      path: '/api/public/conta-azul/callback'
+      fullPath: '/api/public/conta-azul/callback'
+      preLoaderRoute: typeof ApiPublicContaAzulCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/acervo/item/$slug': {
       id: '/_authenticated/acervo/item/$slug'
       path: '/item/$slug'
@@ -590,6 +611,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicContaAzulCallbackRoute: ApiPublicContaAzulCallbackRoute,
   ApiPublicGoogleCallbackRoute: ApiPublicGoogleCallbackRoute,
   ApiPublicWebhooksHotmartRoute: ApiPublicWebhooksHotmartRoute,
 }
