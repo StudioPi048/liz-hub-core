@@ -86,10 +86,12 @@ function FinanceiroPage() {
   });
 
   async function connect() {
+    const authWindow = window.open("about:blank", "_blank");
     try {
       const { url } = await getAuthUrl({ data: { origin: window.location.origin } });
-      window.location.href = url;
+      openContaAzulAuthUrl(url, authWindow);
     } catch (e) {
+      authWindow?.close();
       toast.error(e instanceof Error ? e.message : "Erro ao iniciar OAuth da Conta Azul");
     }
   }
@@ -396,6 +398,25 @@ function setupRequiredMessage(reason: string | undefined, error: unknown): strin
   }
 
   return "Não foi possível verificar a integração. Confira as migrations e os secrets do ambiente.";
+}
+
+function openContaAzulAuthUrl(url: string, authWindow: Window | null) {
+  if (authWindow && !authWindow.closed) {
+    authWindow.opener = null;
+    authWindow.location.href = url;
+    return;
+  }
+
+  try {
+    if (window.top && window.top !== window.self) {
+      window.top.location.href = url;
+      return;
+    }
+  } catch {
+    // Cross-origin frames can block top navigation; fall back to the current window.
+  }
+
+  window.location.href = url;
 }
 
 function formatDateTime(value: string | null): string {
