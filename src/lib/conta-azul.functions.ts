@@ -16,18 +16,31 @@ export const getContaAzulAuthUrl = createServerFn({ method: "POST" })
     return { url: buildContaAzulAuthUrl(state) };
   });
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
+export type ContaAzulStatusResult = {
+  status: string;
+  isAdmin: boolean;
+  reason?: string;
+  connectedAt?: string | null;
+  connectedBy?: string | null;
+  identity?: JsonValue | null;
+  tokenExpiresAt?: string | null;
+  lastError?: string | null;
+};
+
 export const getContaAzulStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<ContaAzulStatusResult> => {
     const isAdmin = await getIsAdmin(context.userId);
     const { getContaAzulSafeStatus } = await import("./conta-azul.server");
 
     try {
       const status = await getContaAzulSafeStatus();
-      return { ...status, isAdmin };
+      return JSON.parse(JSON.stringify({ ...status, isAdmin })) as ContaAzulStatusResult;
     } catch (error) {
       return {
-        status: "setup_required" as const,
+        status: "setup_required",
         reason: classifyContaAzulSetupError(error),
         isAdmin,
       };
@@ -45,11 +58,18 @@ export const disconnectContaAzul = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export type ContaAzulCategoriesResult = {
+  needsAuth: boolean;
+  status: string;
+  categorias: JsonValue[];
+};
+
 export const listContaAzulCategories = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async (): Promise<ContaAzulCategoriesResult> => {
     const { listContaAzulCategorias } = await import("./conta-azul.server");
-    return listContaAzulCategorias();
+    const result = await listContaAzulCategorias();
+    return JSON.parse(JSON.stringify(result)) as ContaAzulCategoriesResult;
   });
 
 async function requireAdmin(userId: string, message: string) {

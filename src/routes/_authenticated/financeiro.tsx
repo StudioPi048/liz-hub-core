@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/financeiro")({
   component: FinanceiroPage,
 });
 
-type ContaAzulCategory = Record<string, unknown>;
+type ContaAzulCategory = { [k: string]: unknown };
 
 function FinanceiroPage() {
   const search = useSearch({ from: "/_authenticated/financeiro" });
@@ -97,7 +97,9 @@ function FinanceiroPage() {
   const isConnected = status.data?.status === "connected";
   const isAdmin = status.data?.isAdmin ?? false;
   const isSetupRequired = status.data?.status === "setup_required" || status.isError;
-  const categoryRows = categories.data?.categorias || [];
+  const categoryRows: ContaAzulCategory[] = (categories.data?.categorias || []).flatMap((c) =>
+    typeof c === "object" && c !== null && !Array.isArray(c) ? [c as ContaAzulCategory] : [],
+  );
 
   return (
     <div className="max-w-6xl space-y-6">
@@ -189,7 +191,7 @@ function FinanceiroPage() {
               label="Conectada em"
               value={
                 status.data?.status === "connected"
-                  ? formatDateTime(status.data.connectedAt)
+                  ? formatDateTime(status.data.connectedAt ?? null)
                   : "Sem conexão"
               }
             />
