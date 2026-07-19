@@ -1,5 +1,5 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -52,6 +52,7 @@ function FinanceiroPage() {
   const search = useSearch({ from: "/_authenticated/financeiro" });
   const qc = useQueryClient();
   const getAuthUrl = useServerFn(getContaAzulAuthUrl);
+  const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
 
   const status = useQuery({
     queryKey: ["conta-azul-status"],
@@ -87,6 +88,7 @@ function FinanceiroPage() {
 
   async function connect() {
     let authWindow: Window | null = null;
+    setPendingAuthUrl(null);
     try {
       authWindow = window.open("about:blank", "_blank");
       const result = await getAuthUrl({ data: { origin: window.location.origin } });
@@ -97,7 +99,11 @@ function FinanceiroPage() {
         return;
       }
 
-      openContaAzulAuthUrl(result.url, authWindow);
+      const opened = openContaAzulAuthUrl(result.url, authWindow);
+      if (!opened) {
+        setPendingAuthUrl(result.url);
+        toast.info("Clique em Abrir autorização para continuar na Conta Azul.");
+      }
     } catch (e) {
       authWindow?.close();
       toast.error(errorMessage(e));
@@ -191,6 +197,24 @@ function FinanceiroPage() {
               <AlertDescription>
                 A autorização da Conta Azul expirou ou foi revogada. Conecte novamente para renovar
                 o acesso.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {pendingAuthUrl ? (
+            <Alert>
+              <Send className="h-4 w-4" />
+              <AlertTitle>Autorização pronta para abrir</AlertTitle>
+              <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  O preview do Lovable bloqueou o redirecionamento automático. Abra a autorização da
+                  Conta Azul em uma nova aba.
+                </span>
+                <Button asChild size="sm" className="shrink-0">
+                  <a href={pendingAuthUrl} target="_blank" rel="noreferrer">
+                    Abrir autorização
+                  </a>
+                </Button>
               </AlertDescription>
             </Alert>
           ) : null}
@@ -412,23 +436,22 @@ function setupRequiredMessage(reason: string | undefined, error: unknown): strin
   return "Não foi possível verificar a integração. Confira as migrations e os secrets do ambiente.";
 }
 
-function openContaAzulAuthUrl(url: string, authWindow: Window | null) {
+function openContaAzulAuthUrl(url: string, authWindow: Window | null): boolean {
   if (authWindow && !authWindow.closed) {
-    authWindow.opener = null;
-    authWindow.location.href = url;
-    return;
-  }
-
-  try {
-    if (window.top && window.top !== window.self) {
-      window.top.location.href = url;
-      return;
+    try {
+      authWindow.location.replace(url);
+      return true;
+    } catch {
+      authWindow.close();
     }
-  } catch {
-    // Cross-origin frames can block top navigation; fall back to the current window.
   }
 
-  window.location.href = url;
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  if (opened) {
+    return true;
+  }
+
+  return false;
 }
 
 function errorMessage(error: unknown): string {
