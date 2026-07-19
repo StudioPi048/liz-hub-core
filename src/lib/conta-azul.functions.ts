@@ -6,14 +6,22 @@ export const getContaAzulAuthUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ origin: z.string().url() }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.userId, "Apenas administradores podem conectar a Conta Azul.");
-
     const { requireContaAzulEnv, signContaAzulState, buildContaAzulAuthUrl } =
       await import("./conta-azul.server");
-    const { stateSecret } = requireContaAzulEnv();
-    const state = signContaAzulState(context.userId, data.origin, stateSecret);
 
-    return { url: buildContaAzulAuthUrl(state) };
+    try {
+      await requireAdmin(context.userId, "Apenas administradores podem conectar a Conta Azul.");
+      const { stateSecret } = requireContaAzulEnv();
+      const state = signContaAzulState(context.userId, data.origin, stateSecret);
+
+      return { ok: true as const, url: buildContaAzulAuthUrl(state) };
+    } catch (error) {
+      return {
+        ok: false as const,
+        reason: classifyContaAzulSetupError(error),
+        message: errorMessage(error),
+      };
+    }
   });
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
@@ -33,9 +41,10 @@ export const getContaAzulStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ContaAzulStatusResult> => {
     const isAdmin = await getIsAdmin(context.userId);
-    const { getContaAzulSafeStatus } = await import("./conta-azul.server");
+    const { getContaAzulSafeStatus, requireContaAzulEnv } = await import("./conta-azul.server");
 
     try {
+      requireContaAzulEnv();
       const status = await getContaAzulSafeStatus();
       return JSON.parse(JSON.stringify({ ...status, isAdmin })) as ContaAzulStatusResult;
     } catch (error) {
@@ -88,7 +97,10 @@ async function getIsAdmin(userId: string): Promise<boolean> {
 }
 
 function classifyContaAzulSetupError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = errorMessage(error);
+  if (/administradores|admin/i.test(message)) {
+    return "not_admin" as const;
+  }
   if (/CONTA_AZUL|não configurada|not configured|Missing/i.test(message)) {
     return "missing_environment" as const;
   }
@@ -97,4 +109,15 @@ function classifyContaAzulSetupError(error: unknown) {
   }
 
   return "status_unavailable" as const;
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+
+  return "Erro ao iniciar OAuth da Conta Azul.";
 }

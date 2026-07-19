@@ -86,13 +86,21 @@ function FinanceiroPage() {
   });
 
   async function connect() {
-    const authWindow = window.open("about:blank", "_blank");
+    let authWindow: Window | null = null;
     try {
-      const { url } = await getAuthUrl({ data: { origin: window.location.origin } });
-      openContaAzulAuthUrl(url, authWindow);
+      authWindow = window.open("about:blank", "_blank");
+      const result = await getAuthUrl({ data: { origin: window.location.origin } });
+      if (!result.ok) {
+        authWindow?.close();
+        toast.error(result.message || setupRequiredMessage(result.reason, null));
+        qc.invalidateQueries({ queryKey: ["conta-azul-status"] });
+        return;
+      }
+
+      openContaAzulAuthUrl(result.url, authWindow);
     } catch (e) {
       authWindow?.close();
-      toast.error(e instanceof Error ? e.message : "Erro ao iniciar OAuth da Conta Azul");
+      toast.error(errorMessage(e));
     }
   }
 
@@ -390,7 +398,11 @@ function setupRequiredMessage(reason: string | undefined, error: unknown): strin
   }
 
   if (reason === "missing_environment") {
-    return "Os secrets da Conta Azul ainda não estão configurados no ambiente Lovable.";
+    return "Os secrets da Conta Azul ainda não estão configurados no ambiente Lovable. Confira CONTA_AZUL_CLIENT_ID, CONTA_AZUL_CLIENT_SECRET, CONTA_AZUL_REDIRECT_URI, CONTA_AZUL_OAUTH_STATE_SECRET e CONTA_AZUL_TOKEN_ENCRYPTION_KEY.";
+  }
+
+  if (reason === "not_admin") {
+    return "Apenas administradores podem conectar ou desconectar a Conta Azul.";
   }
 
   if (error instanceof Error) {
@@ -417,6 +429,17 @@ function openContaAzulAuthUrl(url: string, authWindow: Window | null) {
   }
 
   window.location.href = url;
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+
+  return "Erro ao iniciar OAuth da Conta Azul.";
 }
 
 function formatDateTime(value: string | null): string {
