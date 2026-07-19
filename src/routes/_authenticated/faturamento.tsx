@@ -3,13 +3,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getFaturamentoParcelas,
+  getFaturamentoRelatorios,
   getFaturamentoResumo,
   getNotasFiscais,
   importarFaturamento,
   marcarNotaEmitida,
+  type FaturamentoRelatorios,
   type NfFilaRow,
   type ParcelaRow,
 } from "@/lib/faturamento.functions";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,7 +68,7 @@ const STATUS_VARIANT: Record<string, "neutral" | "pending" | "success" | "critic
   outro: "neutral",
 };
 
-type Escopo = "mes" | "atrasadas" | "busca" | "notas";
+type Escopo = "mes" | "atrasadas" | "busca" | "notas" | "relatorios";
 
 function waLink(fone: string, mensagem: string): string {
   let digits = fone.replace(/\D/g, "");
@@ -108,6 +112,12 @@ function FaturamentoPage() {
     queryKey: ["faturamento-notas"],
     queryFn: () => getNotasFiscais(),
     enabled: escopo === "notas",
+  });
+
+  const relatoriosQuery = useQuery({
+    queryKey: ["faturamento-relatorios"],
+    queryFn: () => getFaturamentoRelatorios(),
+    enabled: escopo === "relatorios",
   });
 
   const importar = useMutation({
@@ -221,6 +231,7 @@ function FaturamentoPage() {
           </TabsTrigger>
           <TabsTrigger value="busca">Buscar cliente</TabsTrigger>
           <TabsTrigger value="notas">Notas fiscais</TabsTrigger>
+          <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -251,6 +262,8 @@ function FaturamentoPage() {
           emitidas={notasQuery.data?.emitidas ?? []}
           loading={notasQuery.isLoading}
         />
+      ) : escopo === "relatorios" ? (
+        <RelatoriosSecao dados={relatoriosQuery.data} loading={relatoriosQuery.isLoading} />
       ) : (
         <ParcelasLista
           parcelas={parcelasQuery.data ?? []}
@@ -338,6 +351,106 @@ function ParcelasLista({
           Mostrando as primeiras 300 parcelas. Use a busca para encontrar um cliente específico.
         </p>
       )}
+    </div>
+  );
+}
+
+const MES_ABREV = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
+
+function mesLabel(mes: string): string {
+  const [ano, m] = mes.split("-");
+  return `${MES_ABREV[Number(m) - 1]}/${ano.slice(2)}`;
+}
+
+function RelatoriosSecao({
+  dados,
+  loading,
+}: {
+  dados: FaturamentoRelatorios | undefined;
+  loading: boolean;
+}) {
+  if (loading || !dados) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  const porMes = dados.recebidoPorMes.map((r) => ({ ...r, label: mesLabel(r.mes) }));
+  const porCurso = dados.recebidoPorCurso.map((r) => ({
+    ...r,
+    label: r.curso.length > 28 ? `${r.curso.slice(0, 28)}…` : r.curso,
+  }));
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium">Recebido por mês (últimos 12 meses)</h2>
+        <ChartContainer config={{ total: { label: "Recebido", color: "hsl(var(--primary))" } }}>
+          <BarChart data={porMes}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v: number) => brl.format(v).replace(",00", "")}
+              width={80}
+            />
+            <ChartTooltip
+              content={<ChartTooltipContent formatter={(v) => brl.format(Number(v))} />}
+            />
+            <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+          </BarChart>
+        </ChartContainer>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-medium">Recebido por curso (top 10, últimos 12 meses)</h2>
+        {porCurso.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground">Nenhum recebimento no período.</p>
+        ) : (
+          <ChartContainer
+            config={{ total: { label: "Recebido", color: "hsl(var(--primary))" } }}
+            className="aspect-auto h-96"
+          >
+            <BarChart data={porCurso} layout="vertical" margin={{ left: 12 }}>
+              <CartesianGrid horizontal={false} />
+              <XAxis
+                type="number"
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v: number) => brl.format(v).replace(",00", "")}
+              />
+              <YAxis
+                dataKey="label"
+                type="category"
+                tickLine={false}
+                axisLine={false}
+                width={180}
+              />
+              <ChartTooltip
+                content={<ChartTooltipContent formatter={(v) => brl.format(Number(v))} />}
+              />
+              <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        )}
+      </div>
     </div>
   );
 }

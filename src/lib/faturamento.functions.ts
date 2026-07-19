@@ -201,6 +201,62 @@ type NfEmitidaLocal = {
   emitida_em: string;
 };
 
+export type FaturamentoRelatorios = {
+  recebidoPorMes: { mes: string; total: number }[];
+  recebidoPorCurso: { curso: string; total: number }[];
+};
+
+export const getFaturamentoRelatorios = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<FaturamentoRelatorios> => {
+    const db = await untypedDb();
+    const hoje = new Date();
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 11, 1);
+    const inicioISO = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, "0")}-01`;
+
+    // Recebido = parcelas com data de recebimento preenchida (mesmo criterio do resumo).
+    const PAGE = 1000;
+    const rows: {
+      dt_recebimento: string;
+      curso_nome: string | null;
+      valor_recebido: number | null;
+      valor_liquido: number | null;
+      valor_parcela: number | null;
+    }[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await db
+        .from("fat_parcelas")
+        .select("dt_recebimento, curso_nome, valor_recebido, valor_liquido, valor_parcela")
+        .gte("dt_recebimento", inicioISO)
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if (!data || data.length < PAGE) break;
+    }
+
+    const porMes = new Map<string, number>();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(inicio.getFullYear(), inicio.getMonth() + i, 1);
+      porMes.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, 0);
+    }
+    const porCurso = new Map<string, number>();
+    for (const r of rows) {
+      const valor = r.valor_recebido ?? r.valor_liquido ?? r.valor_parcela ?? 0;
+      const mesKey = r.dt_recebimento.slice(0, 7);
+      if (porMes.has(mesKey)) porMes.set(mesKey, (porMes.get(mesKey) ?? 0) + valor);
+      const curso = r.curso_nome ?? "Sem curso";
+      porCurso.set(curso, (porCurso.get(curso) ?? 0) + valor);
+    }
+
+    return {
+      recebidoPorMes: [...porMes.entries()].map(([mes, total]) => ({ mes, total })),
+      recebidoPorCurso: [...porCurso.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([curso, total]) => ({ curso, total })),
+    };
+  });
+
 export const getNotasFiscais = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<{ fila: NfFilaRow[]; emitidas: NotaFiscalRow[] }> => {
