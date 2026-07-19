@@ -226,7 +226,9 @@ function ConfiguracoesPage() {
                   ? "Verificando conexão..."
                   : contaAzulStatus.data?.status === "connected"
                     ? "Conectada ao motor financeiro e fiscal do LIZ HUB."
-                    : "Não conectada."}
+                    : contaAzulStatus.data?.status === "setup_required"
+                      ? "Configuração pendente no ambiente."
+                      : "Não conectada."}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -234,7 +236,11 @@ function ConfiguracoesPage() {
                 <Badge
                   variant={contaAzulStatus.data?.status === "connected" ? "default" : "secondary"}
                 >
-                  {contaAzulStatus.data?.status === "connected" ? "Ativo" : "Inativo"}
+                  {contaAzulStatus.data?.status === "connected"
+                    ? "Ativo"
+                    : contaAzulStatus.data?.status === "setup_required"
+                      ? "Pendente"
+                      : "Inativo"}
                 </Badge>
               )}
               <Button asChild variant="outline" size="sm">

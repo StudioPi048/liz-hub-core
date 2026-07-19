@@ -95,7 +95,8 @@ function FinanceiroPage() {
   }
 
   const isConnected = status.data?.status === "connected";
-  const isAdmin = status.data?.isAdmin;
+  const isAdmin = status.data?.isAdmin ?? false;
+  const isSetupRequired = status.data?.status === "setup_required" || status.isError;
   const categoryRows = categories.data?.categorias || [];
 
   return (
@@ -125,7 +126,7 @@ function FinanceiroPage() {
               <Button
                 size="sm"
                 onClick={connect}
-                disabled={status.isLoading || !isAdmin || isConnected}
+                disabled={status.isLoading || !isAdmin || isConnected || isSetupRequired}
               >
                 {status.isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -151,7 +152,17 @@ function FinanceiroPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          {!isAdmin && !status.isLoading ? (
+          {isSetupRequired && !status.isLoading ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Configuração da Conta Azul pendente</AlertTitle>
+              <AlertDescription>
+                {setupRequiredMessage(status.data?.reason, status.error)}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {!isSetupRequired && !isAdmin && !status.isLoading ? (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Acesso administrativo necessário</AlertTitle>
@@ -258,6 +269,10 @@ function ConnectionBadge({ status, isLoading }: { status?: string; isLoading: bo
     return <Badge variant="secondary">Verificando</Badge>;
   }
 
+  if (status === "setup_required") {
+    return <Badge variant="destructive">Configuração pendente</Badge>;
+  }
+
   if (status === "connected") {
     return <Badge>Conta Azul ativa</Badge>;
   }
@@ -358,10 +373,27 @@ function categoryLabel(category: ContaAzulCategory): string {
 
 function statusLabel(status: string | undefined, isLoading: boolean): string {
   if (isLoading) return "Verificando...";
+  if (status === "setup_required") return "Configuração pendente";
   if (status === "connected") return "Conectada";
   if (status === "needs_reconnect") return "Reconectar";
   if (status === "temporarily_unavailable") return "Indisponível";
   return "Desconectada";
+}
+
+function setupRequiredMessage(reason: string | undefined, error: unknown): string {
+  if (reason === "missing_database_migration") {
+    return "A migration da Conta Azul ainda não foi aplicada no Supabase. Aplique a migration conta_azul_oauth_tokens para liberar a conexão.";
+  }
+
+  if (reason === "missing_environment") {
+    return "Os secrets da Conta Azul ainda não estão configurados no ambiente Lovable.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Não foi possível verificar a integração. Confira as migrations e os secrets do ambiente.";
 }
 
 function formatDateTime(value: string | null): string {

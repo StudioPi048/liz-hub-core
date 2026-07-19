@@ -21,9 +21,17 @@ export const getContaAzulStatus = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const isAdmin = await getIsAdmin(context.userId);
     const { getContaAzulSafeStatus } = await import("./conta-azul.server");
-    const status = await getContaAzulSafeStatus();
 
-    return { ...status, isAdmin };
+    try {
+      const status = await getContaAzulSafeStatus();
+      return { ...status, isAdmin };
+    } catch (error) {
+      return {
+        status: "setup_required" as const,
+        reason: classifyContaAzulSetupError(error),
+        isAdmin,
+      };
+    }
   });
 
 export const disconnectContaAzul = createServerFn({ method: "POST" })
@@ -57,4 +65,16 @@ async function getIsAdmin(userId: string): Promise<boolean> {
     .eq("user_id", userId);
 
   return roles?.some((r) => r.role === "admin") || false;
+}
+
+function classifyContaAzulSetupError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/CONTA_AZUL|não configurada|not configured|Missing/i.test(message)) {
+    return "missing_environment" as const;
+  }
+  if (/conta_azul_oauth_tokens|relation .* does not exist|schema cache/i.test(message)) {
+    return "missing_database_migration" as const;
+  }
+
+  return "status_unavailable" as const;
 }
