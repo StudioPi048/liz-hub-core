@@ -215,6 +215,51 @@ export type Database = {
           },
         ]
       }
+      conta_azul_oauth_tokens: {
+        Row: {
+          access_token_ciphertext: string | null
+          connected_by: string | null
+          conta_azul_identity: Json | null
+          created_at: string
+          id: string
+          last_error: string | null
+          refresh_token_ciphertext: string
+          scope: string | null
+          status: string
+          token_expires_at: string | null
+          token_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_ciphertext?: string | null
+          connected_by?: string | null
+          conta_azul_identity?: Json | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          refresh_token_ciphertext: string
+          scope?: string | null
+          status?: string
+          token_expires_at?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_ciphertext?: string | null
+          connected_by?: string | null
+          conta_azul_identity?: Json | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          refresh_token_ciphertext?: string
+          scope?: string | null
+          status?: string
+          token_expires_at?: string | null
+          token_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_contacts: {
         Row: {
           created_at: string
