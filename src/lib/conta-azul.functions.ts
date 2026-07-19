@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import type {
+  ContaAzulBackofficeModule,
+  ContaAzulJsonRecord,
+  ContaAzulJsonValue,
+  ContaAzulOperationResult,
+} from "./conta-azul.server";
 
 export const getContaAzulAuthUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -24,7 +30,20 @@ export const getContaAzulAuthUrl = createServerFn({ method: "POST" })
     }
   });
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+type JsonValue = ContaAzulJsonValue;
+
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(jsonValueSchema),
+  ]),
+);
+
+const jsonRecordSchema = z.record(jsonValueSchema);
 
 export type ContaAzulStatusResult = {
   status: string;
@@ -56,6 +75,13 @@ export const getContaAzulStatus = createServerFn({ method: "GET" })
     }
   });
 
+export const getContaAzulBackofficeCatalog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<ContaAzulBackofficeModule[]> => {
+    const { getContaAzulBackofficeModules } = await import("./conta-azul.server");
+    return getContaAzulBackofficeModules();
+  });
+
 export const disconnectContaAzul = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -81,6 +107,44 @@ export const listContaAzulCategories = createServerFn({ method: "GET" })
     const { listContaAzulCategorias } = await import("./conta-azul.server");
     const result = await listContaAzulCategorias();
     return JSON.parse(JSON.stringify(result)) as ContaAzulCategoriesResult;
+  });
+
+export const executeContaAzulOperation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        moduleId: z.string().min(1),
+        actionId: z.string().min(1),
+        id: z.string().optional(),
+        query: jsonRecordSchema.optional(),
+        body: jsonValueSchema.optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }): Promise<ContaAzulOperationResult> => {
+    const { getContaAzulBackofficeModules, runContaAzulOperation } =
+      await import("./conta-azul.server");
+    const modules = getContaAzulBackofficeModules();
+    const action = modules
+      .find((module) => module.id === data.moduleId)
+      ?.actions.find((candidate) => candidate.id === data.actionId);
+
+    if (!action) throw new Error("Operação da Conta Azul inválida.");
+    if (action.method !== "GET" || action.dangerous) {
+      await requireAdmin(
+        context.userId,
+        "Apenas administradores podem executar operações de escrita na Conta Azul.",
+      );
+    }
+
+    return runContaAzulOperation({
+      moduleId: data.moduleId,
+      actionId: data.actionId,
+      id: data.id,
+      query: data.query as ContaAzulJsonRecord | undefined,
+      body: data.body,
+    });
   });
 
 async function requireAdmin(userId: string, message: string) {

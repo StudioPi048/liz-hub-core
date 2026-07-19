@@ -1,20 +1,38 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
   disconnectContaAzul,
+  executeContaAzulOperation,
   getContaAzulAuthUrl,
+  getContaAzulBackofficeCatalog,
   getContaAzulStatus,
-  listContaAzulCategories,
 } from "@/lib/conta-azul.functions";
+import type {
+  ContaAzulBackofficeAction,
+  ContaAzulBackofficeModule,
+  ContaAzulJsonRecord,
+  ContaAzulJsonValue,
+  ContaAzulOperationResult,
+} from "@/lib/conta-azul.server";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -23,18 +41,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertTriangle,
+  ArrowUpRight,
+  Box,
   Building2,
+  CheckCircle2,
+  ClipboardList,
+  DatabaseZap,
+  FileJson,
   FileText,
   Loader2,
+  PlugZap,
+  Power,
   Receipt,
   RefreshCcw,
   Send,
+  ShieldCheck,
+  TerminalSquare,
   Users,
   WalletCards,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type ContaAzulResultRow = { [key: string]: ContaAzulJsonValue };
 
 const searchSchema = z.object({
   conta_azul_connected: z.string().optional(),
@@ -46,42 +77,96 @@ export const Route = createFileRoute("/_authenticated/financeiro")({
   component: FinanceiroPage,
 });
 
-type ContaAzulCategory = { [k: string]: unknown };
-
 function FinanceiroPage() {
   const search = useSearch({ from: "/_authenticated/financeiro" });
   const qc = useQueryClient();
   const getAuthUrl = useServerFn(getContaAzulAuthUrl);
+  const executeOperation = useServerFn(executeContaAzulOperation);
   const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
+  const [moduleId, setModuleId] = useState("financeiro");
+  const [actionId, setActionId] = useState("");
+  const [idValue, setIdValue] = useState("");
+  const [queryText, setQueryText] = useState("{}");
+  const [bodyText, setBodyText] = useState("{}");
+  const [lastResult, setLastResult] = useState<ContaAzulOperationResult | null>(null);
 
   const status = useQuery({
     queryKey: ["conta-azul-status"],
     queryFn: () => getContaAzulStatus(),
   });
 
-  const categories = useQuery({
-    queryKey: ["conta-azul-categories"],
-    queryFn: () => listContaAzulCategories(),
-    enabled: status.data?.status === "connected",
+  const catalog = useQuery({
+    queryKey: ["conta-azul-backoffice-catalog"],
+    queryFn: () => getContaAzulBackofficeCatalog(),
+    staleTime: 10 * 60 * 1000,
   });
+
+  const modules = useMemo(() => catalog.data || [], [catalog.data]);
+  const selectedModule = useMemo(
+    () => modules.find((module) => module.id === moduleId) || modules[0],
+    [moduleId, modules],
+  );
+  const selectedAction = useMemo(
+    () => selectedModule?.actions.find((action) => action.id === actionId),
+    [actionId, selectedModule],
+  );
 
   useEffect(() => {
     if (search.conta_azul_connected) {
       toast.success("Conta Azul conectada");
       qc.invalidateQueries({ queryKey: ["conta-azul-status"] });
-      qc.invalidateQueries({ queryKey: ["conta-azul-categories"] });
     }
     if (search.conta_azul_error) {
       toast.error("Erro ao conectar Conta Azul: " + search.conta_azul_error);
     }
   }, [search, qc]);
 
+  useEffect(() => {
+    if (!selectedModule) return;
+    if (!selectedModule.actions.some((action) => action.id === actionId)) {
+      setActionId(selectedModule.defaultActionId);
+    }
+  }, [actionId, selectedModule]);
+
+  useEffect(() => {
+    if (!selectedAction) return;
+    setIdValue("");
+    setQueryText(formatJson(selectedAction.queryTemplate || {}));
+    setBodyText(formatJson(selectedAction.bodyTemplate || {}));
+  }, [selectedAction]);
+
   const disconnect = useMutation({
     mutationFn: () => disconnectContaAzul(),
     onSuccess: () => {
       toast.success("Conta Azul desconectada");
       qc.invalidateQueries({ queryKey: ["conta-azul-status"] });
-      qc.removeQueries({ queryKey: ["conta-azul-categories"] });
+      setLastResult(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const operation = useMutation({
+    mutationFn: async () => {
+      if (!selectedModule || !selectedAction) {
+        throw new Error("Selecione uma operação da Conta Azul.");
+      }
+
+      const result = await executeOperation({
+        data: {
+          moduleId: selectedModule.id,
+          actionId: selectedAction.id,
+          id: selectedAction.requiresId ? idValue.trim() : undefined,
+          query: parseJsonRecord(queryText, "Filtros"),
+          body: selectedAction.method === "GET" ? undefined : parseJsonValue(bodyText, "Payload"),
+        },
+      });
+
+      return result;
+    },
+    onSuccess: (result) => {
+      setLastResult(result);
+      toast.success("Operação executada na Conta Azul");
+      qc.invalidateQueries({ queryKey: ["conta-azul-status"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -113,17 +198,24 @@ function FinanceiroPage() {
   const isConnected = status.data?.status === "connected";
   const isAdmin = status.data?.isAdmin ?? false;
   const isSetupRequired = status.data?.status === "setup_required" || status.isError;
-  const categoryRows: ContaAzulCategory[] = (categories.data?.categorias || []).flatMap((c) =>
-    typeof c === "object" && c !== null && !Array.isArray(c) ? [c as ContaAzulCategory] : [],
-  );
+  const requiresAdmin = selectedAction
+    ? selectedAction.method !== "GET" || selectedAction.dangerous
+    : false;
+  const canExecute =
+    Boolean(selectedAction) &&
+    isConnected &&
+    !operation.isPending &&
+    (!requiresAdmin || isAdmin) &&
+    (!selectedAction?.requiresId || idValue.trim().length > 0);
+  const operationCount = modules.reduce((total, module) => total + module.actions.length, 0);
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="max-w-7xl space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-editorial tracking-tight">Financeiro</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Rotinas financeiras, vendas, cobranças e fiscal com a Conta Azul como motor.
+            Backoffice operacional com a Conta Azul como motor financeiro, comercial e fiscal.
           </p>
         </div>
         <ConnectionBadge status={status.data?.status} isLoading={status.isLoading} />
@@ -162,7 +254,7 @@ function FinanceiroPage() {
                 {disconnect.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <RefreshCcw className="h-4 w-4" />
+                  <Power className="h-4 w-4" />
                 )}
                 Desconectar
               </Button>
@@ -182,10 +274,11 @@ function FinanceiroPage() {
 
           {!isSetupRequired && !isAdmin && !status.isLoading ? (
             <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Acesso administrativo necessário</AlertTitle>
+              <ShieldCheck className="h-4 w-4" />
+              <AlertTitle>Acesso administrativo limitado</AlertTitle>
               <AlertDescription>
-                Apenas administradores podem conectar ou desconectar a Conta Azul.
+                Você pode consultar dados conectados. Criações, atualizações, baixas e exclusões
+                exigem perfil admin.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -219,7 +312,7 @@ function FinanceiroPage() {
             </Alert>
           ) : null}
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-4">
             <Metric label="Status" value={statusLabel(status.data?.status, status.isLoading)} />
             <Metric
               label="Conectada em"
@@ -230,77 +323,365 @@ function FinanceiroPage() {
               }
             />
             <Metric
-              label="Categorias financeiras"
-              value={categories.isLoading ? "Carregando..." : String(categoryRows.length)}
+              label="Módulos operacionais"
+              value={catalog.isLoading ? "Carregando..." : String(modules.length)}
             />
-          </div>
-
-          <Separator />
-
-          <div className="grid gap-3 md:grid-cols-5">
-            <ModulePill icon={Users} label="Clientes" state="Próximo" />
-            <ModulePill icon={Receipt} label="Vendas" state="Próximo" />
-            <ModulePill icon={RefreshCcw} label="Contratos" state="Próximo" />
-            <ModulePill icon={Building2} label="Cobranças" state="Próximo" />
-            <ModulePill icon={FileText} label="Fiscal" state="Próximo" />
+            <Metric
+              label="Operações Conta Azul"
+              value={catalog.isLoading ? "Carregando..." : String(operationCount)}
+            />
           </div>
         </CardContent>
       </Card>
 
+      {catalog.isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-72 w-full" />
+        </div>
+      ) : catalog.isError ? (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Falha ao carregar operações</AlertTitle>
+          <AlertDescription>{errorMessage(catalog.error)}</AlertDescription>
+        </Alert>
+      ) : (
+        <Tabs value={selectedModule?.id || moduleId} onValueChange={setModuleId}>
+          <TabsList className="h-auto flex-wrap justify-start">
+            {modules.map((module) => {
+              const Icon = moduleIcon(module.id);
+              return (
+                <TabsTrigger key={module.id} value={module.id} className="gap-2">
+                  <Icon className="h-4 w-4" />
+                  {module.label}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {modules.map((module) => (
+            <TabsContent key={module.id} value={module.id} className="mt-4">
+              <BackofficePanel
+                module={module}
+                actionId={actionId}
+                onActionChange={setActionId}
+                action={selectedModule?.id === module.id ? selectedAction : undefined}
+                idValue={idValue}
+                onIdChange={setIdValue}
+                queryText={queryText}
+                onQueryTextChange={setQueryText}
+                bodyText={bodyText}
+                onBodyTextChange={setBodyText}
+                isConnected={isConnected}
+                isAdmin={isAdmin}
+                canExecute={canExecute}
+                isExecuting={operation.isPending}
+                onExecute={() => operation.mutate()}
+                lastResult={selectedModule?.id === module.id ? lastResult : null}
+              />
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
+    </div>
+  );
+}
+
+function BackofficePanel({
+  module,
+  actionId,
+  onActionChange,
+  action,
+  idValue,
+  onIdChange,
+  queryText,
+  onQueryTextChange,
+  bodyText,
+  onBodyTextChange,
+  isConnected,
+  isAdmin,
+  canExecute,
+  isExecuting,
+  onExecute,
+  lastResult,
+}: {
+  module: ContaAzulBackofficeModule;
+  actionId: string;
+  onActionChange: (value: string) => void;
+  action?: ContaAzulBackofficeAction;
+  idValue: string;
+  onIdChange: (value: string) => void;
+  queryText: string;
+  onQueryTextChange: (value: string) => void;
+  bodyText: string;
+  onBodyTextChange: (value: string) => void;
+  isConnected: boolean;
+  isAdmin: boolean;
+  canExecute: boolean;
+  isExecuting: boolean;
+  onExecute: () => void;
+  lastResult: ContaAzulOperationResult | null;
+}) {
+  const requiresAdmin = action ? action.method !== "GET" || action.dangerous : false;
+  const Icon = moduleIcon(module.id);
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(380px,0.9fr)_minmax(0,1.1fr)]">
       <Card>
-        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <CardTitle className="text-base">Categorias financeiras</CardTitle>
-            <CardDescription>Primeira chamada real: GET /v1/categorias.</CardDescription>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Icon className="h-4 w-4" /> {module.label}
+              </CardTitle>
+              <CardDescription>{module.description}</CardDescription>
+            </div>
+            <Badge variant="secondary">{module.actions.length} ações</Badge>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => categories.refetch()}
-            disabled={!isConnected || categories.isFetching}
-          >
-            {categories.isFetching ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCcw className="h-4 w-4" />
-            )}
-            Atualizar
-          </Button>
         </CardHeader>
-        <CardContent>
-          {status.isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : !isConnected ? (
-            <div className="rounded-lg border border-dashed border-border/70 p-8 text-center">
-              <p className="text-sm font-medium">Conta Azul não conectada</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Conecte a integração para carregar as categorias financeiras validadas pela API.
-              </p>
-            </div>
-          ) : categories.isError ? (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Falha ao carregar categorias</AlertTitle>
-              <AlertDescription>
-                {categories.error instanceof Error
-                  ? categories.error.message
-                  : "Erro desconhecido ao chamar a Conta Azul."}
-              </AlertDescription>
-            </Alert>
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <Label>Operação</Label>
+            <Select value={actionId || module.defaultActionId} onValueChange={onActionChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma operação" />
+              </SelectTrigger>
+              <SelectContent>
+                {module.actions.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.method} · {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {action ? (
+            <>
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <MethodBadge method={action.method} dangerous={action.dangerous} />
+                  {requiresAdmin ? (
+                    <Badge variant={isAdmin ? "default" : "destructive"}>Admin</Badge>
+                  ) : (
+                    <Badge variant="secondary">Consulta</Badge>
+                  )}
+                  {action.docsUrl ? (
+                    <Button asChild variant="ghost" size="sm" className="ml-auto h-7 px-2">
+                      <a href={action.docsUrl} target="_blank" rel="noreferrer">
+                        Docs <ArrowUpRight className="h-3.5 w-3.5" />
+                      </a>
+                    </Button>
+                  ) : null}
+                </div>
+                <p className="mt-3 text-sm text-muted-foreground">{action.description}</p>
+                <code className="mt-3 block break-all rounded-md bg-background px-3 py-2 text-xs">
+                  {action.method} {action.path}
+                </code>
+              </div>
+
+              {action.requiresId ? (
+                <div className="space-y-2">
+                  <Label htmlFor="conta-azul-id">{action.idLabel || "ID"}</Label>
+                  <Input
+                    id="conta-azul-id"
+                    value={idValue}
+                    onChange={(event) => onIdChange(event.target.value)}
+                    placeholder="Cole o identificador da Conta Azul"
+                  />
+                </div>
+              ) : null}
+
+              <JsonField
+                label="Filtros"
+                value={queryText}
+                onChange={onQueryTextChange}
+                minHeight="min-h-[140px]"
+              />
+
+              {action.method !== "GET" ? (
+                <JsonField
+                  label="Payload"
+                  value={bodyText}
+                  onChange={onBodyTextChange}
+                  minHeight="min-h-[220px]"
+                />
+              ) : null}
+
+              {!isConnected ? (
+                <Alert>
+                  <PlugZap className="h-4 w-4" />
+                  <AlertTitle>Conta Azul desconectada</AlertTitle>
+                  <AlertDescription>
+                    Conecte a integração antes de executar operações.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              {requiresAdmin && !isAdmin ? (
+                <Alert variant="destructive">
+                  <ShieldCheck className="h-4 w-4" />
+                  <AlertTitle>Admin necessário</AlertTitle>
+                  <AlertDescription>
+                    Esta operação altera dados na Conta Azul e só pode ser executada por admin.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              <Button className="w-full" onClick={onExecute} disabled={!canExecute}>
+                {isExecuting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <TerminalSquare className="h-4 w-4" />
+                )}
+                Executar na Conta Azul
+              </Button>
+            </>
           ) : (
-            <CategoriesTable
-              categories={categoryRows}
-              isLoading={categories.isLoading}
-              responseShape={categories.data?.responseShape}
-              listSource={categories.data?.listSource}
-            />
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Nenhuma operação selecionada</AlertTitle>
+              <AlertDescription>Selecione uma ação deste módulo para continuar.</AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
+
+      <ResultPanel result={lastResult} />
+    </div>
+  );
+}
+
+function ResultPanel({ result }: { result: ContaAzulOperationResult | null }) {
+  if (!result) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <DatabaseZap className="h-4 w-4" /> Resposta
+          </CardTitle>
+          <CardDescription>
+            A última operação executada neste módulo aparecerá aqui.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-dashed border-border/70 p-8 text-center">
+            <FileJson className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-3 text-sm font-medium">Aguardando execução</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use filtros e payload JSON para operar diretamente no backoffice da Conta Azul.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="space-y-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CheckCircle2 className="h-4 w-4" /> Resposta da Conta Azul
+            </CardTitle>
+            <CardDescription>
+              {result.method} {result.path}
+            </CardDescription>
+          </div>
+          <Badge variant="secondary">{formatDateTime(result.performedAt)}</Badge>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Metric label="Formato" value={result.responseShape} />
+          <Metric label="Itens detectados" value={String(result.itemCount)} />
+          <Metric label="Origem da lista" value={result.listSource || "resposta direta"} />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <ResultTable result={result} />
+        <Separator />
+        <div className="space-y-2">
+          <Label>JSON bruto</Label>
+          <pre className="max-h-[420px] overflow-auto rounded-lg border border-border/60 bg-muted/30 p-4 text-xs leading-relaxed">
+            {formatJson(result.data)}
+          </pre>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ResultTable({ result }: { result: ContaAzulOperationResult }) {
+  const rows: ContaAzulResultRow[] = result.items.filter((item): item is ContaAzulResultRow =>
+    isRecord(item),
+  );
+
+  if (rows.length === 0) {
+    return (
+      <Alert>
+        <FileJson className="h-4 w-4" />
+        <AlertTitle>Resposta sem lista tabular</AlertTitle>
+        <AlertDescription>
+          A Conta Azul retornou um objeto simples, número, texto ou resposta vazia. Veja o JSON
+          bruto.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const columns = pickColumns(rows);
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-border/60">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {columns.map((column) => (
+              <TableHead key={column}>{column}</TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.slice(0, 12).map((row, index) => (
+            <TableRow key={String(row.id || row.uuid || row.chave || row.numero || index)}>
+              {columns.map((column) => (
+                <TableCell key={column} className="max-w-[240px] align-top text-xs">
+                  {formatCell(row[column])}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {rows.length > 12 ? (
+        <div className="border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
+          Exibindo 12 de {rows.length} itens. O JSON bruto contém a resposta completa.
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function JsonField({
+  label,
+  value,
+  onChange,
+  minHeight,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  minHeight: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        spellCheck={false}
+        className={`${minHeight} font-mono text-xs leading-relaxed`}
+      />
     </div>
   );
 }
@@ -325,105 +706,113 @@ function ConnectionBadge({ status, isLoading }: { status?: string; isLoading: bo
   return <Badge variant="secondary">Desconectada</Badge>;
 }
 
+function MethodBadge({
+  method,
+  dangerous,
+}: {
+  method: ContaAzulBackofficeAction["method"];
+  dangerous?: boolean;
+}) {
+  if (dangerous) {
+    return <Badge variant="destructive">{method}</Badge>;
+  }
+
+  if (method === "GET") {
+    return <Badge variant="secondary">{method}</Badge>;
+  }
+
+  return <Badge>{method}</Badge>;
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 text-sm font-semibold">{value}</div>
+      <div className="mt-1 break-words text-sm font-semibold">{value}</div>
     </div>
   );
 }
 
-function ModulePill({
-  icon: Icon,
-  label,
-  state,
-}: {
-  icon: typeof Users;
-  label: string;
-  state: string;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
-      <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
-        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="truncate">{label}</span>
-      </span>
-      <span className="text-[11px] text-muted-foreground">{state}</span>
-    </div>
-  );
+function moduleIcon(moduleId: string) {
+  if (moduleId === "pessoas") return Users;
+  if (moduleId === "produtos") return Box;
+  if (moduleId === "vendas") return Receipt;
+  if (moduleId === "contratos") return ClipboardList;
+  if (moduleId === "cobrancas") return Building2;
+  if (moduleId === "fiscal") return FileText;
+  if (moduleId === "orcamentos") return FileJson;
+  return WalletCards;
 }
 
-function CategoriesTable({
-  categories,
-  isLoading,
-  responseShape,
-  listSource,
-}: {
-  categories: ContaAzulCategory[];
-  isLoading: boolean;
-  responseShape?: string | null;
-  listSource?: string | null;
-}) {
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
+function pickColumns(rows: Record<string, unknown>[]): string[] {
+  const preferred = [
+    "id",
+    "uuid",
+    "id_legado",
+    "nome",
+    "descricao",
+    "status",
+    "situacao",
+    "tipo",
+    "numero",
+    "data_venda",
+    "data_vencimento",
+    "valor",
+    "valor_total",
+    "url",
+  ];
+  const keys = new Set<string>();
+
+  for (const key of preferred) {
+    if (rows.some((row) => key in row)) keys.add(key);
   }
 
-  if (categories.length === 0) {
-    return (
-      <Alert>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Nenhuma categoria exibida</AlertTitle>
-        <AlertDescription>
-          A Conta Azul respondeu à chamada, mas nenhuma lista de categorias foi encontrada
-          {responseShape ? ` no formato recebido: ${responseShape}` : "."}
-          {listSource ? ` Lista detectada em "${listSource}".` : ""}
-        </AlertDescription>
-      </Alert>
-    );
+  for (const row of rows.slice(0, 10)) {
+    for (const key of Object.keys(row)) {
+      keys.add(key);
+      if (keys.size >= 7) return Array.from(keys);
+    }
   }
 
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Categoria</TableHead>
-          <TableHead>Tipo</TableHead>
-          <TableHead>Identificador</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {categories.map((category, index) => (
-          <TableRow key={String(category.id || category.uuid || index)}>
-            <TableCell className="font-medium">{categoryLabel(category)}</TableCell>
-            <TableCell>
-              {String(category.tipo || category.type || category.natureza || "-")}
-            </TableCell>
-            <TableCell className="font-mono text-xs">
-              {String(category.id || category.uuid || category.codigo || "-")}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+  return Array.from(keys).slice(0, 7);
 }
 
-function categoryLabel(category: ContaAzulCategory): string {
-  return String(
-    category.nome ||
-      category.name ||
-      category.descricao ||
-      category.description ||
-      category.codigo ||
-      "Categoria sem nome",
-  );
+function parseJsonRecord(value: string, label: string): ContaAzulJsonRecord {
+  if (!value.trim()) return {};
+  const parsed = parseJsonValue(value, label);
+  if (!isRecord(parsed) || Array.isArray(parsed)) {
+    throw new Error(`${label} precisa ser um objeto JSON.`);
+  }
+
+  return parsed as ContaAzulJsonRecord;
+}
+
+function parseJsonValue(value: string, label: string): ContaAzulJsonValue {
+  if (!value.trim()) return {};
+
+  try {
+    return JSON.parse(value) as ContaAzulJsonValue;
+  } catch (error) {
+    throw new Error(`${label} contém JSON inválido: ${errorMessage(error)}`);
+  }
+}
+
+function formatJson(value: unknown): string {
+  return JSON.stringify(value ?? {}, null, 2);
+}
+
+function formatCell(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  const text = JSON.stringify(value);
+  return text.length > 140 ? `${text.slice(0, 140)}...` : text;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function statusLabel(status: string | undefined, isLoading: boolean): string {

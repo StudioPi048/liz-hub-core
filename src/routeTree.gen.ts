@@ -9,91 +9,61 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedTextosRouteImport } from './routes/_authenticated/textos'
-import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated/prompts'
-import { Route as AuthenticatedProjetosRouteImport } from './routes/_authenticated/projetos'
-import { Route as AuthenticatedLinksRouteImport } from './routes/_authenticated/links'
-import { Route as AuthenticatedInstitucionalRouteImport } from './routes/_authenticated/institucional'
-import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
-import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedCuradoriaRouteImport } from './routes/_authenticated/curadoria'
-import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
-import { Route as AuthenticatedArquivosRouteImport } from './routes/_authenticated/arquivos'
-import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
-import { Route as AuthenticatedCrmRouteRouteImport } from './routes/_authenticated/crm/route'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAcervoRouteRouteImport } from './routes/_authenticated/acervo/route'
-import { Route as AuthenticatedCrmIndexRouteImport } from './routes/_authenticated/crm/index'
+import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
+import { Route as AuthenticatedArquivosRouteImport } from './routes/_authenticated/arquivos'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedCrmRouteRouteImport } from './routes/_authenticated/crm/route'
+import { Route as AuthenticatedCuradoriaRouteImport } from './routes/_authenticated/curadoria'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
+import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedInstitucionalRouteImport } from './routes/_authenticated/institucional'
+import { Route as AuthenticatedLinksRouteImport } from './routes/_authenticated/links'
+import { Route as AuthenticatedProjetosRouteImport } from './routes/_authenticated/projetos'
+import { Route as AuthenticatedPromptsRouteImport } from './routes/_authenticated/prompts'
+import { Route as AuthenticatedTextosRouteImport } from './routes/_authenticated/textos'
 import { Route as AuthenticatedAcervoIndexRouteImport } from './routes/_authenticated/acervo/index'
-import { Route as AuthenticatedCrmIdRouteImport } from './routes/_authenticated/crm/$id'
-import { Route as AuthenticatedAcervoPendentesRouteImport } from './routes/_authenticated/acervo/pendentes'
 import { Route as AuthenticatedAcervoCollectionRouteImport } from './routes/_authenticated/acervo/$collection'
-import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
-import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google/callback'
-import { Route as ApiPublicContaAzulCallbackRouteImport } from './routes/api/public/conta-azul/callback'
+import { Route as AuthenticatedAcervoPendentesRouteImport } from './routes/_authenticated/acervo/pendentes'
+import { Route as AuthenticatedCrmIndexRouteImport } from './routes/_authenticated/crm/index'
+import { Route as AuthenticatedCrmIdRouteImport } from './routes/_authenticated/crm/$id'
 import { Route as AuthenticatedAcervoItemSlugRouteImport } from './routes/_authenticated/acervo/item/$slug'
+import { Route as ApiPublicContaAzulCallbackRouteImport } from './routes/api/public/conta-azul/callback'
+import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google/callback'
+import { Route as ApiPublicWebhooksHotmartRouteImport } from './routes/api/public/webhooks/hotmart'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedTextosRoute = AuthenticatedTextosRouteImport.update({
-  id: '/textos',
-  path: '/textos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
-  id: '/prompts',
-  path: '/prompts',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedProjetosRoute = AuthenticatedProjetosRouteImport.update({
-  id: '/projetos',
-  path: '/projetos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLinksRoute = AuthenticatedLinksRouteImport.update({
-  id: '/links',
-  path: '/links',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInstitucionalRoute =
-  AuthenticatedInstitucionalRouteImport.update({
-    id: '/institucional',
-    path: '/institucional',
+const AuthenticatedAcervoRouteRoute =
+  AuthenticatedAcervoRouteRouteImport.update({
+    id: '/acervo',
+    path: '/acervo',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
-  id: '/financeiro',
-  path: '/financeiro',
+const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedEquipeRoute = AuthenticatedEquipeRouteImport.update({
-  id: '/equipe',
-  path: '/equipe',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCuradoriaRoute = AuthenticatedCuradoriaRouteImport.update({
-  id: '/curadoria',
-  path: '/curadoria',
+const AuthenticatedArquivosRoute = AuthenticatedArquivosRouteImport.update({
+  id: '/arquivos',
+  path: '/arquivos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConfiguracoesRoute =
@@ -102,47 +72,61 @@ const AuthenticatedConfiguracoesRoute =
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedArquivosRoute = AuthenticatedArquivosRouteImport.update({
-  id: '/arquivos',
-  path: '/arquivos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedCrmRouteRoute = AuthenticatedCrmRouteRouteImport.update({
   id: '/crm',
   path: '/crm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAcervoRouteRoute =
-  AuthenticatedAcervoRouteRouteImport.update({
-    id: '/acervo',
-    path: '/acervo',
+const AuthenticatedCuradoriaRoute = AuthenticatedCuradoriaRouteImport.update({
+  id: '/curadoria',
+  path: '/curadoria',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEquipeRoute = AuthenticatedEquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInstitucionalRoute =
+  AuthenticatedInstitucionalRouteImport.update({
+    id: '/institucional',
+    path: '/institucional',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedCrmIndexRoute = AuthenticatedCrmIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedCrmRouteRoute,
+const AuthenticatedLinksRoute = AuthenticatedLinksRouteImport.update({
+  id: '/links',
+  path: '/links',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProjetosRoute = AuthenticatedProjetosRouteImport.update({
+  id: '/projetos',
+  path: '/projetos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPromptsRoute = AuthenticatedPromptsRouteImport.update({
+  id: '/prompts',
+  path: '/prompts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTextosRoute = AuthenticatedTextosRouteImport.update({
+  id: '/textos',
+  path: '/textos',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAcervoIndexRoute =
   AuthenticatedAcervoIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedAcervoRouteRoute,
-  } as any)
-const AuthenticatedCrmIdRoute = AuthenticatedCrmIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedCrmRouteRoute,
-} as any)
-const AuthenticatedAcervoPendentesRoute =
-  AuthenticatedAcervoPendentesRouteImport.update({
-    id: '/pendentes',
-    path: '/pendentes',
     getParentRoute: () => AuthenticatedAcervoRouteRoute,
   } as any)
 const AuthenticatedAcervoCollectionRoute =
@@ -151,10 +135,32 @@ const AuthenticatedAcervoCollectionRoute =
     path: '/$collection',
     getParentRoute: () => AuthenticatedAcervoRouteRoute,
   } as any)
-const ApiPublicWebhooksHotmartRoute =
-  ApiPublicWebhooksHotmartRouteImport.update({
-    id: '/api/public/webhooks/hotmart',
-    path: '/api/public/webhooks/hotmart',
+const AuthenticatedAcervoPendentesRoute =
+  AuthenticatedAcervoPendentesRouteImport.update({
+    id: '/pendentes',
+    path: '/pendentes',
+    getParentRoute: () => AuthenticatedAcervoRouteRoute,
+  } as any)
+const AuthenticatedCrmIndexRoute = AuthenticatedCrmIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedCrmRouteRoute,
+} as any)
+const AuthenticatedCrmIdRoute = AuthenticatedCrmIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedCrmRouteRoute,
+} as any)
+const AuthenticatedAcervoItemSlugRoute =
+  AuthenticatedAcervoItemSlugRouteImport.update({
+    id: '/item/$slug',
+    path: '/item/$slug',
+    getParentRoute: () => AuthenticatedAcervoRouteRoute,
+  } as any)
+const ApiPublicContaAzulCallbackRoute =
+  ApiPublicContaAzulCallbackRouteImport.update({
+    id: '/api/public/conta-azul/callback',
+    path: '/api/public/conta-azul/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicGoogleCallbackRoute = ApiPublicGoogleCallbackRouteImport.update({
@@ -162,17 +168,11 @@ const ApiPublicGoogleCallbackRoute = ApiPublicGoogleCallbackRouteImport.update({
   path: '/api/public/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicContaAzulCallbackRoute =
-  ApiPublicContaAzulCallbackRouteImport.update({
-    id: '/api/public/conta-azul/callback',
-    path: '/api/public/conta-azul/callback',
+const ApiPublicWebhooksHotmartRoute =
+  ApiPublicWebhooksHotmartRouteImport.update({
+    id: '/api/public/webhooks/hotmart',
+    path: '/api/public/webhooks/hotmart',
     getParentRoute: () => rootRouteImport,
-  } as any)
-const AuthenticatedAcervoItemSlugRoute =
-  AuthenticatedAcervoItemSlugRouteImport.update({
-    id: '/item/$slug',
-    path: '/item/$slug',
-    getParentRoute: () => AuthenticatedAcervoRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -350,11 +350,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -364,88 +364,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/textos': {
-      id: '/_authenticated/textos'
-      path: '/textos'
-      fullPath: '/textos'
-      preLoaderRoute: typeof AuthenticatedTextosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/prompts': {
-      id: '/_authenticated/prompts'
-      path: '/prompts'
-      fullPath: '/prompts'
-      preLoaderRoute: typeof AuthenticatedPromptsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/projetos': {
-      id: '/_authenticated/projetos'
-      path: '/projetos'
-      fullPath: '/projetos'
-      preLoaderRoute: typeof AuthenticatedProjetosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/links': {
-      id: '/_authenticated/links'
-      path: '/links'
-      fullPath: '/links'
-      preLoaderRoute: typeof AuthenticatedLinksRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/institucional': {
-      id: '/_authenticated/institucional'
-      path: '/institucional'
-      fullPath: '/institucional'
-      preLoaderRoute: typeof AuthenticatedInstitucionalRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/financeiro': {
-      id: '/_authenticated/financeiro'
-      path: '/financeiro'
-      fullPath: '/financeiro'
-      preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/equipe': {
-      id: '/_authenticated/equipe'
-      path: '/equipe'
-      fullPath: '/equipe'
-      preLoaderRoute: typeof AuthenticatedEquipeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/curadoria': {
-      id: '/_authenticated/curadoria'
-      path: '/curadoria'
-      fullPath: '/curadoria'
-      preLoaderRoute: typeof AuthenticatedCuradoriaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracoes': {
-      id: '/_authenticated/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/arquivos': {
-      id: '/_authenticated/arquivos'
-      path: '/arquivos'
-      fullPath: '/arquivos'
-      preLoaderRoute: typeof AuthenticatedArquivosRouteImport
+    '/_authenticated/acervo': {
+      id: '/_authenticated/acervo'
+      path: '/acervo'
+      fullPath: '/acervo'
+      preLoaderRoute: typeof AuthenticatedAcervoRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/agenda': {
@@ -455,6 +385,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgendaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/arquivos': {
+      id: '/_authenticated/arquivos'
+      path: '/arquivos'
+      fullPath: '/arquivos'
+      preLoaderRoute: typeof AuthenticatedArquivosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/crm': {
       id: '/_authenticated/crm'
       path: '/crm'
@@ -462,39 +406,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/acervo': {
-      id: '/_authenticated/acervo'
-      path: '/acervo'
-      fullPath: '/acervo'
-      preLoaderRoute: typeof AuthenticatedAcervoRouteRouteImport
+    '/_authenticated/curadoria': {
+      id: '/_authenticated/curadoria'
+      path: '/curadoria'
+      fullPath: '/curadoria'
+      preLoaderRoute: typeof AuthenticatedCuradoriaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/crm/': {
-      id: '/_authenticated/crm/'
-      path: '/'
-      fullPath: '/crm/'
-      preLoaderRoute: typeof AuthenticatedCrmIndexRouteImport
-      parentRoute: typeof AuthenticatedCrmRouteRoute
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/equipe': {
+      id: '/_authenticated/equipe'
+      path: '/equipe'
+      fullPath: '/equipe'
+      preLoaderRoute: typeof AuthenticatedEquipeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro': {
+      id: '/_authenticated/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/institucional': {
+      id: '/_authenticated/institucional'
+      path: '/institucional'
+      fullPath: '/institucional'
+      preLoaderRoute: typeof AuthenticatedInstitucionalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/links': {
+      id: '/_authenticated/links'
+      path: '/links'
+      fullPath: '/links'
+      preLoaderRoute: typeof AuthenticatedLinksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projetos': {
+      id: '/_authenticated/projetos'
+      path: '/projetos'
+      fullPath: '/projetos'
+      preLoaderRoute: typeof AuthenticatedProjetosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/prompts': {
+      id: '/_authenticated/prompts'
+      path: '/prompts'
+      fullPath: '/prompts'
+      preLoaderRoute: typeof AuthenticatedPromptsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/textos': {
+      id: '/_authenticated/textos'
+      path: '/textos'
+      fullPath: '/textos'
+      preLoaderRoute: typeof AuthenticatedTextosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/acervo/': {
       id: '/_authenticated/acervo/'
       path: '/'
       fullPath: '/acervo/'
       preLoaderRoute: typeof AuthenticatedAcervoIndexRouteImport
-      parentRoute: typeof AuthenticatedAcervoRouteRoute
-    }
-    '/_authenticated/crm/$id': {
-      id: '/_authenticated/crm/$id'
-      path: '/$id'
-      fullPath: '/crm/$id'
-      preLoaderRoute: typeof AuthenticatedCrmIdRouteImport
-      parentRoute: typeof AuthenticatedCrmRouteRoute
-    }
-    '/_authenticated/acervo/pendentes': {
-      id: '/_authenticated/acervo/pendentes'
-      path: '/pendentes'
-      fullPath: '/acervo/pendentes'
-      preLoaderRoute: typeof AuthenticatedAcervoPendentesRouteImport
       parentRoute: typeof AuthenticatedAcervoRouteRoute
     }
     '/_authenticated/acervo/$collection': {
@@ -504,11 +483,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcervoCollectionRouteImport
       parentRoute: typeof AuthenticatedAcervoRouteRoute
     }
-    '/api/public/webhooks/hotmart': {
-      id: '/api/public/webhooks/hotmart'
-      path: '/api/public/webhooks/hotmart'
-      fullPath: '/api/public/webhooks/hotmart'
-      preLoaderRoute: typeof ApiPublicWebhooksHotmartRouteImport
+    '/_authenticated/acervo/pendentes': {
+      id: '/_authenticated/acervo/pendentes'
+      path: '/pendentes'
+      fullPath: '/acervo/pendentes'
+      preLoaderRoute: typeof AuthenticatedAcervoPendentesRouteImport
+      parentRoute: typeof AuthenticatedAcervoRouteRoute
+    }
+    '/_authenticated/crm/': {
+      id: '/_authenticated/crm/'
+      path: '/'
+      fullPath: '/crm/'
+      preLoaderRoute: typeof AuthenticatedCrmIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/crm/$id': {
+      id: '/_authenticated/crm/$id'
+      path: '/$id'
+      fullPath: '/crm/$id'
+      preLoaderRoute: typeof AuthenticatedCrmIdRouteImport
+      parentRoute: typeof AuthenticatedCrmRouteRoute
+    }
+    '/_authenticated/acervo/item/$slug': {
+      id: '/_authenticated/acervo/item/$slug'
+      path: '/item/$slug'
+      fullPath: '/acervo/item/$slug'
+      preLoaderRoute: typeof AuthenticatedAcervoItemSlugRouteImport
+      parentRoute: typeof AuthenticatedAcervoRouteRoute
+    }
+    '/api/public/conta-azul/callback': {
+      id: '/api/public/conta-azul/callback'
+      path: '/api/public/conta-azul/callback'
+      fullPath: '/api/public/conta-azul/callback'
+      preLoaderRoute: typeof ApiPublicContaAzulCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/google/callback': {
@@ -518,19 +525,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/conta-azul/callback': {
-      id: '/api/public/conta-azul/callback'
-      path: '/api/public/conta-azul/callback'
-      fullPath: '/api/public/conta-azul/callback'
-      preLoaderRoute: typeof ApiPublicContaAzulCallbackRouteImport
+    '/api/public/webhooks/hotmart': {
+      id: '/api/public/webhooks/hotmart'
+      path: '/api/public/webhooks/hotmart'
+      fullPath: '/api/public/webhooks/hotmart'
+      preLoaderRoute: typeof ApiPublicWebhooksHotmartRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/acervo/item/$slug': {
-      id: '/_authenticated/acervo/item/$slug'
-      path: '/item/$slug'
-      fullPath: '/acervo/item/$slug'
-      preLoaderRoute: typeof AuthenticatedAcervoItemSlugRouteImport
-      parentRoute: typeof AuthenticatedAcervoRouteRoute
     }
   }
 }
