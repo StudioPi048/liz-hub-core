@@ -8,6 +8,7 @@ import {
   getNotasFiscais,
   importarFaturamento,
   marcarNotaEmitida,
+  marcarParcelaRecebida,
   type FaturamentoRelatorios,
   type NfFilaRow,
   type ParcelaRow,
@@ -153,20 +154,11 @@ function FaturamentoPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Button
             size="lg"
-            variant="secondary"
             disabled={importar.isPending}
             onClick={() => fileInputRef.current?.click()}
           >
-            <Upload />
-            Enviar arquivo da planilha
-          </Button>
-          <Button
-            size="lg"
-            onClick={() => importar.mutate(undefined)}
-            disabled={importar.isPending}
-          >
-            <RefreshCw className={importar.isPending ? "animate-spin" : ""} />
-            {importar.isPending ? "Atualizando..." : "Atualizar da planilha"}
+            {importar.isPending ? <RefreshCw className="animate-spin" /> : <Upload />}
+            {importar.isPending ? "Atualizando..." : "Enviar arquivo da planilha"}
           </Button>
           <input
             ref={fileInputRef}
@@ -195,8 +187,8 @@ function FaturamentoPage() {
           <CardContent className="py-10 text-center space-y-3">
             <p className="text-lg">Os dados ainda não foram importados.</p>
             <p className="text-sm text-muted-foreground">
-              Clique no botão <strong>Atualizar da planilha</strong> ali em cima para trazer tudo da
-              planilha do Drive. Leva menos de um minuto.
+              Clique no botão <strong>Enviar arquivo da planilha</strong> ali em cima e escolha o
+              arquivo da planilha no seu computador. Leva menos de um minuto.
             </p>
           </CardContent>
         </Card>
@@ -343,6 +335,7 @@ function ParcelasLista({
                 </a>
               </Button>
             )}
+            {p.status === "aberto" && <MarcarRecebidoBtn p={p} />}
           </CardContent>
         </Card>
       ))}
@@ -352,6 +345,42 @@ function ParcelasLista({
         </p>
       )}
     </div>
+  );
+}
+
+function MarcarRecebidoBtn({ p }: { p: ParcelaRow }) {
+  const queryClient = useQueryClient();
+  const marcar = useMutation({
+    mutationFn: () =>
+      marcarParcelaRecebida({
+        data: {
+          parcelaId: p.id,
+          cpf: p.cpf,
+          vcto: p.vcto,
+          valor_parcela: p.valor_parcela,
+          parcela_num: p.parcela_num,
+          curso_nome: p.curso_nome,
+          nome_cliente: p.nome_cliente,
+          valor_recebido: p.valor_liquido ?? p.valor_parcela,
+        },
+      }),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(`Parcela de ${p.nome_cliente ?? "cliente"} marcada como recebida.`);
+        queryClient.invalidateQueries({ queryKey: ["faturamento-resumo"] });
+        queryClient.invalidateQueries({ queryKey: ["faturamento-parcelas"] });
+      } else {
+        toast.error(res.message);
+      }
+    },
+    onError: () => toast.error("Não consegui salvar agora. Tente de novo em instantes."),
+  });
+
+  return (
+    <Button size="sm" disabled={marcar.isPending} onClick={() => marcar.mutate()}>
+      <CheckCircle2 />
+      {marcar.isPending ? "Salvando..." : "Marcar recebido"}
+    </Button>
   );
 }
 

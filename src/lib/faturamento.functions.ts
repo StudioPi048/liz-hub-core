@@ -189,6 +189,50 @@ export const getFaturamentoParcelas = createServerFn({ method: "GET" })
     return { parcelas };
   });
 
+const marcarRecebidaInput = z.object({
+  parcelaId: z.number(),
+  cpf: z.string().nullable(),
+  vcto: z.string().nullable(),
+  valor_parcela: z.number().nullable(),
+  parcela_num: z.number().nullable(),
+  curso_nome: z.string().nullable(),
+  nome_cliente: z.string().nullable(),
+  valor_recebido: z.number().nullable(),
+});
+
+export const marcarParcelaRecebida = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => marcarRecebidaInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const db = await untypedDb();
+    const hoje = todayISO();
+    const valor = data.valor_recebido ?? data.valor_parcela ?? 0;
+
+    // Registro durável: sobrevive ao wipe + reload da importação (reaplicado por
+    // reaplicarBaixas em runFaturamentoImport).
+    const { error: insErr } = await db.from("fat_parcelas_baixas").insert({
+      cpf: data.cpf,
+      vcto: data.vcto,
+      valor_parcela: data.valor_parcela,
+      parcela_num: data.parcela_num,
+      curso_nome: data.curso_nome,
+      nome_cliente: data.nome_cliente,
+      dt_recebimento: hoje,
+      valor_recebido: valor,
+      criado_por: context.userId,
+    });
+    if (insErr) return { ok: false as const, message: insErr.message };
+
+    // Efeito imediato na parcela ativa: sai das listas de "aberto" e entra em
+    // "recebido" — resumo, listas e relatórios já leem status/dt_recebimento.
+    const { error: updErr } = await db
+      .from("fat_parcelas")
+      .update({ status: "pago", dt_recebimento: hoje, valor_recebido: valor })
+      .eq("id", data.parcelaId);
+    if (updErr) return { ok: false as const, message: updErr.message };
+    return { ok: true as const };
+  });
+
 export type NotaFiscalRow = FatNotaFiscal & { id: number };
 export type NfFilaRow = FatNfFila & { id: number };
 

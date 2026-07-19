@@ -355,6 +355,41 @@ export function parseFaturamentoWorkbook(data: ArrayBuffer | Buffer): Faturament
   };
 }
 
+async function reaplicarBaixas(db: SupabaseClient): Promise<void> {
+  // Baixas feitas na plataforma (fat_parcelas_baixas) NAO sao apagadas no wipe.
+  // Depois de recarregar fat_parcelas, reaplica cada baixa na parcela correspondente
+  // pela assinatura cpf + vcto + valor_parcela + parcela_num.
+  // ponytail: 1 UPDATE por baixa; se a quantidade crescer muito, agrupar por assinatura.
+  const { data, error } = await db
+    .from("fat_parcelas_baixas")
+    .select("cpf, vcto, valor_parcela, parcela_num, dt_recebimento, valor_recebido");
+  if (error) throw new Error(`Falha ao ler baixas: ${error.message}`);
+
+  for (const b of (data ?? []) as {
+    cpf: string | null;
+    vcto: string | null;
+    valor_parcela: number | null;
+    parcela_num: number | null;
+    dt_recebimento: string | null;
+    valor_recebido: number | null;
+  }[]) {
+    if (!b.cpf || !b.vcto || b.valor_parcela === null) continue; // assinatura incompleta
+    let q = db
+      .from("fat_parcelas")
+      .update({
+        status: "pago",
+        dt_recebimento: b.dt_recebimento,
+        valor_recebido: b.valor_recebido,
+      })
+      .eq("cpf", b.cpf)
+      .eq("vcto", b.vcto)
+      .eq("valor_parcela", b.valor_parcela);
+    if (b.parcela_num !== null) q = q.eq("parcela_num", b.parcela_num);
+    const { error: uErr } = await q;
+    if (uErr) throw new Error(`Falha ao reaplicar baixa: ${uErr.message}`);
+  }
+}
+
 async function insertBatches(
   db: SupabaseClient,
   table: string,
@@ -417,6 +452,9 @@ export async function runFaturamentoImport(
   await insertBatches(db, "fat_parcelas", parsed.parcelas);
   await insertBatches(db, "fat_notas_fiscais", parsed.notasFiscais);
   await insertBatches(db, "fat_nfs_fila", parsed.nfsFila);
+
+  // Reaplica as baixas feitas na plataforma sobre as parcelas recem-recarregadas.
+  await reaplicarBaixas(db);
 
   const counts = {
     clientes: parsed.clientes.length,
