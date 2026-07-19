@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/financeiro")({
   component: FinanceiroPage,
 });
 
-type ContaAzulCategory = Record<string, unknown>;
+type ContaAzulCategory = { [k: string]: unknown };
 
 function FinanceiroPage() {
   const search = useSearch({ from: "/_authenticated/financeiro" });
