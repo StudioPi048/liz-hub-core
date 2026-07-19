@@ -71,6 +71,8 @@ export type ContaAzulCategoriesResult = {
   needsAuth: boolean;
   status: string;
   categorias: JsonValue[];
+  responseShape?: string | null;
+  listSource?: string | null;
 };
 
 export const listContaAzulCategories = createServerFn({ method: "GET" })

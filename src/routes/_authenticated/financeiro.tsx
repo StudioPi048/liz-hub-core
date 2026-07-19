@@ -292,7 +292,12 @@ function FinanceiroPage() {
               </AlertDescription>
             </Alert>
           ) : (
-            <CategoriesTable categories={categoryRows} isLoading={categories.isLoading} />
+            <CategoriesTable
+              categories={categoryRows}
+              isLoading={categories.isLoading}
+              responseShape={categories.data?.responseShape}
+              listSource={categories.data?.listSource}
+            />
           )}
         </CardContent>
       </Card>
@@ -352,9 +357,13 @@ function ModulePill({
 function CategoriesTable({
   categories,
   isLoading,
+  responseShape,
+  listSource,
 }: {
   categories: ContaAzulCategory[];
   isLoading: boolean;
+  responseShape?: string | null;
+  listSource?: string | null;
 }) {
   if (isLoading) {
     return (
@@ -367,7 +376,17 @@ function CategoriesTable({
   }
 
   if (categories.length === 0) {
-    return <p className="text-sm text-muted-foreground">Nenhuma categoria retornada pela API.</p>;
+    return (
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Nenhuma categoria exibida</AlertTitle>
+        <AlertDescription>
+          A Conta Azul respondeu à chamada, mas nenhuma lista de categorias foi encontrada
+          {responseShape ? ` no formato recebido: ${responseShape}` : "."}
+          {listSource ? ` Lista detectada em "${listSource}".` : ""}
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   return (

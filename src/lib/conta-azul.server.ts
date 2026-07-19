@@ -199,14 +199,23 @@ export async function getContaAzulSafeStatus(): Promise<ContaAzulSafeStatus> {
 export async function listContaAzulCategorias() {
   try {
     const data = await requestContaAzul<unknown>("/v1/categorias");
+    const normalized = normalizeContaAzulList(data);
     return {
       needsAuth: false as const,
       status: "connected" as const,
-      categorias: normalizeContaAzulList(data),
+      categorias: normalized.items,
+      responseShape: describeContaAzulResponse(data),
+      listSource: normalized.source,
     };
   } catch (error) {
     if (error instanceof ContaAzulConnectionUnavailableError) {
-      return { needsAuth: true as const, status: error.result.status, categorias: [] };
+      return {
+        needsAuth: true as const,
+        status: error.result.status,
+        categorias: [],
+        responseShape: null,
+        listSource: null,
+      };
     }
     throw error;
   }
@@ -476,19 +485,63 @@ function decodeContaAzulIdentity(idToken?: string): Record<string, unknown> | nu
   }
 }
 
-function normalizeContaAzulList(value: unknown): Record<string, unknown>[] {
+function normalizeContaAzulList(value: unknown): {
+  items: Record<string, unknown>[];
+  source: string | null;
+} {
   if (Array.isArray(value)) {
-    return value.filter(isRecord);
+    return { items: value.filter(isRecord), source: "root" };
   }
 
   if (isRecord(value)) {
-    const candidate = value.items || value.data || value.categorias;
-    if (Array.isArray(candidate)) {
-      return candidate.filter(isRecord);
+    const listKeys = [
+      "items",
+      "item",
+      "data",
+      "content",
+      "contents",
+      "results",
+      "result",
+      "categorias",
+      "categoria",
+      "categories",
+      "records",
+      "itens",
+      "lista",
+    ];
+
+    for (const key of listKeys) {
+      const candidate = value[key];
+      if (Array.isArray(candidate)) {
+        return { items: candidate.filter(isRecord), source: key };
+      }
+    }
+
+    for (const [key, candidate] of Object.entries(value)) {
+      if (Array.isArray(candidate) && candidate.some(isRecord)) {
+        return { items: candidate.filter(isRecord), source: key };
+      }
+    }
+
+    const recordValues = Object.values(value).filter(isRecord);
+    if (recordValues.length > 1) {
+      return { items: recordValues, source: "objectValues" };
     }
   }
 
-  return [];
+  return { items: [], source: null };
+}
+
+function describeContaAzulResponse(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `array(${value.length})`;
+  }
+
+  if (isRecord(value)) {
+    return `object(${Object.keys(value).slice(0, 12).join(", ")})`;
+  }
+
+  return value === null ? "null" : typeof value;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
