@@ -367,7 +367,10 @@ async function insertBatches(
   }
 }
 
-export async function runFaturamentoImport(userId: string): Promise<{
+export async function runFaturamentoImport(
+  userId: string,
+  arquivo?: Buffer,
+): Promise<{
   clientes: number;
   cursos: number;
   planos: number;
@@ -377,13 +380,18 @@ export async function runFaturamentoImport(userId: string): Promise<{
   // Tabelas fat_* ainda nao estao nos types gerados; cliente sem tipagem de schema.
   const db = supabaseAdmin as unknown as SupabaseClient;
 
-  const res = await fetch(faturamentoSheetUrl(), { redirect: "follow" });
-  if (!res.ok) {
-    throw new Error(
-      `Nao consegui baixar a planilha do Drive (HTTP ${res.status}). Verifique o compartilhamento.`,
-    );
+  // Arquivo enviado manualmente tem prioridade; sem ele, baixa do Drive (link publico).
+  let buf = arquivo;
+  if (!buf) {
+    const res = await fetch(faturamentoSheetUrl(), { redirect: "follow" });
+    if (!res.ok) {
+      throw new Error(
+        `Nao consegui baixar a planilha do Drive (HTTP ${res.status}). ` +
+          `Se o compartilhamento foi restringido, use o botao "Enviar arquivo da planilha".`,
+      );
+    }
+    buf = Buffer.from(await res.arrayBuffer());
   }
-  const buf = Buffer.from(await res.arrayBuffer());
   const parsed = parseFaturamentoWorkbook(buf);
 
   if (parsed.parcelas.length === 0) {

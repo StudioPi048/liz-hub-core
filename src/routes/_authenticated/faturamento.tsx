@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -25,6 +25,7 @@ import {
   MessageCircle,
   Copy,
   FileText,
+  Upload,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -83,6 +84,7 @@ function FaturamentoPage() {
   const [escopo, setEscopo] = useState<Escopo>("mes");
   const [busca, setBusca] = useState("");
   const [buscaAtiva, setBuscaAtiva] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resumoQuery = useQuery({
     queryKey: ["faturamento-resumo"],
@@ -108,7 +110,7 @@ function FaturamentoPage() {
   });
 
   const importar = useMutation({
-    mutationFn: () => importarFaturamento(),
+    mutationFn: (arquivoBase64?: string) => importarFaturamento({ data: { arquivoBase64 } }),
     onSuccess: (res) => {
       if (res.ok) {
         toast.success(
@@ -137,10 +139,44 @@ function FaturamentoPage() {
               : "Dados da planilha de faturamento do Instituto Liz"}
           </p>
         </div>
-        <Button size="lg" onClick={() => importar.mutate()} disabled={importar.isPending}>
-          <RefreshCw className={importar.isPending ? "animate-spin" : ""} />
-          {importar.isPending ? "Atualizando..." : "Atualizar da planilha"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="lg"
+            variant="secondary"
+            disabled={importar.isPending}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload />
+            Enviar arquivo da planilha
+          </Button>
+          <Button
+            size="lg"
+            onClick={() => importar.mutate(undefined)}
+            disabled={importar.isPending}
+          >
+            <RefreshCw className={importar.isPending ? "animate-spin" : ""} />
+            {importar.isPending ? "Atualizando..." : "Atualizar da planilha"}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx"
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              const buf = await file.arrayBuffer();
+              // ArrayBuffer -> base64 em blocos (evita estourar a pilha com arquivos grandes).
+              const bytes = new Uint8Array(buf);
+              let bin = "";
+              for (let i = 0; i < bytes.length; i += 8192) {
+                bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
+              }
+              importar.mutate(btoa(bin));
+            }}
+          />
+        </div>
       </div>
 
       {nuncaImportado ? (

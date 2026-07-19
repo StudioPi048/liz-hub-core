@@ -39,12 +39,19 @@ function somar(rows: { valor_liquido: number | null; valor_parcela: number | nul
   return { total, quantidade: rows.length };
 }
 
+const importarInput = z.object({
+  // xlsx enviado manualmente, em base64; sem ele, baixa a planilha do Drive.
+  arquivoBase64: z.string().optional(),
+});
+
 export const importarFaturamento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d) => importarInput.parse(d ?? {}))
+  .handler(async ({ context, data }) => {
     const { runFaturamentoImport } = await import("./faturamento.server");
     try {
-      const counts = await runFaturamentoImport(context.userId);
+      const arquivo = data.arquivoBase64 ? Buffer.from(data.arquivoBase64, "base64") : undefined;
+      const counts = await runFaturamentoImport(context.userId, arquivo);
       return { ok: true as const, counts };
     } catch (error) {
       return {
