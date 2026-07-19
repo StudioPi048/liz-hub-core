@@ -36,6 +36,7 @@ import {
   ClientStatusBadge,
   clientStatusLabel,
 } from "@/features/clients/components/ClientStatusBadge";
+import { AlunosPlanilhaTab } from "@/features/clients/components/AlunosPlanilhaTab";
 
 export const Route = createFileRoute("/_authenticated/crm/")({
   component: CrmPage,
@@ -60,6 +61,7 @@ function CrmPage() {
   const [form, setForm] = useState<CreateClientInput>(EMPTY_FORM);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [tab, setTab] = useState("alunos");
 
   const filtered = useMemo(() => {
     if (!clients) return [];
@@ -200,31 +202,33 @@ function CrmPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[220px] max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, e-mail ou telefone..."
-            className="pl-9"
-            aria-label="Buscar clientes"
-          />
+      {tab !== "alunos" && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome, e-mail ou telefone..."
+              className="pl-9"
+              aria-label="Buscar clientes"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[200px]" aria-label="Filtrar por status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              {CLIENT_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {clientStatusLabel(s)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[200px]" aria-label="Filtrar por status">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os status</SelectItem>
-            {CLIENT_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {clientStatusLabel(s)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      )}
 
       {isError ? (
         <div className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-card py-16 text-center">
@@ -235,11 +239,16 @@ function CrmPage() {
           </p>
         </div>
       ) : (
-        <Tabs defaultValue="dossies">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
+            <TabsTrigger value="alunos">Alunos</TabsTrigger>
             <TabsTrigger value="dossies">Dossiês</TabsTrigger>
             <TabsTrigger value="fluxo">Fluxo por status</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="alunos" className="mt-4">
+            <AlunosPlanilhaTab />
+          </TabsContent>
 
           <TabsContent value="dossies" className="mt-4">
             {isLoading ? (

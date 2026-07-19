@@ -72,8 +72,22 @@ describe("parseFaturamentoWorkbook", () => {
       ]),
       "BASE",
     );
+    // PLANOS na planilha real comeca na coluna B; o SheetJS corta a coluna vazia
+    // e desloca os indices. O parser deve achar o cabecalho em qualquer coluna.
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet([
+        ["PLANOS DE RECEBIMENTO DAS VENDAS"],
+        ["ID_plano", "Nome Plano", "Parcelas", "Prazo(dias)", "Taxa(am)"],
+        ["2.1", "PIX 1X", 1, 0, null],
+        ["6.12", "Cartão 12x", 12, 360, "0.1776"],
+      ]),
+      "PLANOS",
+    );
     const parsed = parseFaturamentoWorkbook(XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
 
+    expect(parsed.planos).toHaveLength(2);
+    expect(parsed.planos[0]).toMatchObject({ id_plano: "2.1", nome: "PIX 1X", parcelas: 1 });
     expect(parsed.clientes).toHaveLength(1);
     expect(parsed.clientes[0].cpf).toBe("83019138191");
     expect(parsed.parcelas).toHaveLength(1);

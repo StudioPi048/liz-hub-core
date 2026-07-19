@@ -102,6 +102,32 @@ export const getFaturamentoResumo = createServerFn({ method: "GET" })
     };
   });
 
+export type AlunoResumo = {
+  cpf: string;
+  nome: string;
+  email: string | null;
+  fone: string | null;
+  cidade_uf: string | null;
+  parcelas_atrasadas: number;
+  valor_em_aberto: number;
+  total_pago: number;
+  ultima_compra: string | null;
+  cursos: string[];
+};
+
+export const getAlunos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<{ alunos: AlunoResumo[] }> => {
+    const db = await untypedDb();
+    const { data, error } = await db
+      .from("fat_alunos_resumo")
+      .select("*")
+      .order("nome")
+      .range(0, 4999);
+    if (error) throw new Error(error.message);
+    return { alunos: (data ?? []) as AlunoResumo[] };
+  });
+
 const parcelasInput = z.object({
   escopo: z.enum(["mes", "atrasadas", "busca"]),
   busca: z.string().optional(),

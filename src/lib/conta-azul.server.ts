@@ -145,6 +145,19 @@ const DEFAULT_LIST_QUERY = {
   tamanho_pagina: 20,
 } satisfies ContaAzulJsonRecord;
 
+// A API exige data_vencimento_de/ate em contas a receber/pagar; campos vazios
+// sao removidos da query e causavam HTTP 400. Modelo ja vem com o mes atual.
+function monthStartISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+function monthEndISO(): string {
+  const d = new Date();
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
+}
+
 const CONTA_AZUL_BACKOFFICE_MODULES: ContaAzulBackofficeModule[] = [
   {
     id: "financeiro",
@@ -224,8 +237,8 @@ const CONTA_AZUL_BACKOFFICE_MODULES: ContaAzulBackofficeModule[] = [
           ...DEFAULT_LIST_QUERY,
           descricao: "",
           status: [],
-          data_vencimento_de: "",
-          data_vencimento_ate: "",
+          data_vencimento_de: monthStartISO(),
+          data_vencimento_ate: monthEndISO(),
         },
         docsUrl:
           "https://developers.contaazul.com/docs/financial-apis-openapi/v1/searchfinancialaccounts",
@@ -258,8 +271,8 @@ const CONTA_AZUL_BACKOFFICE_MODULES: ContaAzulBackofficeModule[] = [
           ...DEFAULT_LIST_QUERY,
           descricao: "",
           status: [],
-          data_vencimento_de: "",
-          data_vencimento_ate: "",
+          data_vencimento_de: monthStartISO(),
+          data_vencimento_ate: monthEndISO(),
         },
         docsUrl: "https://developers.contaazul.com/docs/financial-apis-openapi",
       },

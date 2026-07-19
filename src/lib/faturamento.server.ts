@@ -132,9 +132,17 @@ function sheetRows(wb: XLSX.WorkBook, name: string): unknown[][] {
   return XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
 }
 
-function findHeaderRow(rows: unknown[][], col: number, label: string): number {
-  const idx = rows.findIndex((r) => String(r?.[col] ?? "").trim() === label);
-  return idx;
+// Localiza o cabecalho pelo texto exato da celula, em qualquer coluna.
+// O SheetJS corta colunas iniciais vazias (ex: aba PLANOS comeca em B1),
+// entao os indices absolutos mudam; tudo e lido relativo a coluna do rotulo.
+function findHeader(rows: unknown[][], label: string): { row: number; col: number } | null {
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i] ?? [];
+    for (let j = 0; j < r.length; j++) {
+      if (String(r[j] ?? "").trim() === label) return { row: i, col: j };
+    }
+  }
+  return null;
 }
 
 export type FaturamentoParsed = {
@@ -147,22 +155,23 @@ export type FaturamentoParsed = {
 export function parseFaturamentoWorkbook(data: ArrayBuffer | Buffer): FaturamentoParsed {
   const wb = XLSX.read(data, { type: "buffer", cellDates: true });
 
-  // CLIENTES: CPF? | CPF | NOME | E-MAIL | ENDERECO | CIDADE/UF | FONE
+  // CLIENTES: CPF | NOME | E-MAIL | ENDERECO | CIDADE/UF | FONE (ancora: celula "CPF")
   const clientesRows = sheetRows(wb, "CLIENTES");
-  const clientesHeader = findHeaderRow(clientesRows, 1, "CPF");
+  const clientesHeader = findHeader(clientesRows, "CPF");
   const clientesMap = new Map<string, FatCliente>();
-  if (clientesHeader >= 0) {
-    for (const r of clientesRows.slice(clientesHeader + 1)) {
-      const cpf = normalizeCpf(r[1]);
-      const nome = text(r[2]);
+  if (clientesHeader) {
+    const c = clientesHeader.col;
+    for (const r of clientesRows.slice(clientesHeader.row + 1)) {
+      const cpf = normalizeCpf(r[c]);
+      const nome = text(r[c + 1]);
       if (!cpf || !nome) continue;
       clientesMap.set(cpf, {
         cpf,
         nome,
-        email: text(r[3]),
-        endereco: text(r[4]),
-        cidade_uf: text(r[5]),
-        fone: text(r[6]),
+        email: text(r[c + 2]),
+        endereco: text(r[c + 3]),
+        cidade_uf: text(r[c + 4]),
+        fone: text(r[c + 5]),
       });
     }
   }
@@ -170,18 +179,19 @@ export function parseFaturamentoWorkbook(data: ArrayBuffer | Buffer): Faturament
   // PRECOS (cursos): Codigo | Modulos | Docente | Valor R$ | Valor EUR
   const cursosMap = new Map<string, FatCurso>();
   const precosRows = sheetRows(wb, "PREÇOS");
-  const precosHeader = findHeaderRow(precosRows, 0, "Código");
-  if (precosHeader >= 0) {
-    for (const r of precosRows.slice(precosHeader + 1)) {
-      const codigo = text(toNumber(r[0]) !== null ? String(Math.round(toNumber(r[0])!)) : r[0]);
-      const nome = text(r[1]);
+  const precosHeader = findHeader(precosRows, "Código");
+  if (precosHeader) {
+    const c = precosHeader.col;
+    for (const r of precosRows.slice(precosHeader.row + 1)) {
+      const codigo = text(toNumber(r[c]) !== null ? String(Math.round(toNumber(r[c])!)) : r[c]);
+      const nome = text(r[c + 1]);
       if (!codigo || !nome) continue;
       cursosMap.set(codigo, {
         codigo,
         nome,
-        docente: text(r[2]),
-        valor_brl: toNumber(r[3]),
-        valor_eur: toNumber(r[4]),
+        docente: text(r[c + 2]),
+        valor_brl: toNumber(r[c + 3]),
+        valor_eur: toNumber(r[c + 4]),
         tipo: "curso",
       });
     }
@@ -189,75 +199,78 @@ export function parseFaturamentoWorkbook(data: ArrayBuffer | Buffer): Faturament
 
   // Livros: CODIGO | NOME | AUTOR | PRECO
   const livrosRows = sheetRows(wb, "Livros");
-  const livrosHeader = findHeaderRow(livrosRows, 0, "CÓDIGO");
-  if (livrosHeader >= 0) {
-    for (const r of livrosRows.slice(livrosHeader + 1)) {
-      const raw = toNumber(r[0]);
-      const codigo = text(raw !== null ? String(raw) : r[0]);
-      const nome = text(r[1]);
+  const livrosHeader = findHeader(livrosRows, "CÓDIGO");
+  if (livrosHeader) {
+    const c = livrosHeader.col;
+    for (const r of livrosRows.slice(livrosHeader.row + 1)) {
+      const raw = toNumber(r[c]);
+      const codigo = text(raw !== null ? String(raw) : r[c]);
+      const nome = text(r[c + 1]);
       if (!codigo || !nome) continue;
       cursosMap.set(codigo, {
         codigo,
         nome,
-        docente: text(r[2]),
-        valor_brl: toNumber(r[3]),
+        docente: text(r[c + 2]),
+        valor_brl: toNumber(r[c + 3]),
         valor_eur: null,
         tipo: "livro",
       });
     }
   }
 
-  // PLANOS: (vazio) | ID_plano | Nome Plano | Parcelas | Prazo(dias) | Taxa(am)
+  // PLANOS: ID_plano | Nome Plano | Parcelas | Prazo(dias) | Taxa(am)
   const planosMap = new Map<string, FatPlano>();
   const planosRows = sheetRows(wb, "PLANOS");
-  const planosHeader = findHeaderRow(planosRows, 1, "ID_plano");
-  if (planosHeader >= 0) {
-    for (const r of planosRows.slice(planosHeader + 1)) {
-      const id = text(r[1]);
-      const nome = text(r[2]);
+  const planosHeader = findHeader(planosRows, "ID_plano");
+  if (planosHeader) {
+    const c = planosHeader.col;
+    for (const r of planosRows.slice(planosHeader.row + 1)) {
+      const id = text(r[c]);
+      const nome = text(r[c + 1]);
       if (!id || !nome) continue;
       planosMap.set(id, {
         id_plano: id,
         nome,
-        parcelas: toNumber(r[3]) !== null ? Math.round(toNumber(r[3])!) : null,
-        prazo_dias: toNumber(r[4]) !== null ? Math.round(toNumber(r[4])!) : null,
-        taxa: text(r[5]),
+        parcelas: toNumber(r[c + 2]) !== null ? Math.round(toNumber(r[c + 2])!) : null,
+        prazo_dias: toNumber(r[c + 3]) !== null ? Math.round(toNumber(r[c + 3])!) : null,
+        taxa: text(r[c + 4]),
       });
     }
   }
 
   // BASE: cada linha = uma parcela de uma venda.
   const baseRows = sheetRows(wb, "BASE");
-  const baseHeader = findHeaderRow(baseRows, 0, "CPF");
+  const baseHeader = findHeader(baseRows, "CPF");
   const parcelas: FatParcela[] = [];
-  if (baseHeader >= 0) {
-    for (const r of baseRows.slice(baseHeader + 1)) {
-      const cpf = normalizeCpf(r[0]);
-      const nome = text(r[1]);
+  if (baseHeader) {
+    const c = baseHeader.col;
+    for (const r of baseRows.slice(baseHeader.row + 1)) {
+      const cpf = normalizeCpf(r[c]);
+      const nome = text(r[c + 1]);
       if (!cpf && !nome) continue;
-      const idCursoNum = toNumber(r[3]);
+      const idCursoNum = toNumber(r[c + 3]);
       parcelas.push({
         cpf,
         nome_cliente: nome,
-        dt_venda: toDateISO(r[2]),
-        id_curso: idCursoNum !== null ? String(Math.round(idCursoNum)) : text(r[3]),
-        curso_nome: text(r[4]),
-        docente: text(r[5]),
-        escola: text(r[6]),
-        valor_tabela: toNumber(r[7]),
-        desconto: toNumber(r[8]),
-        valor_venda: toNumber(r[9]),
-        id_plano: text(r[10]),
-        plano_nome: text(r[11]),
-        prazo: toNumber(r[12]) !== null ? Math.round(toNumber(r[12])!) : null,
-        parcela_num: toNumber(r[13]),
-        vcto: toDateISO(r[15]),
-        valor_parcela: toNumber(r[16]),
-        valor_liquido: toNumber(r[17]),
-        dt_recebimento: toDateISO(r[18]),
-        valor_recebido: toNumber(r[19]),
-        status: normalizeStatus(r[20]),
-        atraso_dias: toNumber(r[21]) !== null ? Math.round(toNumber(r[21])!) : null,
+        dt_venda: toDateISO(r[c + 2]),
+        id_curso: idCursoNum !== null ? String(Math.round(idCursoNum)) : text(r[c + 3]),
+        curso_nome: text(r[c + 4]),
+        docente: text(r[c + 5]),
+        escola: text(r[c + 6]),
+        valor_tabela: toNumber(r[c + 7]),
+        desconto: toNumber(r[c + 8]),
+        valor_venda: toNumber(r[c + 9]),
+        id_plano: text(r[c + 10]),
+        plano_nome: text(r[c + 11]),
+        prazo: toNumber(r[c + 12]) !== null ? Math.round(toNumber(r[c + 12])!) : null,
+        parcela_num: toNumber(r[c + 13]),
+        vcto: toDateISO(r[c + 15]),
+        valor_parcela: toNumber(r[c + 16]),
+        valor_liquido: toNumber(r[c + 17]),
+        dt_recebimento: toDateISO(r[c + 18]),
+        valor_recebido: toNumber(r[c + 19]),
+        status: normalizeStatus(r[c + 20]),
+        atraso_dias: toNumber(r[c + 21]) !== null ? Math.round(toNumber(r[c + 21])!) : null,
       });
     }
   }
