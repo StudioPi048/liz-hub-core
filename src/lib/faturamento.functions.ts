@@ -192,18 +192,74 @@ export const getFaturamentoParcelas = createServerFn({ method: "GET" })
 export type NotaFiscalRow = FatNotaFiscal & { id: number };
 export type NfFilaRow = FatNfFila & { id: number };
 
+type NfEmitidaLocal = {
+  cpf: string | null;
+  nome: string | null;
+  curso_nome: string | null;
+  valor: number | null;
+  numero: string | null;
+  emitida_em: string;
+};
+
 export const getNotasFiscais = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<{ fila: NfFilaRow[]; emitidas: NotaFiscalRow[] }> => {
     const db = await untypedDb();
-    const [fila, emitidas] = await Promise.all([
+    const [fila, emitidas, locais] = await Promise.all([
       db.from("fat_nfs_fila").select("*").order("nome"),
       db.from("fat_notas_fiscais").select("*").order("data", { ascending: false }).limit(300),
+      db.from("fat_nfs_emitidas").select("*").order("emitida_em", { ascending: false }),
     ]);
     if (fila.error) throw new Error(fila.error.message);
     if (emitidas.error) throw new Error(emitidas.error.message);
-    return {
-      fila: (fila.data ?? []) as NfFilaRow[],
-      emitidas: (emitidas.data ?? []) as NotaFiscalRow[],
-    };
+    if (locais.error) throw new Error(locais.error.message);
+
+    // A fila vem da planilha (wipe + reload); as marcadas como emitidas na
+    // plataforma ficam em fat_nfs_emitidas e sao filtradas por cpf + curso.
+    // ponytail: mesmo cliente comprando o mesmo curso 2x some da fila junto;
+    // se acontecer na pratica, chavear tambem por valor.
+    const locaisRows = (locais.data ?? []) as NfEmitidaLocal[];
+    const emitidasChaves = new Set(locaisRows.map((n) => `${n.cpf}|${n.curso_nome}`));
+    const filaRows = ((fila.data ?? []) as NfFilaRow[]).filter(
+      (nf) => !emitidasChaves.has(`${nf.cpf}|${nf.curso_nome}`),
+    );
+
+    // Lista de emitidas = historico da planilha + marcadas na plataforma.
+    const emitidasLocais: NotaFiscalRow[] = locaisRows.map((n, i) => ({
+      id: -(i + 1), // ids negativos para nao colidir com os da planilha
+      data: n.emitida_em,
+      cliente: n.nome,
+      numero: n.numero,
+      valor: n.valor,
+    }));
+    const todas = [...emitidasLocais, ...((emitidas.data ?? []) as NotaFiscalRow[])].sort((a, b) =>
+      (b.data ?? "").localeCompare(a.data ?? ""),
+    );
+
+    return { fila: filaRows, emitidas: todas };
+  });
+
+const marcarEmitidaInput = z.object({
+  cpf: z.string().nullable(),
+  nome: z.string().nullable(),
+  curso_nome: z.string().nullable(),
+  valor: z.number().nullable(),
+  numero: z.string().min(1, "Informe o número da nota."),
+});
+
+export const marcarNotaEmitida = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => marcarEmitidaInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const db = await untypedDb();
+    const { error } = await db.from("fat_nfs_emitidas").insert({
+      cpf: data.cpf,
+      nome: data.nome,
+      curso_nome: data.curso_nome,
+      valor: data.valor,
+      numero: data.numero,
+      criado_por: context.userId,
+    });
+    if (error) return { ok: false as const, message: error.message };
+    return { ok: true as const };
   });

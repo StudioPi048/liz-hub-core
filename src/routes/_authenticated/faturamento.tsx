@@ -6,6 +6,7 @@ import {
   getFaturamentoResumo,
   getNotasFiscais,
   importarFaturamento,
+  marcarNotaEmitida,
   type NfFilaRow,
   type ParcelaRow,
 } from "@/lib/faturamento.functions";
@@ -355,6 +356,87 @@ function dadosNfParaCopiar(nf: NfFilaRow): string {
   ].join("\n");
 }
 
+function NfFilaCard({ nf }: { nf: NfFilaRow }) {
+  const queryClient = useQueryClient();
+  const [numero, setNumero] = useState("");
+
+  const marcar = useMutation({
+    mutationFn: () =>
+      marcarNotaEmitida({
+        data: {
+          cpf: nf.cpf,
+          nome: nf.nome,
+          curso_nome: nf.curso_nome,
+          valor: nf.valor_venda,
+          numero: numero.trim(),
+        },
+      }),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(`Nota de ${nf.nome ?? "cliente"} marcada como emitida.`);
+        queryClient.invalidateQueries({ queryKey: ["faturamento-notas"] });
+      } else {
+        toast.error(res.message);
+      }
+    },
+    onError: () => toast.error("Não consegui salvar agora. Tente de novo em instantes."),
+  });
+
+  return (
+    <Card>
+      <CardContent className="py-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div className="min-w-0 flex-1 basis-64">
+          <p className="text-base font-medium truncate">{nf.nome ?? "Sem nome"}</p>
+          <p className="text-sm text-muted-foreground truncate">
+            {nf.curso_nome ?? "—"}
+            {nf.plano_nome ? ` · ${nf.plano_nome}` : ""}
+          </p>
+          <p className="text-sm text-muted-foreground truncate">
+            CPF {nf.cpf ?? "—"} · {nf.cidade_uf ?? "—"}
+          </p>
+        </div>
+        <div className="text-sm text-right">
+          <p className="text-muted-foreground">Valor</p>
+          <p className="font-medium">{brl.format(nf.valor_venda ?? 0)}</p>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            navigator.clipboard.writeText(dadosNfParaCopiar(nf));
+            toast.success(`Dados de ${nf.nome ?? "cliente"} copiados`);
+          }}
+        >
+          <Copy />
+          Copiar dados
+        </Button>
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!numero.trim()) {
+              toast.error("Digite o número da nota antes de marcar.");
+              return;
+            }
+            marcar.mutate();
+          }}
+        >
+          <Input
+            placeholder="Nº da nota"
+            value={numero}
+            onChange={(e) => setNumero(e.target.value)}
+            className="w-28"
+          />
+          <Button type="submit" size="sm" disabled={marcar.isPending}>
+            <CheckCircle2 />
+            {marcar.isPending ? "Salvando..." : "Marcar como emitida"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
 function NotasFiscaisSecao({
   fila,
   emitidas,
@@ -387,45 +469,15 @@ function NotasFiscaisSecao({
           Notas para emitir ({fila.length})
         </h2>
         <p className="text-sm text-muted-foreground">
-          Lista da aba "Nfs. Dressler" da planilha. Clique em copiar e cole os dados no sistema
-          Senior para emitir a nota.
+          Clique em copiar e cole os dados no sistema Senior para emitir a nota. Depois de emitir,
+          digite o número da nota e clique em "Marcar como emitida".
         </p>
         {fila.length === 0 ? (
           <p className="py-6 text-center text-muted-foreground">
             Nenhuma nota aguardando emissão. Tudo em dia!
           </p>
         ) : (
-          fila.map((nf) => (
-            <Card key={nf.id}>
-              <CardContent className="py-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-                <div className="min-w-0 flex-1 basis-64">
-                  <p className="text-base font-medium truncate">{nf.nome ?? "Sem nome"}</p>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {nf.curso_nome ?? "—"}
-                    {nf.plano_nome ? ` · ${nf.plano_nome}` : ""}
-                  </p>
-                  <p className="text-sm text-muted-foreground truncate">
-                    CPF {nf.cpf ?? "—"} · {nf.cidade_uf ?? "—"}
-                  </p>
-                </div>
-                <div className="text-sm text-right">
-                  <p className="text-muted-foreground">Valor</p>
-                  <p className="font-medium">{brl.format(nf.valor_venda ?? 0)}</p>
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(dadosNfParaCopiar(nf));
-                    toast.success(`Dados de ${nf.nome ?? "cliente"} copiados`);
-                  }}
-                >
-                  <Copy />
-                  Copiar dados
-                </Button>
-              </CardContent>
-            </Card>
-          ))
+          fila.map((nf) => <NfFilaCard key={nf.id} nf={nf} />)
         )}
       </div>
 
