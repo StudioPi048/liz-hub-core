@@ -61,7 +61,7 @@ export const disconnectContaAzul = createServerFn({ method: "POST" })
 export type ContaAzulCategoriesResult = {
   needsAuth: boolean;
   status: string;
-  categorias: unknown[];
+  categorias: JsonValue[];
 };
 
 export const listContaAzulCategories = createServerFn({ method: "GET" })
