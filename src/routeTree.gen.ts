@@ -24,6 +24,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCuradoriaRouteImport } from './routes/_authenticated/curadoria'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedArquivosRouteImport } from './routes/_authenticated/arquivos'
+import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedCrmRouteRouteImport } from './routes/_authenticated/crm/route'
 import { Route as AuthenticatedAcervoRouteRouteImport } from './routes/_authenticated/acervo/route'
@@ -113,6 +114,11 @@ const AuthenticatedArquivosRoute = AuthenticatedArquivosRouteImport.update({
   path: '/arquivos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/acervo': typeof AuthenticatedAcervoRouteRouteWithChildren
   '/crm': typeof AuthenticatedCrmRouteRouteWithChildren
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/curadoria': typeof AuthenticatedCuradoriaRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/curadoria': typeof AuthenticatedCuradoriaRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/_authenticated/acervo': typeof AuthenticatedAcervoRouteRouteWithChildren
   '/_authenticated/crm': typeof AuthenticatedCrmRouteRouteWithChildren
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
+  '/_authenticated/ajuda': typeof AuthenticatedAjudaRoute
   '/_authenticated/arquivos': typeof AuthenticatedArquivosRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/curadoria': typeof AuthenticatedCuradoriaRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/acervo'
     | '/crm'
     | '/agenda'
+    | '/ajuda'
     | '/arquivos'
     | '/configuracoes'
     | '/curadoria'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda'
+    | '/ajuda'
     | '/arquivos'
     | '/configuracoes'
     | '/curadoria'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/acervo'
     | '/_authenticated/crm'
     | '/_authenticated/agenda'
+    | '/_authenticated/ajuda'
     | '/_authenticated/arquivos'
     | '/_authenticated/configuracoes'
     | '/_authenticated/curadoria'
@@ -454,6 +466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedArquivosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ajuda': {
+      id: '/_authenticated/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AuthenticatedAjudaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/agenda': {
       id: '/_authenticated/agenda'
       path: '/agenda'
@@ -573,6 +592,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcervoRouteRoute: typeof AuthenticatedAcervoRouteRouteWithChildren
   AuthenticatedCrmRouteRoute: typeof AuthenticatedCrmRouteRouteWithChildren
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
+  AuthenticatedAjudaRoute: typeof AuthenticatedAjudaRoute
   AuthenticatedArquivosRoute: typeof AuthenticatedArquivosRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedCuradoriaRoute: typeof AuthenticatedCuradoriaRoute
@@ -591,6 +611,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcervoRouteRoute: AuthenticatedAcervoRouteRouteWithChildren,
   AuthenticatedCrmRouteRoute: AuthenticatedCrmRouteRouteWithChildren,
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
+  AuthenticatedAjudaRoute: AuthenticatedAjudaRoute,
   AuthenticatedArquivosRoute: AuthenticatedArquivosRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedCuradoriaRoute: AuthenticatedCuradoriaRoute,
@@ -618,3 +639,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -8,6 +8,7 @@ import {
   Visibility,
   NODE_CATEGORY_MAPPING,
 } from "../model/asset-vocabulary";
+import { ASSET_CATEGORY_LABEL } from "../model/labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,7 +164,7 @@ export function AssetUploadModal({ nodeId, nodeType, children }: AssetUploadModa
               <SelectContent>
                 {validCategories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
-                    {cat}
+                    {ASSET_CATEGORY_LABEL[cat] ?? cat}
                   </SelectItem>
                 ))}
               </SelectContent>

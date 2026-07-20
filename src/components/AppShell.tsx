@@ -27,6 +27,7 @@ import {
   Sparkles,
   LogOut,
   Settings,
+  HelpCircle,
   Search,
   BellRing,
   Library,
@@ -38,6 +39,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ROLE_LABEL } from "@/lib/role-labels";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -224,6 +226,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
+                <Link to="/ajuda">
+                  <HelpCircle />
+                  <span>Ajuda</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
                 <Link to="/configuracoes">
                   <Settings />
                   <span>Configurações</span>
@@ -240,7 +250,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           {profile && (
             <div className="px-3 py-2 text-xs text-sidebar-foreground/80 border-t border-sidebar-border">
               <div className="truncate font-medium">{profile.full_name || profile.email}</div>
-              <div className="truncate opacity-70">{profile.roles?.join(", ") || "viewer"}</div>
+              <div className="truncate opacity-70">
+                {profile.roles?.map((r) => ROLE_LABEL[r] ?? r).join(", ") || ROLE_LABEL.viewer}
+              </div>
             </div>
           )}
         </SidebarFooter>

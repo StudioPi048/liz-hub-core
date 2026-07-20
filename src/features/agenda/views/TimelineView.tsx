@@ -14,6 +14,7 @@ import { AgendaEvent } from "../model/agenda-event";
 import { cn } from "@/lib/utils";
 import { ExternalLink, MapPin, Video, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { EVENT_STATUS_LABEL } from "../model/labels";
 
 const isNextWeek = (date: Date) => isSameWeek(date, addWeeks(new Date(), 1));
 
@@ -144,11 +145,8 @@ export function TimelineView({ events, onEventClick, showStrategicHighlights }: 
                       )}
 
                       {ev.status && (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] h-4 px-1.5 capitalize font-normal"
-                        >
-                          {ev.status}
+                        <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-normal">
+                          {EVENT_STATUS_LABEL[ev.status] ?? ev.status}
                         </Badge>
                       )}
                     </div>

@@ -8,6 +8,7 @@ import {
   knowledgeTypeLabels,
   KnowledgeType,
 } from "@/features/knowledge/model/knowledge-types";
+import { NODE_STATUS_LABEL } from "@/features/knowledge/model/labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -311,7 +312,7 @@ function EntityCard({ node, type }: { node: CollectionNode; type: KnowledgeType 
         ) : (
           <div className="h-32 w-full bg-muted/30 border-b border-border/40 flex items-center justify-center relative overflow-hidden">
             <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-[0.3em] group-hover:text-muted-foreground/60 transition-colors z-10">
-              {type}
+              {knowledgeTypeLabels[type]}
             </span>
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </div>
@@ -328,7 +329,7 @@ function EntityCard({ node, type }: { node: CollectionNode; type: KnowledgeType 
               variant={node.status === "approved" ? "default" : "secondary"}
               className={`text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 transition-all duration-300 ${node.status === "approved" ? "shadow-sm shadow-primary/20 bg-primary/90" : "bg-muted/50 text-muted-foreground"}`}
             >
-              {node.status}
+              {NODE_STATUS_LABEL[node.status] ?? node.status}
             </Badge>
             {node.authority_level === "official" && (
               <Badge

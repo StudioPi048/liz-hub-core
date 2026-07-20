@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { format, isSameDay, isBefore, addDays, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { EVENT_STATUS_LABEL } from "@/features/agenda/model/labels";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -34,15 +35,6 @@ const EVENT_STATUS_VARIANT: Record<string, SemanticVariant> = {
   draft: "pending",
   cancelled: "critical",
   rescheduled: "critical",
-};
-
-const EVENT_STATUS_LABEL: Record<string, string> = {
-  confirmed: "Confirmado",
-  completed: "Concluído",
-  pending: "Pendente",
-  draft: "Rascunho",
-  cancelled: "Cancelado",
-  rescheduled: "Remarcado",
 };
 
 function DashboardPage() {

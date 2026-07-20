@@ -6,6 +6,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, FileText, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import {
+  knowledgeTypeLabels,
+  type KnowledgeType,
+} from "@/features/knowledge/model/knowledge-types";
+import { NODE_STATUS_LABEL, AUTHORITY_LABEL } from "@/features/knowledge/model/labels";
 
 export const Route = createFileRoute("/_authenticated/acervo/pendentes")({
   component: PendentesPage,
@@ -84,7 +89,7 @@ function PendentesPage() {
                         {node.title}
                       </h3>
                       <Badge variant="secondary" className="text-[10px] uppercase shrink-0">
-                        {node.type}
+                        {knowledgeTypeLabels[node.type as KnowledgeType] ?? node.type}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-3">
@@ -92,11 +97,11 @@ function PendentesPage() {
                     </p>
                     <div className="flex items-center gap-2 pt-1">
                       <Badge variant="outline" className="text-[10px] uppercase">
-                        {node.status}
+                        {NODE_STATUS_LABEL[node.status] ?? node.status}
                       </Badge>
                       {node.authority_level && (
                         <span className="text-[10px] text-muted-foreground uppercase">
-                          {node.authority_level}
+                          {AUTHORITY_LABEL[node.authority_level] ?? node.authority_level}
                         </span>
                       )}
                     </div>

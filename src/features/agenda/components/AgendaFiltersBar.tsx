@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Search, FilterX, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AgendaEvent, AgendaEventSource, AgendaEventStatus } from "../model/agenda-event";
+import { EVENT_STATUS_LABEL, EVENT_ORIGIN_LABEL } from "../model/labels";
 // Assume Select/Combobox components exist, or use standard HTML selects for simplicity in this iteration
 
 interface AgendaFiltersBarProps {
@@ -118,7 +119,7 @@ export function AgendaFiltersBar({
           </option>
           {statuses.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {EVENT_STATUS_LABEL[s] ?? s}
             </option>
           ))}
         </select>
@@ -138,7 +139,7 @@ export function AgendaFiltersBar({
           </option>
           {sources.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {EVENT_ORIGIN_LABEL[s] ?? s}
             </option>
           ))}
         </select>
@@ -188,7 +189,7 @@ export function AgendaFiltersBar({
               variant="secondary"
               className="flex items-center gap-1 font-normal"
             >
-              {s}{" "}
+              {EVENT_STATUS_LABEL[s] ?? s}{" "}
               <X
                 className="h-3 w-3 cursor-pointer"
                 onClick={() => onChange({ statuses: toggleArrayItem(filters.statuses, s) })}
@@ -201,7 +202,7 @@ export function AgendaFiltersBar({
               variant="secondary"
               className="flex items-center gap-1 font-normal"
             >
-              {s}{" "}
+              {EVENT_ORIGIN_LABEL[s] ?? s}{" "}
               <X
                 className="h-3 w-3 cursor-pointer"
                 onClick={() => onChange({ sources: toggleArrayItem(filters.sources, s) })}
