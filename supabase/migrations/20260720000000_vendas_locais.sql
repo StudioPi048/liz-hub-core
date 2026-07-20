@@ -43,11 +43,11 @@ CREATE TABLE IF NOT EXISTS public.fat_parcelas_locais (
 
 CREATE INDEX IF NOT EXISTS fat_parcelas_locais_venda_idx ON public.fat_parcelas_locais (venda_id);
 
+-- RLS ligado, sem nenhuma policy: estas tabelas tem CPF/nome/email/telefone de
+-- aluno, a mesma categoria de dado que ja vazou uma vez por policy USING (true)
+-- (ver migration 20260719234500_rls_fat_tables_lockdown.sql). Toda leitura roda
+-- no servidor com service role, que ignora RLS — entao nao precisam de policy
+-- de leitura nenhuma.
 ALTER TABLE public.fat_clientes_locais ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fat_vendas_locais ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fat_parcelas_locais ENABLE ROW LEVEL SECURITY;
-
--- Leitura para logados; escrita somente via service role (server functions).
-CREATE POLICY "fat_clientes_locais read" ON public.fat_clientes_locais FOR SELECT TO authenticated USING (true);
-CREATE POLICY "fat_vendas_locais read" ON public.fat_vendas_locais FOR SELECT TO authenticated USING (true);
-CREATE POLICY "fat_parcelas_locais read" ON public.fat_parcelas_locais FOR SELECT TO authenticated USING (true);
