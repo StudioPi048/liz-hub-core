@@ -408,7 +408,7 @@ function NovaVendaDialog() {
                       {alunosQuery.isLoading ? "Carregando..." : "Nenhum aluno encontrado."}
                     </CommandEmpty>
                     <CommandGroup>
-                      {(alunosQuery.data ?? []).slice(0, 200).map((a: AlunoResumo) => (
+                      {(alunosQuery.data ?? []).map((a: AlunoResumo) => (
                         <CommandItem
                           key={a.cpf}
                           value={`${a.nome} ${a.cpf}`}
