@@ -364,6 +364,22 @@ export const criarAlunoLocal = createServerFn({ method: "POST" })
     const cpf = normalizeCpf(data.cpf);
     if (!cpf) return { ok: false as const, message: "CPF inválido." };
     const db = await untypedDb();
+
+    // "Novo aluno" é só para quem ainda não existe — sem essa checagem, um CPF
+    // que já está em fat_clientes (planilha ou cadastro anterior) teria seus
+    // dados sobrescritos silenciosamente pelo upsert abaixo.
+    const { data: existente } = await db
+      .from("fat_clientes")
+      .select("nome")
+      .eq("cpf", cpf)
+      .maybeSingle();
+    if (existente) {
+      return {
+        ok: false as const,
+        message: `Já existe um aluno com esse CPF: ${(existente as { nome: string }).nome}.`,
+      };
+    }
+
     const cliente = {
       cpf,
       nome: data.nome.trim(),
