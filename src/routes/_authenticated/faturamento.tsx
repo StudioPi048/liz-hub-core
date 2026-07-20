@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  getAlunos,
+  getCursosPlanos,
   getFaturamentoParcelas,
   getFaturamentoRelatorios,
   getFaturamentoResumo,
@@ -9,6 +11,8 @@ import {
   importarFaturamento,
   marcarNotaEmitida,
   marcarParcelaRecebida,
+  registrarVenda,
+  type AlunoResumo,
   type FaturamentoRelatorios,
   type NfFilaRow,
   type ParcelaRow,
@@ -17,11 +21,37 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/StatCard";
 import { SemanticBadge } from "@/components/SemanticBadge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   CalendarClock,
   CheckCircle2,
@@ -32,6 +62,9 @@ import {
   Copy,
   FileText,
   Upload,
+  Plus,
+  ChevronsUpDown,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -152,8 +185,10 @@ function FaturamentoPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <NovaVendaDialog />
           <Button
             size="lg"
+            variant="secondary"
             disabled={importar.isPending}
             onClick={() => fileInputRef.current?.click()}
           >
@@ -265,6 +300,226 @@ function FaturamentoPage() {
         />
       )}
     </div>
+  );
+}
+
+const VENDA_FORM_VAZIO = {
+  cpf: "",
+  cursoCodigo: "",
+  planoId: "",
+  valorVenda: "",
+  desconto: "",
+  dtVenda: new Date().toISOString().slice(0, 10),
+};
+
+function NovaVendaDialog() {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [alunoAberto, setAlunoAberto] = useState(false);
+  const [form, setForm] = useState(VENDA_FORM_VAZIO);
+
+  const alunosQuery = useQuery({
+    queryKey: ["fat-alunos"],
+    queryFn: async () => (await getAlunos()).alunos,
+    enabled: open,
+  });
+  const cursosPlanosQuery = useQuery({
+    queryKey: ["fat-cursos-planos"],
+    queryFn: () => getCursosPlanos(),
+    enabled: open,
+  });
+
+  const alunoSelecionado = alunosQuery.data?.find((a) => a.cpf === form.cpf);
+  const cursoSelecionado = cursosPlanosQuery.data?.cursos.find(
+    (c) => c.codigo === form.cursoCodigo,
+  );
+  const planoSelecionado = cursosPlanosQuery.data?.planos.find((p) => p.id_plano === form.planoId);
+
+  const registrar = useMutation({
+    mutationFn: () =>
+      registrarVenda({
+        data: {
+          cpf: form.cpf,
+          cursoCodigo: form.cursoCodigo,
+          planoId: form.planoId,
+          valorVenda: Number(form.valorVenda.replace(",", ".")),
+          desconto: form.desconto ? Number(form.desconto.replace(",", ".")) : undefined,
+          dtVenda: form.dtVenda,
+        },
+      }),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(`Venda registrada: ${res.numParcelas} parcela(s) geradas.`);
+        setOpen(false);
+        setForm(VENDA_FORM_VAZIO);
+        queryClient.invalidateQueries({ queryKey: ["faturamento-resumo"] });
+        queryClient.invalidateQueries({ queryKey: ["faturamento-parcelas"] });
+        queryClient.invalidateQueries({ queryKey: ["fat-alunos"] });
+      } else {
+        toast.error(res.message);
+      }
+    },
+    onError: () => toast.error("Não consegui registrar a venda agora. Tente de novo em instantes."),
+  });
+
+  const podeSalvar = form.cpf && form.cursoCodigo && form.planoId && Number(form.valorVenda) > 0;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) setForm(VENDA_FORM_VAZIO);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="lg">
+          <Plus />
+          Nova venda
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Registrar venda nova</DialogTitle>
+          <DialogDescription>
+            Escolha o aluno, o curso e o plano de pagamento. As parcelas são geradas
+            automaticamente.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div>
+            <Label>Aluno</Label>
+            <Popover open={alunoAberto} onOpenChange={setAlunoAberto}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between font-normal"
+                >
+                  {alunoSelecionado ? alunoSelecionado.nome : "Buscar aluno por nome ou CPF..."}
+                  <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                  <CommandInput placeholder="Nome ou CPF..." />
+                  <CommandList>
+                    <CommandEmpty>
+                      {alunosQuery.isLoading ? "Carregando..." : "Nenhum aluno encontrado."}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {(alunosQuery.data ?? []).slice(0, 200).map((a: AlunoResumo) => (
+                        <CommandItem
+                          key={a.cpf}
+                          value={`${a.nome} ${a.cpf}`}
+                          onSelect={() => {
+                            setForm((f) => ({ ...f, cpf: a.cpf }));
+                            setAlunoAberto(false);
+                          }}
+                        >
+                          {a.nome}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Aluno novo? Cadastre em Clientes → Alunos → Novo aluno primeiro.
+            </p>
+          </div>
+
+          <div>
+            <Label>Curso</Label>
+            <Select
+              value={form.cursoCodigo}
+              onValueChange={(v) => {
+                const curso = cursosPlanosQuery.data?.cursos.find((c) => c.codigo === v);
+                setForm((f) => ({
+                  ...f,
+                  cursoCodigo: v,
+                  valorVenda: f.valorVenda || String(curso?.valor_brl ?? ""),
+                }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o curso" />
+              </SelectTrigger>
+              <SelectContent>
+                {(cursosPlanosQuery.data?.cursos ?? []).map((c) => (
+                  <SelectItem key={c.codigo} value={c.codigo}>
+                    {c.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Plano de pagamento</Label>
+            <Select
+              value={form.planoId}
+              onValueChange={(v) => setForm((f) => ({ ...f, planoId: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o plano" />
+              </SelectTrigger>
+              <SelectContent>
+                {(cursosPlanosQuery.data?.planos ?? []).map((p) => (
+                  <SelectItem key={p.id_plano} value={p.id_plano}>
+                    {p.nome} {p.parcelas ? `(${p.parcelas}x)` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {planoSelecionado && form.planoId && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Gera {planoSelecionado.parcelas ?? 1} parcela(s)
+                {planoSelecionado.prazo_dias ? ` em até ${planoSelecionado.prazo_dias} dias` : ""}.
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Valor da venda (R$)</Label>
+              <Input
+                inputMode="decimal"
+                value={form.valorVenda}
+                onChange={(e) => setForm((f) => ({ ...f, valorVenda: e.target.value }))}
+                placeholder={
+                  cursoSelecionado?.valor_brl ? String(cursoSelecionado.valor_brl) : "0,00"
+                }
+              />
+            </div>
+            <div>
+              <Label>Desconto (R$)</Label>
+              <Input
+                inputMode="decimal"
+                value={form.desconto}
+                onChange={(e) => setForm((f) => ({ ...f, desconto: e.target.value }))}
+                placeholder="0,00"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Data da venda</Label>
+            <Input
+              type="date"
+              value={form.dtVenda}
+              onChange={(e) => setForm((f) => ({ ...f, dtVenda: e.target.value }))}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button disabled={!podeSalvar || registrar.isPending} onClick={() => registrar.mutate()}>
+            {registrar.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Registrar venda"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

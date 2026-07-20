@@ -390,6 +390,85 @@ async function reaplicarBaixas(db: SupabaseClient): Promise<void> {
   }
 }
 
+async function reaplicarVendasLocais(db: SupabaseClient): Promise<void> {
+  // Alunos e vendas criados no HUB (fat_*_locais) NAO sao apagados no wipe.
+  // Depois de recarregar fat_clientes/fat_parcelas, reinsere cada um.
+  const { data: clientes, error: cErr } = await db.from("fat_clientes_locais").select("*");
+  if (cErr) throw new Error(`Falha ao ler clientes locais: ${cErr.message}`);
+  if (clientes && clientes.length > 0) {
+    const rows = (
+      clientes as {
+        cpf: string;
+        nome: string;
+        email: string | null;
+        endereco: string | null;
+        cidade_uf: string | null;
+        fone: string | null;
+      }[]
+    ).map(({ cpf, nome, email, endereco, cidade_uf, fone }) => ({
+      cpf,
+      nome,
+      email,
+      endereco,
+      cidade_uf,
+      fone,
+    }));
+    const { error } = await db.from("fat_clientes").upsert(rows, { onConflict: "cpf" });
+    if (error) throw new Error(`Falha ao reaplicar clientes locais: ${error.message}`);
+  }
+
+  const { data: vendas, error: vErr } = await db
+    .from("fat_vendas_locais")
+    .select("*, fat_parcelas_locais(*)");
+  if (vErr) throw new Error(`Falha ao ler vendas locais: ${vErr.message}`);
+
+  type VendaLocal = {
+    cpf: string;
+    nome_cliente: string;
+    dt_venda: string;
+    id_curso: string | null;
+    curso_nome: string;
+    valor_tabela: number | null;
+    desconto: number | null;
+    valor_venda: number;
+    id_plano: string | null;
+    plano_nome: string;
+    prazo_dias: number | null;
+    fat_parcelas_locais: { parcela_num: number; vcto: string; valor_parcela: number }[];
+  };
+  const parcelasReinseridas: Record<string, unknown>[] = [];
+  for (const v of (vendas ?? []) as unknown as VendaLocal[]) {
+    for (const p of v.fat_parcelas_locais) {
+      parcelasReinseridas.push({
+        cpf: v.cpf,
+        nome_cliente: v.nome_cliente,
+        dt_venda: v.dt_venda,
+        id_curso: v.id_curso,
+        curso_nome: v.curso_nome,
+        docente: null,
+        escola: null,
+        valor_tabela: v.valor_tabela,
+        desconto: v.desconto,
+        valor_venda: v.valor_venda,
+        id_plano: v.id_plano,
+        plano_nome: v.plano_nome,
+        prazo: v.prazo_dias,
+        parcela_num: p.parcela_num,
+        vcto: p.vcto,
+        valor_parcela: p.valor_parcela,
+        valor_liquido: p.valor_parcela,
+        dt_recebimento: null,
+        valor_recebido: null,
+        status: "aberto",
+        atraso_dias: null,
+      });
+    }
+  }
+  if (parcelasReinseridas.length > 0) {
+    await insertBatches(db, "fat_parcelas", parcelasReinseridas);
+  }
+}
+
 async function insertBatches(
   db: SupabaseClient,
   table: string,
@@ -453,8 +532,10 @@ export async function runFaturamentoImport(
   await insertBatches(db, "fat_notas_fiscais", parsed.notasFiscais);
   await insertBatches(db, "fat_nfs_fila", parsed.nfsFila);
 
-  // Reaplica as baixas feitas na plataforma sobre as parcelas recem-recarregadas.
+  // Reaplica as baixas e as vendas/alunos criados na plataforma sobre os dados
+  // recem-recarregados da planilha.
   await reaplicarBaixas(db);
+  await reaplicarVendasLocais(db);
 
   const counts = {
     clientes: parsed.clientes.length,

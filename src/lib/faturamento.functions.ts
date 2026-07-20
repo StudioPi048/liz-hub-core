@@ -347,6 +347,202 @@ const marcarEmitidaInput = z.object({
   numero: z.string().min(1, "Informe o número da nota."),
 });
 
+const criarAlunoInput = z.object({
+  cpf: z.string().min(1, "Informe o CPF."),
+  nome: z.string().min(1, "Informe o nome."),
+  email: z.string().optional(),
+  endereco: z.string().optional(),
+  cidade_uf: z.string().optional(),
+  fone: z.string().optional(),
+});
+
+export const criarAlunoLocal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => criarAlunoInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const { normalizeCpf } = await import("./faturamento.server");
+    const cpf = normalizeCpf(data.cpf);
+    if (!cpf) return { ok: false as const, message: "CPF inválido." };
+    const db = await untypedDb();
+    const cliente = {
+      cpf,
+      nome: data.nome.trim(),
+      email: data.email?.trim() || null,
+      endereco: data.endereco?.trim() || null,
+      cidade_uf: data.cidade_uf?.trim() || null,
+      fone: data.fone?.trim() || null,
+    };
+
+    // Efeito imediato (aparece já na lista de alunos) + registro durável que
+    // sobrevive ao wipe+reload da próxima importação da planilha.
+    const { error: upsertErr } = await db
+      .from("fat_clientes")
+      .upsert(cliente, { onConflict: "cpf" });
+    if (upsertErr) return { ok: false as const, message: upsertErr.message };
+
+    const { error: localErr } = await db
+      .from("fat_clientes_locais")
+      .upsert({ ...cliente, criado_por: context.userId }, { onConflict: "cpf" });
+    if (localErr) return { ok: false as const, message: localErr.message };
+
+    return { ok: true as const, cpf };
+  });
+
+export type CursoOpcao = { codigo: string; nome: string; valor_brl: number | null };
+export type PlanoOpcao = {
+  id_plano: string;
+  nome: string;
+  parcelas: number | null;
+  prazo_dias: number | null;
+};
+
+export const getCursosPlanos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<{ cursos: CursoOpcao[]; planos: PlanoOpcao[] }> => {
+    const db = await untypedDb();
+    const [cursos, planos] = await Promise.all([
+      db.from("fat_cursos").select("codigo, nome, valor_brl").order("nome"),
+      db.from("fat_planos").select("id_plano, nome, parcelas, prazo_dias").order("nome"),
+    ]);
+    if (cursos.error) throw new Error(cursos.error.message);
+    if (planos.error) throw new Error(planos.error.message);
+    return {
+      cursos: (cursos.data ?? []) as CursoOpcao[],
+      planos: (planos.data ?? []) as PlanoOpcao[],
+    };
+  });
+
+function addDaysISO(dateISO: string, days: number): string {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + Math.round(days));
+  return dt.toISOString().slice(0, 10);
+}
+
+// ponytail: espaça as parcelas em intervalos iguais dentro do prazo do plano
+// (sem a fórmula real da planilha, que não temos). Se o Denilson achar as
+// datas erradas para algum plano específico, é aqui que ajustar.
+function gerarParcelas(
+  dtVenda: string,
+  numParcelas: number,
+  prazoDias: number | null,
+  valorVenda: number,
+): { parcela_num: number; vcto: string; valor_parcela: number }[] {
+  const step = prazoDias && numParcelas > 0 ? prazoDias / numParcelas : 30;
+  const centavos = Math.round(valorVenda * 100);
+  const base = Math.floor(centavos / numParcelas);
+  const resto = centavos - base * numParcelas;
+  const parcelas = [];
+  for (let i = 1; i <= numParcelas; i++) {
+    const valorCent = base + (i === numParcelas ? resto : 0);
+    parcelas.push({
+      parcela_num: i,
+      vcto: addDaysISO(dtVenda, step * i),
+      valor_parcela: valorCent / 100,
+    });
+  }
+  return parcelas;
+}
+
+const registrarVendaInput = z.object({
+  cpf: z.string().min(1, "Selecione o aluno."),
+  cursoCodigo: z.string().min(1, "Selecione o curso."),
+  planoId: z.string().min(1, "Selecione o plano."),
+  valorVenda: z.number().positive("Informe o valor da venda."),
+  desconto: z.number().optional(),
+  dtVenda: z.string().optional(),
+});
+
+export const registrarVenda = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => registrarVendaInput.parse(d))
+  .handler(async ({ context, data }) => {
+    const db = await untypedDb();
+
+    const [clienteRes, cursoRes, planoRes] = await Promise.all([
+      db.from("fat_clientes").select("cpf, nome").eq("cpf", data.cpf).maybeSingle(),
+      db
+        .from("fat_cursos")
+        .select("codigo, nome, valor_brl")
+        .eq("codigo", data.cursoCodigo)
+        .maybeSingle(),
+      db
+        .from("fat_planos")
+        .select("id_plano, nome, parcelas, prazo_dias")
+        .eq("id_plano", data.planoId)
+        .maybeSingle(),
+    ]);
+    if (!clienteRes.data) return { ok: false as const, message: "Aluno não encontrado." };
+    if (!cursoRes.data) return { ok: false as const, message: "Curso não encontrado." };
+    if (!planoRes.data) return { ok: false as const, message: "Plano não encontrado." };
+
+    const curso = cursoRes.data as { codigo: string; nome: string; valor_brl: number | null };
+    const plano = planoRes.data as {
+      id_plano: string;
+      nome: string;
+      parcelas: number | null;
+      prazo_dias: number | null;
+    };
+    const numParcelas = plano.parcelas && plano.parcelas > 0 ? plano.parcelas : 1;
+    const dtVenda = data.dtVenda ?? todayISO();
+    const desconto = data.desconto ?? 0;
+
+    const { data: venda, error: vendaErr } = await db
+      .from("fat_vendas_locais")
+      .insert({
+        cpf: data.cpf,
+        nome_cliente: (clienteRes.data as { nome: string }).nome,
+        id_curso: curso.codigo,
+        curso_nome: curso.nome,
+        id_plano: plano.id_plano,
+        plano_nome: plano.nome,
+        valor_tabela: curso.valor_brl,
+        desconto,
+        valor_venda: data.valorVenda,
+        num_parcelas: numParcelas,
+        prazo_dias: plano.prazo_dias,
+        dt_venda: dtVenda,
+        criado_por: context.userId,
+      })
+      .select("id")
+      .single();
+    if (vendaErr || !venda)
+      return { ok: false as const, message: vendaErr?.message ?? "Falha ao criar venda." };
+
+    const parcelas = gerarParcelas(dtVenda, numParcelas, plano.prazo_dias, data.valorVenda);
+
+    const { error: parcelasLocaisErr } = await db
+      .from("fat_parcelas_locais")
+      .insert(parcelas.map((p) => ({ venda_id: (venda as { id: number }).id, ...p })));
+    if (parcelasLocaisErr) return { ok: false as const, message: parcelasLocaisErr.message };
+
+    // Efeito imediato: a venda já aparece em Cobranças do mês sem precisar
+    // reimportar a planilha.
+    const { error: parcelasErr } = await db.from("fat_parcelas").insert(
+      parcelas.map((p) => ({
+        cpf: data.cpf,
+        nome_cliente: (clienteRes.data as { nome: string }).nome,
+        dt_venda: dtVenda,
+        id_curso: curso.codigo,
+        curso_nome: curso.nome,
+        valor_tabela: curso.valor_brl,
+        desconto,
+        valor_venda: data.valorVenda,
+        id_plano: plano.id_plano,
+        plano_nome: plano.nome,
+        prazo: plano.prazo_dias,
+        parcela_num: p.parcela_num,
+        vcto: p.vcto,
+        valor_parcela: p.valor_parcela,
+        valor_liquido: p.valor_parcela,
+        status: "aberto",
+      })),
+    );
+    if (parcelasErr) return { ok: false as const, message: parcelasErr.message };
+
+    return { ok: true as const, numParcelas };
+  });
+
 export const marcarNotaEmitida = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => marcarEmitidaInput.parse(d))

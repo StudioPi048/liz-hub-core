@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getAlunos, type AlunoResumo } from "@/lib/faturamento.functions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { criarAlunoLocal, getAlunos, type AlunoResumo } from "@/lib/faturamento.functions";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -9,9 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SemanticBadge } from "@/components/SemanticBadge";
-import { Search, GraduationCap } from "lucide-react";
+import { Search, GraduationCap, Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -100,6 +112,7 @@ export function AlunosPlanilhaTab() {
         <span className="text-sm text-muted-foreground">
           {alunos.length} alunos · {comAtraso} com atraso
         </span>
+        <NovoAlunoDialog />
       </div>
 
       {filtrados.length === 0 ? (
@@ -119,6 +132,106 @@ export function AlunosPlanilhaTab() {
         </div>
       )}
     </div>
+  );
+}
+
+const ALUNO_FORM_VAZIO = { cpf: "", nome: "", email: "", cidade_uf: "", fone: "" };
+
+function NovoAlunoDialog() {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(ALUNO_FORM_VAZIO);
+
+  const criar = useMutation({
+    mutationFn: () => criarAlunoLocal({ data: form }),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success("Aluno cadastrado.");
+        setOpen(false);
+        setForm(ALUNO_FORM_VAZIO);
+        queryClient.invalidateQueries({ queryKey: ["fat-alunos"] });
+      } else {
+        toast.error(res.message);
+      }
+    },
+    onError: () => toast.error("Não consegui cadastrar agora. Tente de novo em instantes."),
+  });
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) setForm(ALUNO_FORM_VAZIO);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" variant="secondary" className="ml-auto">
+          <Plus />
+          Novo aluno
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Cadastrar aluno novo</DialogTitle>
+          <DialogDescription>
+            Cadastre os dados do aluno para depois registrar a venda dele.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Label htmlFor="aluno-cpf">CPF</Label>
+            <Input
+              id="aluno-cpf"
+              value={form.cpf}
+              onChange={(e) => setForm((f) => ({ ...f, cpf: e.target.value }))}
+              placeholder="000.000.000-00"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="aluno-nome">Nome</Label>
+            <Input
+              id="aluno-nome"
+              value={form.nome}
+              onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="aluno-email">E-mail</Label>
+            <Input
+              id="aluno-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="aluno-fone">Telefone</Label>
+            <Input
+              id="aluno-fone"
+              value={form.fone}
+              onChange={(e) => setForm((f) => ({ ...f, fone: e.target.value }))}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="aluno-cidade">Cidade/UF</Label>
+            <Input
+              id="aluno-cidade"
+              value={form.cidade_uf}
+              onChange={(e) => setForm((f) => ({ ...f, cidade_uf: e.target.value }))}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            disabled={!form.cpf || !form.nome || criar.isPending}
+            onClick={() => criar.mutate()}
+          >
+            {criar.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar aluno"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
