@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getGoogleStatus } from "@/lib/google-calendar.functions";
-import { getContaAzulStatus } from "@/lib/conta-azul.functions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,14 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  CalendarCheck2,
-  Loader2,
-  Save,
-  SlidersHorizontal,
-  Building2,
-  WalletCards,
-} from "lucide-react";
+import { CalendarCheck2, Loader2, Save, SlidersHorizontal, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
@@ -49,10 +41,6 @@ function ConfiguracoesPage() {
   });
 
   const googleStatus = useQuery({ queryKey: ["google-status"], queryFn: () => getGoogleStatus() });
-  const contaAzulStatus = useQuery({
-    queryKey: ["conta-azul-status"],
-    queryFn: () => getContaAzulStatus(),
-  });
 
   const [form, setForm] = useState({
     full_name: "",
@@ -213,38 +201,6 @@ function ConfiguracoesPage() {
               )}
               <Button asChild variant="outline" size="sm">
                 <Link to="/agenda">Gerenciar na Agenda</Link>
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-border/60 p-4">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <WalletCards className="h-4 w-4" /> Conta Azul
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {contaAzulStatus.isLoading
-                  ? "Verificando conexão..."
-                  : contaAzulStatus.data?.status === "connected"
-                    ? "Conectada ao motor financeiro e fiscal do LIZ HUB."
-                    : contaAzulStatus.data?.status === "setup_required"
-                      ? "Configuração pendente no ambiente."
-                      : "Não conectada."}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {!contaAzulStatus.isLoading && (
-                <Badge
-                  variant={contaAzulStatus.data?.status === "connected" ? "default" : "secondary"}
-                >
-                  {contaAzulStatus.data?.status === "connected"
-                    ? "Ativo"
-                    : contaAzulStatus.data?.status === "setup_required"
-                      ? "Pendente"
-                      : "Inativo"}
-                </Badge>
-              )}
-              <Button asChild variant="outline" size="sm">
-                <Link to="/financeiro">Gerenciar</Link>
               </Button>
             </div>
           </div>

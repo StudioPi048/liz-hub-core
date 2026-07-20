@@ -156,3 +156,110 @@ export const excluirContaPagar = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, message: error.message };
     return { ok: true as const };
   });
+
+export type FluxoCaixaMes = { mes: string; entradas: number; saidas: number };
+export type FluxoCaixa = { historico: FluxoCaixaMes[]; projecao: FluxoCaixaMes[] };
+
+function mesKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// Fase 3: fluxo de caixa. Entradas = parcelas recebidas em /faturamento
+// (fat_parcelas), saídas = despesas pagas em /financeiro (fin_contas_pagar).
+// Projeção simples: em aberto (a receber − a pagar) por mês futuro; o que já
+// venceu e não foi pago/recebido entra no mês atual.
+export const getFluxoCaixa = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<FluxoCaixa> => {
+    const db = await untypedDb();
+    const agora = new Date();
+    const mesAtual = mesKey(agora);
+    const inicio = new Date(agora.getFullYear(), agora.getMonth() - 11, 1);
+    const inicioISO = `${mesKey(inicio)}-01`;
+
+    // O PostgREST corta em 1000 linhas; pagina até esgotar (mesmo padrão de getAlunos).
+    const PAGE = 1000;
+    async function paginar<T>(
+      build: (
+        from: number,
+        to: number,
+      ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+    ): Promise<T[]> {
+      const rows: T[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await build(from, from + PAGE - 1);
+        if (error) throw new Error(error.message);
+        rows.push(...(data ?? []));
+        if (!data || data.length < PAGE) break;
+      }
+      return rows;
+    }
+
+    const [recebidas, aReceber, contas] = await Promise.all([
+      paginar<{
+        dt_recebimento: string;
+        valor_recebido: number | null;
+        valor_liquido: number | null;
+        valor_parcela: number | null;
+      }>((f, t) =>
+        db
+          .from("fat_parcelas")
+          .select("dt_recebimento, valor_recebido, valor_liquido, valor_parcela")
+          .gte("dt_recebimento", inicioISO)
+          .range(f, t),
+      ),
+      paginar<{ vcto: string | null; valor_liquido: number | null; valor_parcela: number | null }>(
+        (f, t) =>
+          db
+            .from("fat_parcelas")
+            .select("vcto, valor_liquido, valor_parcela")
+            .eq("status", "aberto")
+            .range(f, t),
+      ),
+      paginar<{ vencimento: string; valor: number | null; pago: boolean; pago_em: string | null }>(
+        (f, t) =>
+          db.from("fin_contas_pagar").select("vencimento, valor, pago, pago_em").range(f, t),
+      ),
+    ]);
+
+    const montarMeses = (base: Date, qtd: number) => {
+      const lista: FluxoCaixaMes[] = [];
+      const porMes = new Map<string, FluxoCaixaMes>();
+      for (let i = 0; i < qtd; i++) {
+        const item = {
+          mes: mesKey(new Date(base.getFullYear(), base.getMonth() + i, 1)),
+          entradas: 0,
+          saidas: 0,
+        };
+        lista.push(item);
+        porMes.set(item.mes, item);
+      }
+      return { lista, porMes };
+    };
+
+    const historico = montarMeses(inicio, 12);
+    for (const r of recebidas) {
+      const item = historico.porMes.get(r.dt_recebimento.slice(0, 7));
+      if (item) item.entradas += r.valor_recebido ?? r.valor_liquido ?? r.valor_parcela ?? 0;
+    }
+    for (const c of contas) {
+      if (!c.pago || !c.pago_em) continue;
+      const item = historico.porMes.get(c.pago_em.slice(0, 7));
+      if (item) item.saidas += c.valor ?? 0;
+    }
+
+    const projecao = montarMeses(agora, 6);
+    const clamp = (mes: string) => (mes < mesAtual ? mesAtual : mes);
+    for (const p of aReceber) {
+      if (!p.vcto) continue;
+      const item = projecao.porMes.get(clamp(p.vcto.slice(0, 7)));
+      if (item) item.entradas += p.valor_liquido ?? p.valor_parcela ?? 0;
+    }
+    for (const c of contas) {
+      if (c.pago) continue;
+      const item = projecao.porMes.get(clamp(c.vencimento.slice(0, 7)));
+      if (item) item.saidas += c.valor ?? 0;
+    }
+
+    return { historico: historico.lista, projecao: projecao.lista };
+  });
