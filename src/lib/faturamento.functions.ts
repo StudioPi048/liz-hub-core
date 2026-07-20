@@ -144,7 +144,7 @@ export const getAlunos = createServerFn({ method: "GET" })
   });
 
 const parcelasInput = z.object({
-  escopo: z.enum(["mes", "atrasadas", "busca"]),
+  escopo: z.enum(["mes", "atrasadas", "recebidos", "busca"]),
   busca: z.string().optional(),
 });
 
@@ -162,6 +162,16 @@ export const getFaturamentoParcelas = createServerFn({ method: "GET" })
       q = q.eq("status", "aberto").gte("vcto", from).lte("vcto", to).order("vcto");
     } else if (data.escopo === "atrasadas") {
       q = q.eq("status", "aberto").lt("vcto", hoje).order("vcto");
+    } else if (data.escopo === "recebidos") {
+      q = q.eq("status", "pago").order("dt_recebimento", { ascending: false });
+      const termo = (data.busca ?? "").trim();
+      if (termo) {
+        const digits = termo.replace(/\D/g, "");
+        q =
+          digits.length >= 4
+            ? q.eq("cpf", digits.padStart(11, "0"))
+            : q.ilike("nome_cliente", `%${termo}%`);
+      }
     } else {
       const termo = (data.busca ?? "").trim();
       if (!termo) return { parcelas: [] };

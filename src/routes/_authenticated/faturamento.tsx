@@ -105,7 +105,7 @@ const STATUS_VARIANT: Record<string, "neutral" | "pending" | "success" | "critic
   outro: "neutral",
 };
 
-type Escopo = "mes" | "atrasadas" | "busca" | "notas" | "relatorios";
+type Escopo = "mes" | "atrasadas" | "recebidos" | "busca" | "notas" | "relatorios";
 
 function waLink(fone: string, mensagem: string): string {
   let digits = fone.replace(/\D/g, "");
@@ -137,12 +137,18 @@ function FaturamentoPage() {
     queryKey: ["faturamento-parcelas", escopo, buscaAtiva],
     queryFn: async () => {
       const res = await getFaturamentoParcelas({
-        data: { escopo: escopo as "mes" | "atrasadas" | "busca", busca: buscaAtiva || undefined },
+        data: {
+          escopo: escopo as "mes" | "atrasadas" | "recebidos" | "busca",
+          busca: buscaAtiva || undefined,
+        },
       });
       return res.parcelas;
     },
     enabled:
-      escopo === "mes" || escopo === "atrasadas" || (escopo === "busca" && buscaAtiva.length > 0),
+      escopo === "mes" ||
+      escopo === "atrasadas" ||
+      escopo === "recebidos" ||
+      (escopo === "busca" && buscaAtiva.length > 0),
   });
 
   const notasQuery = useQuery({
@@ -259,13 +265,14 @@ function FaturamentoPage() {
           <TabsTrigger value="atrasadas">
             Em atraso{resumo ? ` (${resumo.emAtraso.quantidade})` : ""}
           </TabsTrigger>
+          <TabsTrigger value="recebidos">Recebidos</TabsTrigger>
           <TabsTrigger value="busca">Buscar cliente</TabsTrigger>
           <TabsTrigger value="notas">Notas fiscais</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {escopo === "busca" && (
+      {(escopo === "busca" || escopo === "recebidos") && (
         <form
           className="flex gap-2 max-w-xl"
           onSubmit={(e) => {
@@ -274,14 +281,18 @@ function FaturamentoPage() {
           }}
         >
           <Input
-            placeholder="Digite o nome ou CPF do cliente"
+            placeholder={
+              escopo === "recebidos"
+                ? "Filtrar por nome ou CPF (opcional)"
+                : "Digite o nome ou CPF do cliente"
+            }
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="h-11 text-base"
           />
           <Button type="submit" size="lg">
             <Search />
-            Buscar
+            {escopo === "recebidos" ? "Filtrar" : "Buscar"}
           </Button>
         </form>
       )}
@@ -569,9 +580,11 @@ function ParcelasLista({
         ? "Nenhuma cobrança em aberto neste mês."
         : escopo === "atrasadas"
           ? "Nenhuma parcela em atraso. Tudo em dia!"
-          : buscou
-            ? "Nenhum resultado. Confira o nome ou CPF e tente de novo."
-            : "Digite o nome ou CPF do cliente e clique em Buscar.";
+          : escopo === "recebidos"
+            ? "Nenhuma parcela recebida ainda."
+            : buscou
+              ? "Nenhum resultado. Confira o nome ou CPF e tente de novo."
+              : "Digite o nome ou CPF do cliente e clique em Buscar.";
     return <p className="text-muted-foreground py-8 text-center text-base">{msg}</p>;
   }
 
