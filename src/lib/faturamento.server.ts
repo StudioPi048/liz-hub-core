@@ -434,10 +434,13 @@ async function reaplicarVendasLocais(db: SupabaseClient): Promise<void> {
     id_plano: string | null;
     plano_nome: string;
     prazo_dias: number | null;
+    presencial: boolean;
     fat_parcelas_locais: { parcela_num: number; vcto: string; valor_parcela: number }[];
   };
   const parcelasReinseridas: Record<string, unknown>[] = [];
+  const vendasPresenciais: VendaLocal[] = [];
   for (const v of (vendas ?? []) as unknown as VendaLocal[]) {
+    if (v.presencial) vendasPresenciais.push(v);
     for (const p of v.fat_parcelas_locais) {
       parcelasReinseridas.push({
         cpf: v.cpf,
@@ -466,6 +469,45 @@ async function reaplicarVendasLocais(db: SupabaseClient): Promise<void> {
   }
   if (parcelasReinseridas.length > 0) {
     await insertBatches(db, "fat_parcelas", parcelasReinseridas);
+  }
+
+  // fat_nfs_fila e recarregada do zero a cada import (aba "Nfs. Dressler" da
+  // planilha) — venda presencial feita no HUB precisa voltar pra fila aqui.
+  if (vendasPresenciais.length > 0) {
+    const cpfs = [...new Set(vendasPresenciais.map((v) => v.cpf))];
+    const { data: clientesInfo, error: clErr } = await db
+      .from("fat_clientes")
+      .select("cpf, email, endereco, cidade_uf, fone")
+      .in("cpf", cpfs);
+    if (clErr) throw new Error(`Falha ao ler clientes para fila de NF: ${clErr.message}`);
+    const infoPorCpf = new Map(
+      (
+        (clientesInfo ?? []) as {
+          cpf: string;
+          email: string | null;
+          endereco: string | null;
+          cidade_uf: string | null;
+          fone: string | null;
+        }[]
+      ).map((c) => [c.cpf, c]),
+    );
+    const filaRows = vendasPresenciais.map((v) => {
+      const info = infoPorCpf.get(v.cpf);
+      return {
+        cpf: v.cpf,
+        nome: v.nome_cliente,
+        email: info?.email ?? null,
+        endereco: info?.endereco ?? null,
+        cidade_uf: info?.cidade_uf ?? null,
+        fone: info?.fone ?? null,
+        id_curso: v.id_curso,
+        curso_nome: v.curso_nome,
+        valor_venda: v.valor_venda,
+        id_plano: v.id_plano,
+        plano_nome: v.plano_nome,
+      };
+    });
+    await insertBatches(db, "fat_nfs_fila", filaRows);
   }
 }
 

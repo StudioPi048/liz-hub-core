@@ -503,6 +503,7 @@ const registrarVendaInput = z.object({
   valorVenda: z.number().positive("Informe o valor da venda."),
   desconto: z.number().optional(),
   dtVenda: z.string().optional(),
+  presencial: z.boolean().optional(),
 });
 
 export const registrarVenda = createServerFn({ method: "POST" })
@@ -512,7 +513,11 @@ export const registrarVenda = createServerFn({ method: "POST" })
     const db = await untypedDb();
 
     const [clienteRes, cursoRes, planoRes] = await Promise.all([
-      db.from("fat_clientes").select("cpf, nome").eq("cpf", data.cpf).maybeSingle(),
+      db
+        .from("fat_clientes")
+        .select("cpf, nome, email, endereco, cidade_uf, fone")
+        .eq("cpf", data.cpf)
+        .maybeSingle(),
       db
         .from("fat_cursos")
         .select("codigo, nome, valor_brl")
@@ -528,6 +533,14 @@ export const registrarVenda = createServerFn({ method: "POST" })
     if (!cursoRes.data) return { ok: false as const, message: "Curso não encontrado." };
     if (!planoRes.data) return { ok: false as const, message: "Plano não encontrado." };
 
+    const cliente = clienteRes.data as {
+      cpf: string;
+      nome: string;
+      email: string | null;
+      endereco: string | null;
+      cidade_uf: string | null;
+      fone: string | null;
+    };
     const curso = cursoRes.data as { codigo: string; nome: string; valor_brl: number | null };
     const plano = planoRes.data as {
       id_plano: string;
@@ -543,7 +556,7 @@ export const registrarVenda = createServerFn({ method: "POST" })
       .from("fat_vendas_locais")
       .insert({
         cpf: data.cpf,
-        nome_cliente: (clienteRes.data as { nome: string }).nome,
+        nome_cliente: cliente.nome,
         id_curso: curso.codigo,
         curso_nome: curso.nome,
         id_plano: plano.id_plano,
@@ -554,6 +567,7 @@ export const registrarVenda = createServerFn({ method: "POST" })
         num_parcelas: numParcelas,
         prazo_dias: plano.prazo_dias,
         dt_venda: dtVenda,
+        presencial: data.presencial ?? false,
         criado_por: context.userId,
       })
       .select("id")
@@ -573,7 +587,7 @@ export const registrarVenda = createServerFn({ method: "POST" })
     const { error: parcelasErr } = await db.from("fat_parcelas").insert(
       parcelas.map((p) => ({
         cpf: data.cpf,
-        nome_cliente: (clienteRes.data as { nome: string }).nome,
+        nome_cliente: cliente.nome,
         dt_venda: dtVenda,
         id_curso: curso.codigo,
         curso_nome: curso.nome,
@@ -591,6 +605,25 @@ export const registrarVenda = createServerFn({ method: "POST" })
       })),
     );
     if (parcelasErr) return { ok: false as const, message: parcelasErr.message };
+
+    // Venda presencial entra sozinha na fila de nota fiscal (aba "Notas fiscais"),
+    // sem precisar editar a planilha "Nfs. Dressler" na mão.
+    if (data.presencial) {
+      const { error: filaErr } = await db.from("fat_nfs_fila").insert({
+        cpf: data.cpf,
+        nome: cliente.nome,
+        email: cliente.email,
+        endereco: cliente.endereco,
+        cidade_uf: cliente.cidade_uf,
+        fone: cliente.fone,
+        id_curso: curso.codigo,
+        curso_nome: curso.nome,
+        valor_venda: data.valorVenda,
+        id_plano: plano.id_plano,
+        plano_nome: plano.nome,
+      });
+      if (filaErr) return { ok: false as const, message: filaErr.message };
+    }
 
     return { ok: true as const, numParcelas };
   });

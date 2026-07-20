@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/StatCard";
 import { SemanticBadge } from "@/components/SemanticBadge";
@@ -312,6 +313,7 @@ const VENDA_FORM_VAZIO = {
   valorVenda: "",
   desconto: "",
   dtVenda: new Date().toISOString().slice(0, 10),
+  presencial: false,
 };
 
 function NovaVendaDialog() {
@@ -347,6 +349,7 @@ function NovaVendaDialog() {
           valorVenda: Number(form.valorVenda.replace(",", ".")),
           desconto: form.desconto ? Number(form.desconto.replace(",", ".")) : undefined,
           dtVenda: form.dtVenda,
+          presencial: form.presencial,
         },
       }),
     onSuccess: (res) => {
@@ -520,6 +523,14 @@ function NovaVendaDialog() {
               onChange={(e) => setForm((f) => ({ ...f, dtVenda: e.target.value }))}
             />
           </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={form.presencial}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, presencial: v === true }))}
+            />
+            Curso presencial (entra sozinho na fila de nota fiscal)
+          </label>
         </div>
         <DialogFooter>
           <Button disabled={!podeSalvar || registrar.isPending} onClick={() => registrar.mutate()}>
