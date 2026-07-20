@@ -215,51 +215,6 @@ export type Database = {
           },
         ]
       }
-      conta_azul_oauth_tokens: {
-        Row: {
-          access_token_ciphertext: string | null
-          connected_by: string | null
-          conta_azul_identity: Json | null
-          created_at: string
-          id: string
-          last_error: string | null
-          refresh_token_ciphertext: string
-          scope: string | null
-          status: string
-          token_expires_at: string | null
-          token_type: string | null
-          updated_at: string
-        }
-        Insert: {
-          access_token_ciphertext?: string | null
-          connected_by?: string | null
-          conta_azul_identity?: Json | null
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          refresh_token_ciphertext: string
-          scope?: string | null
-          status?: string
-          token_expires_at?: string | null
-          token_type?: string | null
-          updated_at?: string
-        }
-        Update: {
-          access_token_ciphertext?: string | null
-          connected_by?: string | null
-          conta_azul_identity?: Json | null
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          refresh_token_ciphertext?: string
-          scope?: string | null
-          status?: string
-          token_expires_at?: string | null
-          token_type?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       crm_contacts: {
         Row: {
           created_at: string
@@ -375,6 +330,503 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fat_clientes: {
+        Row: {
+          cidade_uf: string | null
+          cpf: string
+          email: string | null
+          endereco: string | null
+          fone: string | null
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cidade_uf?: string | null
+          cpf: string
+          email?: string | null
+          endereco?: string | null
+          fone?: string | null
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cidade_uf?: string | null
+          cpf?: string
+          email?: string | null
+          endereco?: string | null
+          fone?: string | null
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fat_clientes_locais: {
+        Row: {
+          cidade_uf: string | null
+          cpf: string
+          criado_em: string
+          criado_por: string | null
+          email: string | null
+          endereco: string | null
+          fone: string | null
+          nome: string
+        }
+        Insert: {
+          cidade_uf?: string | null
+          cpf: string
+          criado_em?: string
+          criado_por?: string | null
+          email?: string | null
+          endereco?: string | null
+          fone?: string | null
+          nome: string
+        }
+        Update: {
+          cidade_uf?: string | null
+          cpf?: string
+          criado_em?: string
+          criado_por?: string | null
+          email?: string | null
+          endereco?: string | null
+          fone?: string | null
+          nome?: string
+        }
+        Relationships: []
+      }
+      fat_cursos: {
+        Row: {
+          codigo: string
+          docente: string | null
+          nome: string
+          tipo: string
+          valor_brl: number | null
+          valor_eur: number | null
+        }
+        Insert: {
+          codigo: string
+          docente?: string | null
+          nome: string
+          tipo?: string
+          valor_brl?: number | null
+          valor_eur?: number | null
+        }
+        Update: {
+          codigo?: string
+          docente?: string | null
+          nome?: string
+          tipo?: string
+          valor_brl?: number | null
+          valor_eur?: number | null
+        }
+        Relationships: []
+      }
+      fat_import_status: {
+        Row: {
+          clientes_count: number | null
+          cursos_count: number | null
+          id: string
+          imported_at: string | null
+          imported_by: string | null
+          last_error: string | null
+          parcelas_count: number | null
+          planos_count: number | null
+        }
+        Insert: {
+          clientes_count?: number | null
+          cursos_count?: number | null
+          id?: string
+          imported_at?: string | null
+          imported_by?: string | null
+          last_error?: string | null
+          parcelas_count?: number | null
+          planos_count?: number | null
+        }
+        Update: {
+          clientes_count?: number | null
+          cursos_count?: number | null
+          id?: string
+          imported_at?: string | null
+          imported_by?: string | null
+          last_error?: string | null
+          parcelas_count?: number | null
+          planos_count?: number | null
+        }
+        Relationships: []
+      }
+      fat_nfs_emitidas: {
+        Row: {
+          cpf: string | null
+          criado_em: string
+          criado_por: string | null
+          curso_nome: string | null
+          emitida_em: string
+          id: number
+          nome: string | null
+          numero: string | null
+          valor: number | null
+        }
+        Insert: {
+          cpf?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          curso_nome?: string | null
+          emitida_em?: string
+          id?: never
+          nome?: string | null
+          numero?: string | null
+          valor?: number | null
+        }
+        Update: {
+          cpf?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          curso_nome?: string | null
+          emitida_em?: string
+          id?: never
+          nome?: string | null
+          numero?: string | null
+          valor?: number | null
+        }
+        Relationships: []
+      }
+      fat_nfs_fila: {
+        Row: {
+          cidade_uf: string | null
+          cpf: string | null
+          curso_nome: string | null
+          email: string | null
+          endereco: string | null
+          fone: string | null
+          id: number
+          id_curso: string | null
+          id_plano: string | null
+          nome: string | null
+          plano_nome: string | null
+          valor_venda: number | null
+        }
+        Insert: {
+          cidade_uf?: string | null
+          cpf?: string | null
+          curso_nome?: string | null
+          email?: string | null
+          endereco?: string | null
+          fone?: string | null
+          id?: never
+          id_curso?: string | null
+          id_plano?: string | null
+          nome?: string | null
+          plano_nome?: string | null
+          valor_venda?: number | null
+        }
+        Update: {
+          cidade_uf?: string | null
+          cpf?: string | null
+          curso_nome?: string | null
+          email?: string | null
+          endereco?: string | null
+          fone?: string | null
+          id?: never
+          id_curso?: string | null
+          id_plano?: string | null
+          nome?: string | null
+          plano_nome?: string | null
+          valor_venda?: number | null
+        }
+        Relationships: []
+      }
+      fat_notas_fiscais: {
+        Row: {
+          cliente: string | null
+          data: string | null
+          id: number
+          numero: string | null
+          valor: number | null
+        }
+        Insert: {
+          cliente?: string | null
+          data?: string | null
+          id?: never
+          numero?: string | null
+          valor?: number | null
+        }
+        Update: {
+          cliente?: string | null
+          data?: string | null
+          id?: never
+          numero?: string | null
+          valor?: number | null
+        }
+        Relationships: []
+      }
+      fat_parcelas: {
+        Row: {
+          atraso_dias: number | null
+          cpf: string | null
+          curso_nome: string | null
+          desconto: number | null
+          docente: string | null
+          dt_recebimento: string | null
+          dt_venda: string | null
+          escola: string | null
+          id: number
+          id_curso: string | null
+          id_plano: string | null
+          nome_cliente: string | null
+          parcela_num: number | null
+          plano_nome: string | null
+          prazo: number | null
+          status: string
+          valor_liquido: number | null
+          valor_parcela: number | null
+          valor_recebido: number | null
+          valor_tabela: number | null
+          valor_venda: number | null
+          vcto: string | null
+        }
+        Insert: {
+          atraso_dias?: number | null
+          cpf?: string | null
+          curso_nome?: string | null
+          desconto?: number | null
+          docente?: string | null
+          dt_recebimento?: string | null
+          dt_venda?: string | null
+          escola?: string | null
+          id?: never
+          id_curso?: string | null
+          id_plano?: string | null
+          nome_cliente?: string | null
+          parcela_num?: number | null
+          plano_nome?: string | null
+          prazo?: number | null
+          status?: string
+          valor_liquido?: number | null
+          valor_parcela?: number | null
+          valor_recebido?: number | null
+          valor_tabela?: number | null
+          valor_venda?: number | null
+          vcto?: string | null
+        }
+        Update: {
+          atraso_dias?: number | null
+          cpf?: string | null
+          curso_nome?: string | null
+          desconto?: number | null
+          docente?: string | null
+          dt_recebimento?: string | null
+          dt_venda?: string | null
+          escola?: string | null
+          id?: never
+          id_curso?: string | null
+          id_plano?: string | null
+          nome_cliente?: string | null
+          parcela_num?: number | null
+          plano_nome?: string | null
+          prazo?: number | null
+          status?: string
+          valor_liquido?: number | null
+          valor_parcela?: number | null
+          valor_recebido?: number | null
+          valor_tabela?: number | null
+          valor_venda?: number | null
+          vcto?: string | null
+        }
+        Relationships: []
+      }
+      fat_parcelas_baixas: {
+        Row: {
+          cpf: string | null
+          criado_em: string
+          criado_por: string | null
+          curso_nome: string | null
+          dt_recebimento: string
+          id: number
+          nome_cliente: string | null
+          parcela_num: number | null
+          valor_parcela: number | null
+          valor_recebido: number | null
+          vcto: string | null
+        }
+        Insert: {
+          cpf?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          curso_nome?: string | null
+          dt_recebimento?: string
+          id?: never
+          nome_cliente?: string | null
+          parcela_num?: number | null
+          valor_parcela?: number | null
+          valor_recebido?: number | null
+          vcto?: string | null
+        }
+        Update: {
+          cpf?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          curso_nome?: string | null
+          dt_recebimento?: string
+          id?: never
+          nome_cliente?: string | null
+          parcela_num?: number | null
+          valor_parcela?: number | null
+          valor_recebido?: number | null
+          vcto?: string | null
+        }
+        Relationships: []
+      }
+      fat_parcelas_locais: {
+        Row: {
+          id: number
+          parcela_num: number
+          valor_parcela: number
+          vcto: string
+          venda_id: number
+        }
+        Insert: {
+          id?: never
+          parcela_num: number
+          valor_parcela: number
+          vcto: string
+          venda_id: number
+        }
+        Update: {
+          id?: never
+          parcela_num?: number
+          valor_parcela?: number
+          vcto?: string
+          venda_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fat_parcelas_locais_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "fat_vendas_locais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fat_planos: {
+        Row: {
+          id_plano: string
+          nome: string
+          parcelas: number | null
+          prazo_dias: number | null
+          taxa: string | null
+        }
+        Insert: {
+          id_plano: string
+          nome: string
+          parcelas?: number | null
+          prazo_dias?: number | null
+          taxa?: string | null
+        }
+        Update: {
+          id_plano?: string
+          nome?: string
+          parcelas?: number | null
+          prazo_dias?: number | null
+          taxa?: string | null
+        }
+        Relationships: []
+      }
+      fat_vendas_locais: {
+        Row: {
+          cpf: string
+          criado_em: string
+          criado_por: string | null
+          curso_nome: string
+          desconto: number | null
+          dt_venda: string
+          id: number
+          id_curso: string | null
+          id_plano: string | null
+          nome_cliente: string
+          num_parcelas: number
+          plano_nome: string
+          prazo_dias: number | null
+          presencial: boolean
+          valor_tabela: number | null
+          valor_venda: number
+        }
+        Insert: {
+          cpf: string
+          criado_em?: string
+          criado_por?: string | null
+          curso_nome: string
+          desconto?: number | null
+          dt_venda: string
+          id?: never
+          id_curso?: string | null
+          id_plano?: string | null
+          nome_cliente: string
+          num_parcelas: number
+          plano_nome: string
+          prazo_dias?: number | null
+          presencial?: boolean
+          valor_tabela?: number | null
+          valor_venda: number
+        }
+        Update: {
+          cpf?: string
+          criado_em?: string
+          criado_por?: string | null
+          curso_nome?: string
+          desconto?: number | null
+          dt_venda?: string
+          id?: never
+          id_curso?: string | null
+          id_plano?: string | null
+          nome_cliente?: string
+          num_parcelas?: number
+          plano_nome?: string
+          prazo_dias?: number | null
+          presencial?: boolean
+          valor_tabela?: number | null
+          valor_venda?: number
+        }
+        Relationships: []
+      }
+      fin_contas_pagar: {
+        Row: {
+          categoria: string
+          criado_em: string
+          criado_por: string | null
+          descricao: string
+          fornecedor: string | null
+          id: number
+          pago: boolean
+          pago_em: string | null
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          categoria?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao: string
+          fornecedor?: string | null
+          id?: never
+          pago?: boolean
+          pago_em?: string | null
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          categoria?: string
+          criado_em?: string
+          criado_por?: string | null
+          descricao?: string
+          fornecedor?: string | null
+          id?: never
+          pago?: boolean
+          pago_em?: string | null
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: []
       }
       google_calendar_prefs: {
         Row: {
@@ -1141,7 +1593,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      fat_alunos_resumo: {
+        Row: {
+          cidade_uf: string | null
+          cpf: string | null
+          cursos: string[] | null
+          email: string | null
+          fone: string | null
+          nome: string | null
+          parcelas_atrasadas: number | null
+          total_pago: number | null
+          ultima_compra: string | null
+          valor_em_aberto: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_edit: { Args: { _user_id: string }; Returns: boolean }
