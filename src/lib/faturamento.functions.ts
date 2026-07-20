@@ -233,6 +233,42 @@ export const marcarParcelaRecebida = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+const desfazerBaixaInput = z.object({
+  parcelaId: z.number(),
+  cpf: z.string().nullable(),
+  vcto: z.string().nullable(),
+  valor_parcela: z.number().nullable(),
+  parcela_num: z.number().nullable(),
+});
+
+export const desfazerBaixaParcela = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => desfazerBaixaInput.parse(d))
+  .handler(async ({ data }) => {
+    const db = await untypedDb();
+
+    // Remove o registro durável (mesma assinatura usada por reaplicarBaixas),
+    // senão a proxima importacao da planilha reaplicaria a baixa desfeita.
+    if (data.cpf && data.vcto && data.valor_parcela !== null) {
+      let q = db
+        .from("fat_parcelas_baixas")
+        .delete()
+        .eq("cpf", data.cpf)
+        .eq("vcto", data.vcto)
+        .eq("valor_parcela", data.valor_parcela);
+      if (data.parcela_num !== null) q = q.eq("parcela_num", data.parcela_num);
+      const { error: delErr } = await q;
+      if (delErr) return { ok: false as const, message: delErr.message };
+    }
+
+    const { error: updErr } = await db
+      .from("fat_parcelas")
+      .update({ status: "aberto", dt_recebimento: null, valor_recebido: null })
+      .eq("id", data.parcelaId);
+    if (updErr) return { ok: false as const, message: updErr.message };
+    return { ok: true as const };
+  });
+
 export type NotaFiscalRow = FatNotaFiscal & { id: number };
 export type NfFilaRow = FatNfFila & { id: number };
 

@@ -8,6 +8,7 @@ import {
   getFaturamentoRelatorios,
   getFaturamentoResumo,
   getNotasFiscais,
+  desfazerBaixaParcela,
   importarFaturamento,
   marcarNotaEmitida,
   marcarParcelaRecebida,
@@ -65,6 +66,7 @@ import {
   Plus,
   ChevronsUpDown,
   Loader2,
+  Undo2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -597,6 +599,7 @@ function ParcelasLista({
               </Button>
             )}
             {p.status === "aberto" && <MarcarRecebidoBtn p={p} />}
+            {p.status === "pago" && <DesfazerBaixaBtn p={p} />}
           </CardContent>
         </Card>
       ))}
@@ -641,6 +644,46 @@ function MarcarRecebidoBtn({ p }: { p: ParcelaRow }) {
     <Button size="sm" disabled={marcar.isPending} onClick={() => marcar.mutate()}>
       <CheckCircle2 />
       {marcar.isPending ? "Salvando..." : "Marcar recebido"}
+    </Button>
+  );
+}
+
+function DesfazerBaixaBtn({ p }: { p: ParcelaRow }) {
+  const queryClient = useQueryClient();
+  const desfazer = useMutation({
+    mutationFn: () =>
+      desfazerBaixaParcela({
+        data: {
+          parcelaId: p.id,
+          cpf: p.cpf,
+          vcto: p.vcto,
+          valor_parcela: p.valor_parcela,
+          parcela_num: p.parcela_num,
+        },
+      }),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(
+          `Baixa de ${p.nome_cliente ?? "cliente"} desfeita. Parcela voltou a "Em aberto".`,
+        );
+        queryClient.invalidateQueries({ queryKey: ["faturamento-resumo"] });
+        queryClient.invalidateQueries({ queryKey: ["faturamento-parcelas"] });
+      } else {
+        toast.error(res.message);
+      }
+    },
+    onError: () => toast.error("Não consegui desfazer agora. Tente de novo em instantes."),
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={desfazer.isPending}
+      onClick={() => desfazer.mutate()}
+    >
+      <Undo2 />
+      {desfazer.isPending ? "Desfazendo..." : "Desfazer baixa"}
     </Button>
   );
 }
