@@ -9,12 +9,19 @@ import {
   getContaAzulAuthUrl,
   getContaAzulBackofficeCatalog,
   getContaAzulStatus,
-  getContasAPagar,
 } from "@/lib/conta-azul.functions";
+import {
+  CATEGORIAS_DESPESA,
+  criarContaPagar,
+  editarContaPagar,
+  excluirContaPagar,
+  getContasPagar,
+  marcarContaPaga,
+  type ContaPagarRow,
+} from "@/lib/financeiro.functions";
 import { StatCard } from "@/components/StatCard";
 import { SemanticBadge } from "@/components/SemanticBadge";
 import type {
-  ContaAPagarRow,
   ContaAzulBackofficeAction,
   ContaAzulBackofficeModule,
   ContaAzulJsonRecord,
@@ -34,6 +41,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,13 +84,16 @@ import {
   FileJson,
   FileText,
   Loader2,
+  Pencil,
   PlugZap,
+  Plus,
   Power,
   Receipt,
   RefreshCcw,
   Send,
   ShieldCheck,
   TerminalSquare,
+  Trash2,
   Users,
   WalletCards,
 } from "lucide-react";
@@ -223,7 +252,7 @@ function FinanceiroPage() {
           <p className="text-sm text-muted-foreground mt-1">
             {avancado
               ? "Console técnico da Conta Azul. Use só se souber o que está fazendo."
-              : "Contas do Instituto a pagar, direto da Conta Azul."}
+              : "Despesas do Instituto: cadastre, acompanhe e marque como pagas."}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -235,7 +264,7 @@ function FinanceiroPage() {
         </div>
       </div>
 
-      {!avancado ? <ContasAPagarSecao isConnected={isConnected} /> : null}
+      {!avancado ? <ContasAPagarSecao /> : null}
 
       {!avancado ? null : (
         <>
@@ -422,25 +451,42 @@ function todayISOLocal(): string {
 
 type FiltroPagar = "abertas" | "vencidas" | "pagas";
 
-function ContasAPagarSecao({ isConnected }: { isConnected: boolean }) {
+function categoriaRotulo(valor: string): string {
+  return CATEGORIAS_DESPESA.find((c) => c.valor === valor)?.rotulo ?? valor;
+}
+
+function ContasAPagarSecao() {
+  const qc = useQueryClient();
   const [filtro, setFiltro] = useState<FiltroPagar>("abertas");
+  const [dialogAberto, setDialogAberto] = useState(false);
+  const [editando, setEditando] = useState<ContaPagarRow | null>(null);
+
   const contasQuery = useQuery({
-    queryKey: ["conta-azul-contas-a-pagar"],
-    queryFn: () => getContasAPagar(),
-    enabled: isConnected,
+    queryKey: ["fin-contas-pagar"],
+    queryFn: () => getContasPagar(),
   });
 
-  if (!isConnected) {
-    return (
-      <Alert>
-        <PlugZap className="h-4 w-4" />
-        <AlertTitle>Conta Azul desconectada</AlertTitle>
-        <AlertDescription>
-          As contas a pagar vêm da Conta Azul. Reconecte a integração para ver os dados.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const invalidar = () => qc.invalidateQueries({ queryKey: ["fin-contas-pagar"] });
+
+  const pagar = useMutation({
+    mutationFn: (input: { id: number; pago: boolean }) => marcarContaPaga({ data: input }),
+    onSuccess: (res) => {
+      if (res.ok) invalidar();
+      else toast.error(res.message);
+    },
+    onError: () => toast.error("Não consegui atualizar a conta. Tente de novo."),
+  });
+
+  const excluir = useMutation({
+    mutationFn: (id: number) => excluirContaPagar({ data: { id } }),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success("Despesa excluída.");
+        invalidar();
+      } else toast.error(res.message);
+    },
+    onError: () => toast.error("Não consegui excluir a despesa. Tente de novo."),
+  });
 
   if (contasQuery.isLoading) {
     return (
@@ -451,25 +497,28 @@ function ContasAPagarSecao({ isConnected }: { isConnected: boolean }) {
     );
   }
 
-  const resultado = contasQuery.data;
-  if (!resultado?.ok) {
+  if (contasQuery.isError) {
     return (
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Não consegui buscar as contas a pagar</AlertTitle>
-        <AlertDescription>{resultado?.message ?? "Tente de novo em instantes."}</AlertDescription>
+        <AlertDescription>Tente de novo em instantes.</AlertDescription>
       </Alert>
     );
   }
 
+  const contas = contasQuery.data?.contas ?? [];
   const hoje = todayISOLocal();
   const mes = hoje.slice(0, 7);
-  const naoPagas = resultado.contas.filter((c) => !c.pago);
-  const vencidas = naoPagas.filter((c) => c.vencimento && c.vencimento < hoje);
-  const aPagarMes = naoPagas.filter((c) => c.vencimento?.startsWith(mes));
-  const pagasMes = resultado.contas.filter((c) => c.pago && c.vencimento?.startsWith(mes));
-  const soma = (rows: ContaAPagarRow[]) => rows.reduce((t, c) => t + (c.valor ?? 0), 0);
-  const lista = filtro === "vencidas" ? vencidas : filtro === "pagas" ? pagasMes : naoPagas;
+  const naoPagas = contas.filter((c) => !c.pago);
+  const vencidas = naoPagas.filter((c) => c.vencimento < hoje);
+  const aPagarMes = naoPagas.filter((c) => c.vencimento.startsWith(mes));
+  const pagas = contas
+    .filter((c) => c.pago)
+    .sort((a, b) => (b.pago_em ?? "").localeCompare(a.pago_em ?? ""));
+  const pagasMes = pagas.filter((c) => c.pago_em?.startsWith(mes));
+  const soma = (rows: ContaPagarRow[]) => rows.reduce((t, c) => t + (c.valor ?? 0), 0);
+  const lista = filtro === "vencidas" ? vencidas : filtro === "pagas" ? pagas : naoPagas;
 
   return (
     <div className="space-y-6">
@@ -494,33 +543,48 @@ function ContasAPagarSecao({ isConnected }: { isConnected: boolean }) {
         />
       </div>
 
-      <Tabs value={filtro} onValueChange={(v) => setFiltro(v as FiltroPagar)}>
-        <TabsList>
-          <TabsTrigger value="abertas">Em aberto ({naoPagas.length})</TabsTrigger>
-          <TabsTrigger value="vencidas">Vencidas ({vencidas.length})</TabsTrigger>
-          <TabsTrigger value="pagas">Pagas no mês ({pagasMes.length})</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={filtro} onValueChange={(v) => setFiltro(v as FiltroPagar)}>
+          <TabsList>
+            <TabsTrigger value="abertas">Em aberto ({naoPagas.length})</TabsTrigger>
+            <TabsTrigger value="vencidas">Vencidas ({vencidas.length})</TabsTrigger>
+            <TabsTrigger value="pagas">Pagas ({pagas.length})</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Button
+          size="lg"
+          onClick={() => {
+            setEditando(null);
+            setDialogAberto(true);
+          }}
+        >
+          <Plus />
+          Nova despesa
+        </Button>
+      </div>
 
       {lista.length === 0 ? (
         <p className="text-muted-foreground py-8 text-center text-base">
-          {filtro === "vencidas"
-            ? "Nenhuma conta vencida. Tudo em dia!"
-            : filtro === "pagas"
-              ? "Nenhuma conta paga neste mês."
-              : "Nenhuma conta em aberto."}
+          {contas.length === 0
+            ? "Nenhuma despesa cadastrada ainda. Clique em Nova despesa para começar."
+            : filtro === "vencidas"
+              ? "Nenhuma conta vencida. Tudo em dia!"
+              : filtro === "pagas"
+                ? "Nenhuma conta paga ainda."
+                : "Nenhuma conta em aberto."}
         </p>
       ) : (
         <div className="space-y-3">
-          {lista.map((conta, index) => {
-            const vencida = !conta.pago && Boolean(conta.vencimento && conta.vencimento < hoje);
+          {lista.map((conta) => {
+            const vencida = !conta.pago && conta.vencimento < hoje;
             return (
-              <Card key={conta.id ?? index}>
-                <CardContent className="py-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+              <Card key={conta.id}>
+                <CardContent className="py-4 flex flex-wrap items-center gap-x-6 gap-y-3">
                   <div className="min-w-0 flex-1 basis-64">
                     <p className="text-base font-medium truncate">{conta.descricao}</p>
                     <p className="text-sm text-muted-foreground truncate">
-                      {conta.fornecedor ?? "—"}
+                      {conta.fornecedor ? `${conta.fornecedor} · ` : ""}
+                      {categoriaRotulo(conta.categoria)}
                     </p>
                   </div>
                   <div className="text-sm">
@@ -529,22 +593,256 @@ function ContasAPagarSecao({ isConnected }: { isConnected: boolean }) {
                   </div>
                   <div className="text-sm">
                     <p className="text-muted-foreground">Valor</p>
-                    <p className="font-medium">
-                      {conta.valor === null ? "—" : brlFmt.format(conta.valor)}
-                    </p>
+                    <p className="font-medium">{brlFmt.format(conta.valor)}</p>
                   </div>
                   <SemanticBadge
                     variant={conta.pago ? "success" : vencida ? "critical" : "pending"}
                   >
-                    {conta.pago ? "Paga" : vencida ? "Vencida" : "Em aberto"}
+                    {conta.pago
+                      ? `Paga em ${dataBR(conta.pago_em)}`
+                      : vencida
+                        ? "Vencida"
+                        : "Em aberto"}
                   </SemanticBadge>
+                  <div className="flex items-center gap-1">
+                    {conta.pago ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={pagar.isPending}
+                        onClick={() => pagar.mutate({ id: conta.id, pago: false })}
+                      >
+                        Desfazer pagamento
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={pagar.isPending}
+                        onClick={() => pagar.mutate({ id: conta.id, pago: true })}
+                      >
+                        <CheckCircle2 />
+                        Marcar como paga
+                      </Button>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Editar despesa"
+                      onClick={() => {
+                        setEditando(conta);
+                        setDialogAberto(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="icon" variant="ghost" aria-label="Excluir despesa">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir esta despesa?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            "{conta.descricao}" de {brlFmt.format(conta.valor)} será removida de
+                            vez. Isso não pode ser desfeito.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => excluir.mutate(conta.id)}>
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
       )}
+
+      <DespesaDialog open={dialogAberto} onOpenChange={setDialogAberto} conta={editando} />
     </div>
+  );
+}
+
+const DESPESA_FORM_VAZIO = {
+  descricao: "",
+  fornecedor: "",
+  categoria: "outros",
+  vencimento: "",
+  valor: "",
+  repetirMeses: "0",
+};
+
+function DespesaDialog({
+  open,
+  onOpenChange,
+  conta,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  conta: ContaPagarRow | null;
+}) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState(DESPESA_FORM_VAZIO);
+
+  useEffect(() => {
+    if (!open) return;
+    setForm(
+      conta
+        ? {
+            descricao: conta.descricao,
+            fornecedor: conta.fornecedor ?? "",
+            categoria: conta.categoria,
+            vencimento: conta.vencimento,
+            valor: String(conta.valor),
+            repetirMeses: "0",
+          }
+        : { ...DESPESA_FORM_VAZIO, vencimento: todayISOLocal() },
+    );
+  }, [open, conta]);
+
+  const salvar = useMutation({
+    mutationFn: () => {
+      const base = {
+        descricao: form.descricao,
+        fornecedor: form.fornecedor || undefined,
+        categoria: form.categoria as (typeof CATEGORIAS_DESPESA)[number]["valor"],
+        vencimento: form.vencimento,
+        valor: Number(form.valor.replace(",", ".")),
+      };
+      return conta
+        ? editarContaPagar({ data: { id: conta.id, ...base } })
+        : criarContaPagar({ data: { ...base, repetirMeses: Number(form.repetirMeses) } });
+    },
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(
+          conta
+            ? "Despesa atualizada."
+            : "criadas" in res && (res.criadas as number) > 1
+              ? `${res.criadas} despesas criadas (uma por mês).`
+              : "Despesa criada.",
+        );
+        onOpenChange(false);
+        qc.invalidateQueries({ queryKey: ["fin-contas-pagar"] });
+      } else {
+        toast.error(res.message);
+      }
+    },
+    onError: () => toast.error("Não consegui salvar a despesa. Tente de novo."),
+  });
+
+  const podeSalvar =
+    form.descricao.trim().length > 0 &&
+    Boolean(form.vencimento) &&
+    Number(form.valor.replace(",", ".")) > 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{conta ? "Editar despesa" : "Nova despesa"}</DialogTitle>
+          <DialogDescription>
+            {conta
+              ? "Ajuste os dados da despesa e salve."
+              : "Preencha o que o Instituto tem para pagar."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div>
+            <Label>Descrição</Label>
+            <Input
+              value={form.descricao}
+              onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
+              placeholder="Ex.: Aluguel da sede"
+            />
+          </div>
+          <div>
+            <Label>Fornecedor (opcional)</Label>
+            <Input
+              value={form.fornecedor}
+              onChange={(e) => setForm((f) => ({ ...f, fornecedor: e.target.value }))}
+              placeholder="Ex.: Imobiliária Silva"
+            />
+          </div>
+          <div>
+            <Label>Categoria</Label>
+            <Select
+              value={form.categoria}
+              onValueChange={(v) => setForm((f) => ({ ...f, categoria: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIAS_DESPESA.map((c) => (
+                  <SelectItem key={c.valor} value={c.valor}>
+                    {c.rotulo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Vencimento</Label>
+              <Input
+                type="date"
+                value={form.vencimento}
+                onChange={(e) => setForm((f) => ({ ...f, vencimento: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Valor (R$)</Label>
+              <Input
+                inputMode="decimal"
+                value={form.valor}
+                onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))}
+                placeholder="0,00"
+              />
+            </div>
+          </div>
+          {!conta && (
+            <div>
+              <Label>Repetir todo mês?</Label>
+              <Select
+                value={form.repetirMeses}
+                onValueChange={(v) => setForm((f) => ({ ...f, repetirMeses: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Não, só esta vez</SelectItem>
+                  {[1, 2, 3, 5, 11].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      Sim, por mais {n} {n === 1 ? "mês" : "meses"} ({n + 1} contas no total)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button disabled={!podeSalvar || salvar.isPending} onClick={() => salvar.mutate()}>
+            {salvar.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : conta ? (
+              "Salvar alterações"
+            ) : (
+              "Criar despesa"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
