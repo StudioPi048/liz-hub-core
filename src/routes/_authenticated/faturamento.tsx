@@ -401,7 +401,13 @@ function NovaVendaDialog() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                <Command>
+                {/* Busca por substring (não fuzzy do cmdk): mesmo padrão da busca de
+                    alunos em /crm, previsível para quem digita o nome completo. */}
+                <Command
+                  filter={(value, search) =>
+                    value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                  }
+                >
                   <CommandInput placeholder="Nome ou CPF..." />
                   <CommandList>
                     <CommandEmpty>
