@@ -36,11 +36,15 @@ export const Route = createFileRoute("/_authenticated/links")({
   component: LinksPage,
 });
 
-const PREDEFINED_VARIANTS: Record<string, "neutral" | "pending" | "success" | "critical"> = {
+const PREDEFINED_VARIANTS: Record<
+  string,
+  "neutral" | "pending" | "success" | "critical" | "forms"
+> = {
   Hotmart: "neutral",
   "Plataformas LIZ": "pending",
   "Redes Sociais": "success",
   Design: "critical",
+  Formulários: "forms",
 };
 
 function getCategoryVariant(name: string) {

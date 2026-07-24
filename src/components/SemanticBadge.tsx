@@ -10,6 +10,7 @@ const badgeVariants = cva(
         pending: "bg-[var(--semantic-pending-bg)] text-[var(--semantic-pending-fg)]",
         success: "bg-[var(--semantic-success-bg)] text-[var(--semantic-success-fg)]",
         critical: "bg-[var(--semantic-critical-bg)] text-[var(--semantic-critical-fg)]",
+        forms: "bg-[var(--semantic-forms-bg)] text-[var(--semantic-forms-fg)]",
       },
     },
     defaultVariants: {
