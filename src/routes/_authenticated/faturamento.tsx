@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import {
   getAlunos,
   getCursosPlanos,
@@ -73,7 +74,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
+const faturamentoSearchSchema = z.object({
+  busca: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/faturamento")({
+  validateSearch: faturamentoSearchSchema,
   component: FaturamentoPage,
 });
 
@@ -106,6 +112,15 @@ const STATUS_VARIANT: Record<string, "neutral" | "pending" | "success" | "critic
 };
 
 type Escopo = "mes" | "atrasadas" | "recebidos" | "busca" | "notas" | "relatorios";
+type Grupo = "cobrancas" | "notas" | "relatorios";
+
+const COBRANCAS_ESCOPO_PADRAO: Escopo = "mes";
+
+function grupoDeEscopo(e: Escopo): Grupo {
+  if (e === "notas") return "notas";
+  if (e === "relatorios") return "relatorios";
+  return "cobrancas";
+}
 
 function waLink(fone: string, mensagem: string): string {
   let digits = fone.replace(/\D/g, "");
@@ -122,10 +137,11 @@ function mensagemCobranca(p: ParcelaRow): string {
 }
 
 function FaturamentoPage() {
+  const search = useSearch({ from: "/_authenticated/faturamento" });
   const queryClient = useQueryClient();
-  const [escopo, setEscopo] = useState<Escopo>("mes");
-  const [busca, setBusca] = useState("");
-  const [buscaAtiva, setBuscaAtiva] = useState("");
+  const [escopo, setEscopo] = useState<Escopo>(search.busca ? "busca" : "mes");
+  const [busca, setBusca] = useState(search.busca ?? "");
+  const [buscaAtiva, setBuscaAtiva] = useState(search.busca ?? "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resumoQuery = useQuery({
@@ -259,18 +275,34 @@ function FaturamentoPage() {
         </div>
       )}
 
-      <Tabs value={escopo} onValueChange={(v) => setEscopo(v as Escopo)}>
+      <Tabs
+        value={grupoDeEscopo(escopo)}
+        onValueChange={(v) => {
+          const grupo = v as Grupo;
+          if (grupo === "notas") setEscopo("notas");
+          else if (grupo === "relatorios") setEscopo("relatorios");
+          else setEscopo(COBRANCAS_ESCOPO_PADRAO);
+        }}
+      >
         <TabsList>
-          <TabsTrigger value="mes">Cobranças do mês</TabsTrigger>
-          <TabsTrigger value="atrasadas">
-            Em atraso{resumo ? ` (${resumo.emAtraso.quantidade})` : ""}
-          </TabsTrigger>
-          <TabsTrigger value="recebidos">Recebidos</TabsTrigger>
-          <TabsTrigger value="busca">Buscar cliente</TabsTrigger>
+          <TabsTrigger value="cobrancas">Cobranças</TabsTrigger>
           <TabsTrigger value="notas">Notas fiscais</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {grupoDeEscopo(escopo) === "cobrancas" && (
+        <Tabs value={escopo} onValueChange={(v) => setEscopo(v as Escopo)}>
+          <TabsList>
+            <TabsTrigger value="mes">Do mês</TabsTrigger>
+            <TabsTrigger value="atrasadas">
+              Em atraso{resumo ? ` (${resumo.emAtraso.quantidade})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="recebidos">Recebidos</TabsTrigger>
+            <TabsTrigger value="busca">Buscar cliente</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
 
       {(escopo === "busca" || escopo === "recebidos") && (
         <form
@@ -330,6 +362,7 @@ const VENDA_FORM_VAZIO = {
 function NovaVendaDialog() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
   const [alunoAberto, setAlunoAberto] = useState(false);
   const [form, setForm] = useState(VENDA_FORM_VAZIO);
 
@@ -378,6 +411,7 @@ function NovaVendaDialog() {
     onError: () => toast.error("Não consegui registrar a venda agora. Tente de novo em instantes."),
   });
 
+  const podeAvancar = Boolean(form.cpf && form.cursoCodigo);
   const podeSalvar = form.cpf && form.cursoCodigo && form.planoId && Number(form.valorVenda) > 0;
 
   return (
@@ -385,7 +419,10 @@ function NovaVendaDialog() {
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) setForm(VENDA_FORM_VAZIO);
+        if (!v) {
+          setForm(VENDA_FORM_VAZIO);
+          setStep(1);
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -398,155 +435,197 @@ function NovaVendaDialog() {
         <DialogHeader>
           <DialogTitle>Registrar venda nova</DialogTitle>
           <DialogDescription>
-            Escolha o aluno, o curso e o plano de pagamento. As parcelas são geradas
-            automaticamente.
+            {step === 1
+              ? "Passo 1 de 2: escolha o aluno e o curso."
+              : "Passo 2 de 2: confirme o plano e os valores. As parcelas são geradas automaticamente."}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div>
-            <Label>Aluno</Label>
-            <Popover open={alunoAberto} onOpenChange={setAlunoAberto}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-full justify-between font-normal"
-                >
-                  {alunoSelecionado ? alunoSelecionado.nome : "Buscar aluno por nome ou CPF..."}
-                  <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                {/* Busca por substring (não fuzzy do cmdk): mesmo padrão da busca de
-                    alunos em /crm, previsível para quem digita o nome completo. */}
-                <Command
-                  filter={(value, search) =>
-                    value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
-                  }
-                >
-                  <CommandInput placeholder="Nome ou CPF..." />
-                  <CommandList>
-                    <CommandEmpty>
-                      {alunosQuery.isLoading ? "Carregando..." : "Nenhum aluno encontrado."}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {(alunosQuery.data ?? []).map((a: AlunoResumo) => (
-                        <CommandItem
-                          key={a.cpf}
-                          value={`${a.nome} ${a.cpf}`}
-                          onSelect={() => {
-                            setForm((f) => ({ ...f, cpf: a.cpf }));
-                            setAlunoAberto(false);
-                          }}
-                        >
-                          {a.nome}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Aluno novo? Cadastre em Clientes → Alunos → Novo aluno primeiro.
-            </p>
-          </div>
 
-          <div>
-            <Label>Curso</Label>
-            <Select
-              value={form.cursoCodigo}
-              onValueChange={(v) => {
-                const curso = cursosPlanosQuery.data?.cursos.find((c) => c.codigo === v);
-                setForm((f) => ({
-                  ...f,
-                  cursoCodigo: v,
-                  valorVenda: f.valorVenda || String(curso?.valor_brl ?? ""),
-                }));
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o curso" />
-              </SelectTrigger>
-              <SelectContent>
-                {(cursosPlanosQuery.data?.cursos ?? []).map((c) => (
-                  <SelectItem key={c.codigo} value={c.codigo}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Plano de pagamento</Label>
-            <Select
-              value={form.planoId}
-              onValueChange={(v) => setForm((f) => ({ ...f, planoId: v }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o plano" />
-              </SelectTrigger>
-              <SelectContent>
-                {(cursosPlanosQuery.data?.planos ?? []).map((p) => (
-                  <SelectItem key={p.id_plano} value={p.id_plano}>
-                    {p.nome} {p.parcelas ? `(${p.parcelas}x)` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {planoSelecionado && form.planoId && (
+        {step === 1 && (
+          <div className="grid gap-3">
+            <div>
+              <Label>Aluno</Label>
+              <Popover open={alunoAberto} onOpenChange={setAlunoAberto}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between font-normal"
+                  >
+                    {alunoSelecionado ? alunoSelecionado.nome : "Buscar aluno por nome ou CPF..."}
+                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  {/* Busca por substring (não fuzzy do cmdk): mesmo padrão da busca de
+                      alunos em /crm, previsível para quem digita o nome completo. */}
+                  <Command
+                    filter={(value, search) =>
+                      value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                    }
+                  >
+                    <CommandInput placeholder="Nome ou CPF..." />
+                    <CommandList>
+                      <CommandEmpty>
+                        {alunosQuery.isLoading ? "Carregando..." : "Nenhum aluno encontrado."}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {(alunosQuery.data ?? []).map((a: AlunoResumo) => (
+                          <CommandItem
+                            key={a.cpf}
+                            value={`${a.nome} ${a.cpf}`}
+                            onSelect={() => {
+                              setForm((f) => ({ ...f, cpf: a.cpf }));
+                              setAlunoAberto(false);
+                            }}
+                          >
+                            {a.nome}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <p className="mt-1 text-xs text-muted-foreground">
-                Gera {planoSelecionado.parcelas ?? 1} parcela(s)
-                {planoSelecionado.prazo_dias ? ` em até ${planoSelecionado.prazo_dias} dias` : ""}.
+                Aluno novo? Cadastre em Clientes → Alunos → Novo aluno primeiro.
               </p>
-            )}
-          </div>
+            </div>
 
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Valor da venda (R$)</Label>
+              <Label>Curso</Label>
+              <Select
+                value={form.cursoCodigo}
+                onValueChange={(v) => {
+                  const curso = cursosPlanosQuery.data?.cursos.find((c) => c.codigo === v);
+                  setForm((f) => ({
+                    ...f,
+                    cursoCodigo: v,
+                    valorVenda: f.valorVenda || String(curso?.valor_brl ?? ""),
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o curso" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(cursosPlanosQuery.data?.cursos ?? []).map((c) => (
+                    <SelectItem key={c.codigo} value={c.codigo}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="grid gap-3">
+            <p className="rounded-md bg-muted/50 px-3 py-2 text-sm">
+              <span className="font-medium">{alunoSelecionado?.nome}</span>
+              {" · "}
+              {cursoSelecionado?.nome}
+              <Button
+                variant="link"
+                size="sm"
+                className="ml-1 h-auto p-0 align-baseline"
+                onClick={() => setStep(1)}
+              >
+                trocar
+              </Button>
+            </p>
+
+            <div>
+              <Label>Plano de pagamento</Label>
+              <Select
+                value={form.planoId}
+                onValueChange={(v) => setForm((f) => ({ ...f, planoId: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o plano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(cursosPlanosQuery.data?.planos ?? []).map((p) => (
+                    <SelectItem key={p.id_plano} value={p.id_plano}>
+                      {p.nome} {p.parcelas ? `(${p.parcelas}x)` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {planoSelecionado && form.planoId && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Gera {planoSelecionado.parcelas ?? 1} parcela(s)
+                  {planoSelecionado.prazo_dias ? ` em até ${planoSelecionado.prazo_dias} dias` : ""}
+                  .
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Valor da venda (R$)</Label>
+                <Input
+                  inputMode="decimal"
+                  value={form.valorVenda}
+                  onChange={(e) => setForm((f) => ({ ...f, valorVenda: e.target.value }))}
+                  placeholder={
+                    cursoSelecionado?.valor_brl ? String(cursoSelecionado.valor_brl) : "0,00"
+                  }
+                />
+              </div>
+              <div>
+                <Label>Desconto (R$)</Label>
+                <Input
+                  inputMode="decimal"
+                  value={form.desconto}
+                  onChange={(e) => setForm((f) => ({ ...f, desconto: e.target.value }))}
+                  placeholder="0,00"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Data da venda</Label>
               <Input
-                inputMode="decimal"
-                value={form.valorVenda}
-                onChange={(e) => setForm((f) => ({ ...f, valorVenda: e.target.value }))}
-                placeholder={
-                  cursoSelecionado?.valor_brl ? String(cursoSelecionado.valor_brl) : "0,00"
-                }
+                type="date"
+                value={form.dtVenda}
+                onChange={(e) => setForm((f) => ({ ...f, dtVenda: e.target.value }))}
               />
             </div>
-            <div>
-              <Label>Desconto (R$)</Label>
-              <Input
-                inputMode="decimal"
-                value={form.desconto}
-                onChange={(e) => setForm((f) => ({ ...f, desconto: e.target.value }))}
-                placeholder="0,00"
+
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={form.presencial}
+                onCheckedChange={(v) => setForm((f) => ({ ...f, presencial: v === true }))}
               />
-            </div>
+              Curso presencial (entra sozinho na fila de nota fiscal)
+            </label>
           </div>
+        )}
 
-          <div>
-            <Label>Data da venda</Label>
-            <Input
-              type="date"
-              value={form.dtVenda}
-              onChange={(e) => setForm((f) => ({ ...f, dtVenda: e.target.value }))}
-            />
-          </div>
-
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={form.presencial}
-              onCheckedChange={(v) => setForm((f) => ({ ...f, presencial: v === true }))}
-            />
-            Curso presencial (entra sozinho na fila de nota fiscal)
-          </label>
-        </div>
         <DialogFooter>
-          <Button disabled={!podeSalvar || registrar.isPending} onClick={() => registrar.mutate()}>
-            {registrar.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Registrar venda"}
-          </Button>
+          {step === 1 ? (
+            <Button disabled={!podeAvancar} onClick={() => setStep(2)}>
+              Continuar
+            </Button>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={() => setStep(1)}>
+                Voltar
+              </Button>
+              <Button
+                disabled={!podeSalvar || registrar.isPending}
+                onClick={() => registrar.mutate()}
+              >
+                {registrar.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Registrar venda"
+                )}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

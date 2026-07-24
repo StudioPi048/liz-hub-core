@@ -29,7 +29,6 @@ import {
   Settings,
   HelpCircle,
   Search,
-  BellRing,
   Library,
   BookOpen,
   GraduationCap,
@@ -263,25 +262,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             <SidebarTrigger className="hover:bg-primary/5 transition-colors rounded-full" />
             <div className="flex-1 flex items-center min-w-0">
               <Button
+                asChild
                 variant="outline"
                 size="sm"
-                disabled
-                title="Busca global ainda não implementada nesta versão."
-                className="h-9 w-40 sm:w-56 md:w-64 justify-start text-muted-foreground font-normal bg-background/50 border-border/50 shadow-sm rounded-full px-4 disabled:opacity-50"
+                title="Buscar um cliente em Clientes"
+                className="h-9 w-40 sm:w-56 md:w-64 justify-start text-muted-foreground font-normal bg-background/50 border-border/50 shadow-sm rounded-full px-4"
               >
-                <Search className="mr-2 h-4 w-4 opacity-70 shrink-0" />
-                <span className="truncate">Buscar no LIZ HUB...</span>
+                <Link to="/crm">
+                  <Search className="mr-2 h-4 w-4 opacity-70 shrink-0" />
+                  <span className="truncate">Buscar cliente...</span>
+                </Link>
               </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled
-              title="Notificações ainda não implementadas nesta versão."
-              className="h-9 w-9 relative hover:bg-primary/5 rounded-full transition-colors disabled:opacity-50"
-            >
-              <BellRing className="h-4 w-4 text-foreground/80" />
-            </Button>
           </header>
           <main className="p-6 md:p-10 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">
             {children}

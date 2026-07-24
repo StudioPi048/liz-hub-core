@@ -29,6 +29,17 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Copy, ExternalLink, FileText, Plus, Search, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
@@ -131,12 +142,10 @@ function LinksPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Remover?")) {
-      del.mutate(id, {
-        onSuccess: () => toast.success("Removido"),
-        onError: (e: Error) => toast.error(e.message),
-      });
-    }
+    del.mutate(id, {
+      onSuccess: () => toast.success("Removido"),
+      onError: (e: Error) => toast.error(e.message),
+    });
   };
 
   if (errorLinks || errorCats) {
@@ -354,16 +363,33 @@ function LinksPage() {
                           >
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                           </Button>
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="shrink-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-colors"
-                            onClick={() => handleDelete(l.id)}
-                            disabled={del.isPending}
-                            title="Remover link"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                className="shrink-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-colors"
+                                disabled={del.isPending}
+                                title="Remover link"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remover "{l.name}"?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Este link será removido de vez. Isso não pode ser desfeito.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(l.id)}>
+                                  Remover
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </CardContent>
                     </Card>

@@ -210,7 +210,7 @@ function CrmPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nome, e-mail ou telefone..."
-              className="pl-9"
+              className="h-11 pl-9 text-base"
               aria-label="Buscar clientes"
             />
           </div>

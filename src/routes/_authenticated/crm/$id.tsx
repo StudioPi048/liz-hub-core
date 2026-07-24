@@ -14,6 +14,17 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   AlertTriangle,
   FileX2,
@@ -55,6 +66,7 @@ function ClientDossierPage() {
     isError: isEventsError,
   } = useClientAgendaEvents(id);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -143,7 +155,6 @@ function ClientDossierPage() {
   const clientName = client.name;
 
   function handleDelete() {
-    if (!confirm(`Remover o dossiê de "${clientName}"? Esta ação não pode ser desfeita.`)) return;
     deleteClient.mutate(id, {
       onSuccess: () => {
         toast.success("Dossiê removido");
@@ -171,14 +182,48 @@ function ClientDossierPage() {
               Dossiê aberto em {formatFullDate(client.created_at) ?? "data não registrada"}
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[var(--semantic-critical-fg)]"
-            onClick={handleDelete}
+          <AlertDialog
+            onOpenChange={(open) => {
+              if (!open) setDeleteConfirmName("");
+            }}
           >
-            <Trash2 className="h-4 w-4" /> Remover dossiê
-          </Button>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-[var(--semantic-critical-fg)]">
+                <Trash2 className="h-4 w-4" /> Remover dossiê
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remover o dossiê de "{clientName}"?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Isso apaga definitivamente os dados de contato deste cliente (CPF, endereço,
+                  telefone). Não pode ser desfeito. Para confirmar, digite o nome completo do
+                  cliente abaixo.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="py-2">
+                <Label htmlFor="confirm-delete-name" className="sr-only">
+                  Digite "{clientName}" para confirmar
+                </Label>
+                <Input
+                  id="confirm-delete-name"
+                  autoComplete="off"
+                  placeholder={clientName}
+                  value={deleteConfirmName}
+                  onChange={(e) => setDeleteConfirmName(e.target.value)}
+                />
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={deleteConfirmName.trim() !== clientName.trim()}
+                  onClick={handleDelete}
+                >
+                  Remover dossiê
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

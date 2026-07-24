@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { criarAlunoLocal, getAlunos, type AlunoResumo } from "@/lib/faturamento.functions";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SemanticBadge } from "@/components/SemanticBadge";
-import { Search, GraduationCap, Plus, Loader2 } from "lucide-react";
+import { Search, GraduationCap, Plus, Loader2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -93,7 +94,7 @@ export function AlunosPlanilhaTab() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por nome, CPF, e-mail ou cidade..."
-            className="pl-9"
+            className="h-11 pl-9 text-base"
             aria-label="Buscar alunos"
           />
         </div>
@@ -272,6 +273,14 @@ function AlunoCard({ aluno }: { aluno: AlunoResumo }) {
       ) : aluno.cursos.length > 0 ? (
         <SemanticBadge variant="success">Em dia</SemanticBadge>
       ) : null}
+      {aluno.cursos.length > 0 && (
+        <Button size="sm" variant="secondary" asChild>
+          <Link to="/faturamento" search={{ busca: aluno.cpf }}>
+            <Receipt className="h-4 w-4" />
+            Ver no Faturamento
+          </Link>
+        </Button>
+      )}
     </div>
   );
 }
