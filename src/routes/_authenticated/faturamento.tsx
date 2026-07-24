@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatCard } from "@/components/StatCard";
+import { StatCard, StatCardRow } from "@/components/StatCard";
 import { SemanticBadge } from "@/components/SemanticBadge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -253,7 +253,7 @@ function FaturamentoPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-5 md:grid-cols-3">
+        <StatCardRow>
           <StatCard
             title="A receber neste mês"
             value={resumo ? brl.format(resumo.aReceberMes.total) : "–"}
@@ -272,7 +272,7 @@ function FaturamentoPage() {
             icon={AlertTriangle}
             variant="critical"
           />
-        </div>
+        </StatCardRow>
       )}
 
       <Tabs

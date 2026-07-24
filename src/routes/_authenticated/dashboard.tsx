@@ -6,7 +6,7 @@ import { useClients } from "@/features/clients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatCard } from "@/components/StatCard";
+import { StatCard, StatCardRow } from "@/components/StatCard";
 import { MiniCalendar } from "@/components/MiniCalendar";
 import { SemanticBadge } from "@/components/SemanticBadge";
 import type { SemanticVariant } from "@/components/StatCard";
@@ -91,7 +91,7 @@ function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+      <StatCardRow>
         <StatCard
           title="Compromissos hoje"
           value={dataLoading ? "–" : todaysEventsCount}
@@ -116,7 +116,7 @@ function DashboardPage() {
           icon={Users}
           variant="neutral"
         />
-      </div>
+      </StatCardRow>
 
       <div className="grid gap-6 md:grid-cols-12">
         <div className="md:col-span-8 space-y-6">

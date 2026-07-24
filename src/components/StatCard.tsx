@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,12 +12,31 @@ interface StatCardProps {
   className?: string;
 }
 
-const variantStyles: Record<SemanticVariant, string> = {
-  neutral: "bg-[var(--semantic-neutral-bg)] text-[var(--semantic-neutral-fg)]",
-  pending: "bg-[var(--semantic-pending-bg)] text-[var(--semantic-pending-fg)]",
-  success: "bg-[var(--semantic-success-bg)] text-[var(--semantic-success-fg)]",
-  critical: "bg-[var(--semantic-critical-bg)] text-[var(--semantic-critical-fg)]",
+const variantText: Record<SemanticVariant, string> = {
+  neutral: "text-[var(--semantic-neutral-fg)]",
+  pending: "text-[var(--semantic-pending-fg)]",
+  success: "text-[var(--semantic-success-fg)]",
+  critical: "text-[var(--semantic-critical-fg)]",
 };
+
+const variantIcon: Record<SemanticVariant, string> = {
+  neutral: "text-muted-foreground",
+  pending: "text-[var(--semantic-pending-fg)]",
+  success: "text-[var(--semantic-success-fg)]",
+  critical: "text-[var(--semantic-critical-fg)]",
+};
+
+/**
+ * Fileira única de estatísticas ligadas (estilo registro/ficha), não cartões
+ * repetidos: divisórias finas entre células em vez de N caixas idênticas.
+ */
+export function StatCardRow({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-bg-canvas sm:divide-x sm:divide-y-0">
+      {children}
+    </div>
+  );
+}
 
 export function StatCard({
   title,
@@ -26,15 +46,13 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <div
-      className={cn("rounded-[14px] p-4 flex flex-col gap-3", variantStyles[variant], className)}
-    >
-      <div className="w-[30px] h-[30px] rounded-[9px] bg-white flex items-center justify-center shadow-sm">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div>
-        <div className="text-xs md:text-[13px] font-medium opacity-80 mb-1">{title}</div>
-        <div className="text-[22px] font-medium leading-none">{value}</div>
+    <div className={cn("flex flex-1 basis-48 items-start gap-3 px-5 py-4", className)}>
+      <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", variantIcon[variant])} />
+      <div className="min-w-0">
+        <div className="mb-1 truncate text-[13px] text-muted-foreground">{title}</div>
+        <div className={cn("font-editorial text-[26px] leading-none", variantText[variant])}>
+          {value}
+        </div>
       </div>
     </div>
   );

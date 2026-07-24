@@ -12,7 +12,7 @@ import {
   type ContaPagarRow,
   type FluxoCaixaMes,
 } from "@/lib/financeiro.functions";
-import { StatCard } from "@/components/StatCard";
+import { StatCard, StatCardRow } from "@/components/StatCard";
 import { SemanticBadge } from "@/components/SemanticBadge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -210,7 +210,7 @@ function ContasAPagarSecao() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-5 md:grid-cols-3">
+      <StatCardRow>
         <StatCard
           title="A pagar neste mês"
           value={brlFmt.format(soma(aPagarMes))}
@@ -229,7 +229,7 @@ function ContasAPagarSecao() {
           icon={CheckCircle2}
           variant="success"
         />
-      </div>
+      </StatCardRow>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs value={filtro} onValueChange={(v) => setFiltro(v as FiltroPagar)}>
@@ -567,7 +567,7 @@ function CaixaSecao() {
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-5 md:grid-cols-3">
+      <StatCardRow>
         <StatCard
           title="Entrou neste mês"
           value={brlFmt.format(mesCorrente?.entradas ?? 0)}
@@ -586,7 +586,7 @@ function CaixaSecao() {
           icon={Scale}
           variant={saldoMes >= 0 ? "success" : "critical"}
         />
-      </div>
+      </StatCardRow>
 
       <div className="space-y-3">
         <h2 className="text-lg font-medium">Entradas x saídas (últimos 12 meses)</h2>
