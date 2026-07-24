@@ -22,6 +22,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Tables } from "@/integrations/supabase/types";
 
 const VARIANTS = ["longa", "media", "curta", "instagram", "whatsapp", "email"] as const;
+const VARIANT_LABEL: Record<(typeof VARIANTS)[number], string> = {
+  longa: "Longa",
+  media: "Média",
+  curta: "Curta",
+  instagram: "Instagram",
+  whatsapp: "WhatsApp",
+  email: "E-mail",
+};
 
 type TextSnippet = Tables<"text_snippets"> & {
   text_snippet_variants: Tables<"text_snippet_variants">[];
@@ -141,7 +149,7 @@ function TextosPage() {
                 </div>
                 {VARIANTS.map((v) => (
                   <div key={v}>
-                    <Label className="capitalize">{v}</Label>
+                    <Label>{VARIANT_LABEL[v]}</Label>
                     <Textarea
                       rows={3}
                       value={bodies[v] || ""}
@@ -207,8 +215,8 @@ function TextosPage() {
                 {(s.text_snippet_variants || []).map((v) => (
                   <div key={v.id} className="border rounded-lg p-3">
                     <div className="flex items-center justify-between mb-1">
-                      <Badge variant="outline" className="capitalize">
-                        {v.variant}
+                      <Badge variant="outline">
+                        {VARIANT_LABEL[v.variant as (typeof VARIANTS)[number]] ?? v.variant}
                       </Badge>
                       <Button
                         size="sm"

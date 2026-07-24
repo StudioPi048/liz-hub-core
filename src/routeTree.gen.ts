@@ -18,11 +18,13 @@ import { Route as AuthenticatedProjetosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedLinksRouteImport } from './routes/_authenticated/links'
 import { Route as AuthenticatedInstitucionalRouteImport } from './routes/_authenticated/institucional'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedFaturamentoRouteImport } from './routes/_authenticated/faturamento'
 import { Route as AuthenticatedEquipeRouteImport } from './routes/_authenticated/equipe'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCuradoriaRouteImport } from './routes/_authenticated/curadoria'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedArquivosRouteImport } from './routes/_authenticated/arquivos'
+import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated/ajuda'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedCrmRouteRouteImport } from './routes/_authenticated/crm/route'
 import { Route as AuthenticatedAcervoRouteRouteImport } from './routes/_authenticated/acervo/route'
@@ -80,6 +82,12 @@ const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFaturamentoRoute =
+  AuthenticatedFaturamentoRouteImport.update({
+    id: '/faturamento',
+    path: '/faturamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEquipeRoute = AuthenticatedEquipeRouteImport.update({
   id: '/equipe',
   path: '/equipe',
@@ -104,6 +112,11 @@ const AuthenticatedConfiguracoesRoute =
 const AuthenticatedArquivosRoute = AuthenticatedArquivosRouteImport.update({
   id: '/arquivos',
   path: '/arquivos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
@@ -174,11 +187,13 @@ export interface FileRoutesByFullPath {
   '/acervo': typeof AuthenticatedAcervoRouteRouteWithChildren
   '/crm': typeof AuthenticatedCrmRouteRouteWithChildren
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/curadoria': typeof AuthenticatedCuradoriaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
+  '/faturamento': typeof AuthenticatedFaturamentoRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/institucional': typeof AuthenticatedInstitucionalRoute
   '/links': typeof AuthenticatedLinksRoute
@@ -198,11 +213,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/arquivos': typeof AuthenticatedArquivosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/curadoria': typeof AuthenticatedCuradoriaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipe': typeof AuthenticatedEquipeRoute
+  '/faturamento': typeof AuthenticatedFaturamentoRoute
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/institucional': typeof AuthenticatedInstitucionalRoute
   '/links': typeof AuthenticatedLinksRoute
@@ -226,11 +243,13 @@ export interface FileRoutesById {
   '/_authenticated/acervo': typeof AuthenticatedAcervoRouteRouteWithChildren
   '/_authenticated/crm': typeof AuthenticatedCrmRouteRouteWithChildren
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
+  '/_authenticated/ajuda': typeof AuthenticatedAjudaRoute
   '/_authenticated/arquivos': typeof AuthenticatedArquivosRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/curadoria': typeof AuthenticatedCuradoriaRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipe': typeof AuthenticatedEquipeRoute
+  '/_authenticated/faturamento': typeof AuthenticatedFaturamentoRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
   '/_authenticated/institucional': typeof AuthenticatedInstitucionalRoute
   '/_authenticated/links': typeof AuthenticatedLinksRoute
@@ -254,11 +273,13 @@ export interface FileRouteTypes {
     | '/acervo'
     | '/crm'
     | '/agenda'
+    | '/ajuda'
     | '/arquivos'
     | '/configuracoes'
     | '/curadoria'
     | '/dashboard'
     | '/equipe'
+    | '/faturamento'
     | '/financeiro'
     | '/institucional'
     | '/links'
@@ -278,11 +299,13 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/agenda'
+    | '/ajuda'
     | '/arquivos'
     | '/configuracoes'
     | '/curadoria'
     | '/dashboard'
     | '/equipe'
+    | '/faturamento'
     | '/financeiro'
     | '/institucional'
     | '/links'
@@ -305,11 +328,13 @@ export interface FileRouteTypes {
     | '/_authenticated/acervo'
     | '/_authenticated/crm'
     | '/_authenticated/agenda'
+    | '/_authenticated/ajuda'
     | '/_authenticated/arquivos'
     | '/_authenticated/configuracoes'
     | '/_authenticated/curadoria'
     | '/_authenticated/dashboard'
     | '/_authenticated/equipe'
+    | '/_authenticated/faturamento'
     | '/_authenticated/financeiro'
     | '/_authenticated/institucional'
     | '/_authenticated/links'
@@ -399,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/faturamento': {
+      id: '/_authenticated/faturamento'
+      path: '/faturamento'
+      fullPath: '/faturamento'
+      preLoaderRoute: typeof AuthenticatedFaturamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/equipe': {
       id: '/_authenticated/equipe'
       path: '/equipe'
@@ -432,6 +464,13 @@ declare module '@tanstack/react-router' {
       path: '/arquivos'
       fullPath: '/arquivos'
       preLoaderRoute: typeof AuthenticatedArquivosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ajuda': {
+      id: '/_authenticated/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AuthenticatedAjudaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/agenda': {
@@ -553,11 +592,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcervoRouteRoute: typeof AuthenticatedAcervoRouteRouteWithChildren
   AuthenticatedCrmRouteRoute: typeof AuthenticatedCrmRouteRouteWithChildren
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
+  AuthenticatedAjudaRoute: typeof AuthenticatedAjudaRoute
   AuthenticatedArquivosRoute: typeof AuthenticatedArquivosRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedCuradoriaRoute: typeof AuthenticatedCuradoriaRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipeRoute: typeof AuthenticatedEquipeRoute
+  AuthenticatedFaturamentoRoute: typeof AuthenticatedFaturamentoRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
   AuthenticatedInstitucionalRoute: typeof AuthenticatedInstitucionalRoute
   AuthenticatedLinksRoute: typeof AuthenticatedLinksRoute
@@ -570,11 +611,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAcervoRouteRoute: AuthenticatedAcervoRouteRouteWithChildren,
   AuthenticatedCrmRouteRoute: AuthenticatedCrmRouteRouteWithChildren,
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
+  AuthenticatedAjudaRoute: AuthenticatedAjudaRoute,
   AuthenticatedArquivosRoute: AuthenticatedArquivosRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedCuradoriaRoute: AuthenticatedCuradoriaRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipeRoute: AuthenticatedEquipeRoute,
+  AuthenticatedFaturamentoRoute: AuthenticatedFaturamentoRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
   AuthenticatedInstitucionalRoute: AuthenticatedInstitucionalRoute,
   AuthenticatedLinksRoute: AuthenticatedLinksRoute,

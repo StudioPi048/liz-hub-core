@@ -26,6 +26,7 @@ import {
   commercialTypeLabels,
   type CommercialType,
 } from "@/features/knowledge/model/knowledge-types";
+import { NODE_STATUS_LABEL, AUTHORITY_LABEL } from "@/features/knowledge/model/labels";
 
 interface BaseProps {
   nodeId: string;
@@ -138,15 +139,12 @@ export function CurationStatusCard({
         </span>
         <Badge
           variant={isApproved ? "default" : "secondary"}
-          className={`capitalize transition-all duration-300 ${isApproved ? "shadow-sm shadow-primary/20" : ""}`}
+          className={`transition-all duration-300 ${isApproved ? "shadow-sm shadow-primary/20" : ""}`}
         >
-          {currentStatus}
+          {NODE_STATUS_LABEL[currentStatus] ?? currentStatus}
         </Badge>
-        <Badge
-          variant="outline"
-          className="capitalize bg-background/50 backdrop-blur-sm border-border/50"
-        >
-          {currentAuthority}
+        <Badge variant="outline" className="bg-background/50 backdrop-blur-sm border-border/50">
+          {AUTHORITY_LABEL[currentAuthority] ?? currentAuthority}
         </Badge>
         <Badge
           variant="outline"

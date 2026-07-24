@@ -32,6 +32,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  knowledgeTypeLabels,
+  type KnowledgeType,
+} from "@/features/knowledge/model/knowledge-types";
 
 export const Route = createFileRoute("/_authenticated/curadoria")({
   component: CuradoriaPage,
@@ -350,7 +354,7 @@ function KanbanColumn({
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="outline" className="text-[10px] uppercase bg-background">
-                        {node.type}
+                        {knowledgeTypeLabels[node.type as KnowledgeType] ?? node.type}
                       </Badge>
                       {concept && (
                         <Badge
@@ -382,7 +386,7 @@ function KanbanColumn({
                     }}
                   >
                     <SelectTrigger className="h-7 text-xs bg-transparent border-dashed w-auto min-w-[120px]">
-                      <SelectValue placeholder="+ Add Conceito" />
+                      <SelectValue placeholder="+ Adicionar conceito" />
                     </SelectTrigger>
                     <SelectContent>
                       {CONCEPTS.map((c) => (

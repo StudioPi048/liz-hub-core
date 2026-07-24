@@ -37,15 +37,7 @@ import {
 import { formatFullDate, formatRelativeDate } from "@/features/clients/utils/format-date";
 import { useClientAgendaEvents } from "@/features/agenda/hooks/use-client-agenda-events";
 import { AgendaEventDialog } from "@/features/agenda/components/AgendaEventDialog";
-
-const EVENT_STATUS_LABELS: Record<string, string> = {
-  confirmed: "Confirmado",
-  pending: "Pendente",
-  draft: "Rascunho",
-  completed: "Concluído",
-  rescheduled: "Remarcado",
-  cancelled: "Cancelado",
-};
+import { EVENT_STATUS_LABEL as EVENT_STATUS_LABELS } from "@/features/agenda/model/labels";
 
 export const Route = createFileRoute("/_authenticated/crm/$id")({
   component: ClientDossierPage,

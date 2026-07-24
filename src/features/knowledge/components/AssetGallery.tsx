@@ -13,6 +13,7 @@ import {
   Download,
   Eye,
 } from "lucide-react";
+import { ASSET_CATEGORY_LABEL, ASSET_STATUS_LABEL, VISIBILITY_LABEL } from "../model/labels";
 
 type KnowledgeAsset = Tables<"knowledge_assets"> & {
   revisions?: { status: string }[];
@@ -108,7 +109,9 @@ function AssetCard({ asset }: { asset: KnowledgeAsset }) {
         </div>
 
         <p className="text-xs text-muted-foreground mt-1 truncate">
-          {asset.asset_category} • {asset.storage_provider}
+          {ASSET_CATEGORY_LABEL[asset.asset_category as keyof typeof ASSET_CATEGORY_LABEL] ??
+            asset.asset_category}{" "}
+          • {asset.storage_provider}
         </p>
 
         <div className="flex items-center gap-2 mt-2">
@@ -116,10 +119,11 @@ function AssetCard({ asset }: { asset: KnowledgeAsset }) {
             variant={asset.status === "approved" ? "default" : "outline"}
             className="text-[10px]"
           >
-            {asset.status}
+            {ASSET_STATUS_LABEL[asset.status as keyof typeof ASSET_STATUS_LABEL] ?? asset.status}
           </Badge>
           <Badge variant="outline" className="text-[10px]">
-            {asset.visibility}
+            {VISIBILITY_LABEL[asset.visibility as keyof typeof VISIBILITY_LABEL] ??
+              asset.visibility}
           </Badge>
         </div>
       </div>

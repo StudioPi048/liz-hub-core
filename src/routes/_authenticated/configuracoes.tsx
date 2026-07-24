@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarCheck2, Loader2, Save, SlidersHorizontal, Building2 } from "lucide-react";
 import { toast } from "sonner";
+import { ROLE_LABEL } from "@/lib/role-labels";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: ConfiguracoesPage,
@@ -104,7 +105,7 @@ function ConfiguracoesPage() {
                 ) : (
                   (me.data?.roles || []).map((r) => (
                     <Badge key={r} variant="secondary">
-                      {r}
+                      {ROLE_LABEL[r] ?? r}
                     </Badge>
                   ))
                 )}
@@ -179,7 +180,7 @@ function ConfiguracoesPage() {
           </CardTitle>
           <CardDescription>Conexões ativas do Instituto com serviços externos.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <div className="flex items-center justify-between rounded-lg border border-border/60 p-4">
             <div>
               <div className="text-sm font-medium">Google Calendar</div>
