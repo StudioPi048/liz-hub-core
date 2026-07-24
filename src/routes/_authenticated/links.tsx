@@ -29,7 +29,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Copy, ExternalLink, Plus, Search, Trash2, Loader2, Pencil } from "lucide-react";
+import { Copy, ExternalLink, FileText, Plus, Search, Trash2, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/links")({
@@ -51,6 +51,14 @@ function getCategoryVariant(name: string) {
   if (PREDEFINED_VARIANTS[name]) return PREDEFINED_VARIANTS[name];
   const variants = ["neutral", "pending", "success", "critical"] as const;
   return variants[name.length % variants.length];
+}
+
+function getNoteTags(notes: string | null) {
+  if (!notes) return [];
+  return notes
+    .split(/\s+/)
+    .filter((tag) => tag.startsWith("#"))
+    .map((tag) => tag.replace(/^#/, "").replace(/-/g, " "));
 }
 
 function LinksPage() {
@@ -143,7 +151,8 @@ function LinksPage() {
     (l) =>
       !q ||
       l.name.toLowerCase().includes(q.toLowerCase()) ||
-      l.url.toLowerCase().includes(q.toLowerCase()),
+      l.url.toLowerCase().includes(q.toLowerCase()) ||
+      (l.notes || "").toLowerCase().includes(q.toLowerCase()),
   );
 
   const byCategory = new Map<string, typeof filtered>();
@@ -247,88 +256,121 @@ function LinksPage() {
       ) : (
         <div className="space-y-10">
           {[...byCategory.entries()].map(([cat, list]) => (
-            <div key={cat} className="space-y-4">
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground pl-1 border-l-2 border-primary/20">
-                {cat}
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {list.map((l) => (
-                  <Card
-                    key={l.id}
-                    className="group bg-card/60 backdrop-blur-sm border-border/40 hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
-                  >
-                    <CardContent className="p-5 flex flex-col gap-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="font-semibold truncate text-foreground group-hover:text-primary transition-colors">
-                            {l.name}
+            <section key={cat} className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-l-2 border-primary/25 pl-3">
+                <div className="flex items-center gap-2">
+                  {cat === "Formulários" && (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--semantic-forms-bg)] text-[var(--semantic-forms-fg)]">
+                      <FileText className="h-4 w-4" />
+                    </span>
+                  )}
+                  <div>
+                    <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+                      {cat}
+                    </h2>
+                    <p className="text-xs text-muted-foreground/80">
+                      {list.length} {list.length === 1 ? "link cadastrado" : "links cadastrados"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+                {list.map((l) => {
+                  const tags = getNoteTags(l.notes);
+
+                  return (
+                    <Card
+                      key={l.id}
+                      className="group bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                    >
+                      <CardContent className="p-5 flex min-h-64 flex-col gap-5">
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {l.link_categories && (
+                              <SemanticBadge variant={getCategoryVariant(l.link_categories.name)}>
+                                {l.link_categories.name}
+                              </SemanticBadge>
+                            )}
+                            {tags.includes("2026") && (
+                              <SemanticBadge variant="pending">2026</SemanticBadge>
+                            )}
                           </div>
-                          <div className="text-xs font-mono text-muted-foreground/80 truncate bg-muted/30 rounded px-1.5 py-0.5 inline-block max-w-full">
-                            {l.url}
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
+                              {l.name}
+                            </h3>
+                            <div className="w-fit max-w-full rounded-md bg-muted/35 px-2 py-1 text-xs font-mono text-muted-foreground/80 truncate">
+                              {l.url}
+                            </div>
                           </div>
                         </div>
-                        {l.link_categories && (
-                          <SemanticBadge variant={getCategoryVariant(l.link_categories.name)}>
-                            {l.link_categories.name}
-                          </SemanticBadge>
+
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {tags
+                              .filter((tag) => tag !== "2026" && tag !== "formulario")
+                              .slice(0, 7)
+                              .map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded-full border border-border/60 bg-background/60 px-2 py-1 text-xs leading-none text-muted-foreground"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                          </div>
                         )}
-                      </div>
 
-                      {l.notes && (
-                        <p className="text-sm text-muted-foreground/90 line-clamp-2 leading-relaxed">
-                          {l.notes}
-                        </p>
-                      )}
-
-                      <div className="flex gap-2 pt-2 border-t border-border/40 mt-auto">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="flex-1 gap-2 shadow-sm"
-                          asChild
-                        >
-                          <a href={l.url} target="_blank" rel="noreferrer">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            Abrir
-                          </a>
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="shrink-0"
-                          onClick={() => {
-                            navigator.clipboard.writeText(l.url);
-                            toast.success("Link copiado");
-                          }}
-                          title="Copiar link"
-                        >
-                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="shrink-0"
-                          onClick={() => openEditFor(l)}
-                          title="Editar link"
-                        >
-                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="shrink-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-colors"
-                          onClick={() => handleDelete(l.id)}
-                          disabled={del.isPending}
-                          title="Remover link"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="flex gap-2 pt-2 border-t border-border/40 mt-auto">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="flex-1 gap-2 shadow-sm"
+                            asChild
+                          >
+                            <a href={l.url} target="_blank" rel="noreferrer">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Abrir
+                            </a>
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="shrink-0"
+                            onClick={() => {
+                              navigator.clipboard.writeText(l.url);
+                              toast.success("Link copiado");
+                            }}
+                            title="Copiar link"
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="shrink-0"
+                            onClick={() => openEditFor(l)}
+                            title="Editar link"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="shrink-0 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-colors"
+                            onClick={() => handleDelete(l.id)}
+                            disabled={del.isPending}
+                            title="Remover link"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-            </div>
+            </section>
           ))}
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-2xl bg-muted/10">
